@@ -4,7 +4,7 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
+    // id("com.google.gms.google-services") // Temporarily commented out until android/app/google-services.json is added
     // END: FlutterFire Configuration
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -33,13 +33,19 @@ android {
         applicationId = "com.example.taleem_plus"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = 1
+        versionName = "1"
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
-            create("release") {
+        create("release") {
+            val envKeystorePath = System.getenv("KEYSTORE_PATH")
+            if (!envKeystorePath.isNullOrEmpty() && file(envKeystorePath).exists()) {
+                storeFile = file(envKeystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("KEY_ALIAS") ?: ""
+                keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            } else if (keystorePropertiesFile.exists()) {
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
                 storeFile = file(keystoreProperties["storeFile"] as String)
@@ -50,10 +56,9 @@ android {
 
     buildTypes {
         release {
-            // Falls back to the debug key only if key.properties is missing
-            // (e.g. a fresh clone that hasn't generated a release keystore
-            // yet) so the build never silently ships debug-signed.
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            val envKeystorePath = System.getenv("KEYSTORE_PATH")
+            val hasReleaseSigning = (!envKeystorePath.isNullOrEmpty() && file(envKeystorePath).exists()) || keystorePropertiesFile.exists()
+            signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
@@ -64,6 +69,15 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+
+    applicationVariants.all {
+        if (buildType.name == "release") {
+            outputs.all {
+                val output = this as com.android.build.gradle.api.BaseVariantOutputImpl
+                output.outputFileName = "Final_Year_Project-version-1.apk"
+            }
         }
     }
 }
