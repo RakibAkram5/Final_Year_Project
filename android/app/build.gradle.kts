@@ -33,8 +33,8 @@ android {
         applicationId = "com.example.taleem_plus"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 1
-        versionName = "1"
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     signingConfigs {
@@ -69,15 +69,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-        }
-    }
-
-    applicationVariants.all {
-        if (buildType.name == "release") {
-            outputs.all {
-                val output = this as com.android.build.gradle.api.BaseVariantOutputImpl
-                output.outputFileName = "Final_Year_Project-version-1.apk"
-            }
         }
     }
 }
