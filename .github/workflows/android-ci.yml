@@ -91,7 +91,7 @@ jobs:
           name: "Version 1"
           tag_name: ${{ github.ref_name }}
           files: |
-            build/app/outputs/flutter-apk/Final_Year_Project-version-1.apk
+            build/app/outputs/flutter-apk/app-release.apk
           draft: false
           prerelease: false
           generate_release_notes: true
