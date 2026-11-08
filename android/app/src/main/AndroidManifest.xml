@@ -2,6 +2,9 @@
 
     <!-- Camera Permission -->
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Camera is optional (OCR scan); devices without one, e.g. Chromebooks,
+         can still install the app. Required by lint PermissionImpliesUnsupportedChromeOsHardware. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
 
     <!-- Required for REST API access in release builds. -->
     <uses-permission android:name="android.permission.INTERNET"/>

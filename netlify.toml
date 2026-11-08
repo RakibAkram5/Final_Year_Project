@@ -1,0 +1,81 @@
+# Netlify hosts the TaleemPlus Flutter web app (static files only).
+#
+# The Express API + Prisma/Neon Postgres keep running on the existing Vercel
+# project (https://taleemplus.vercel.app). Netlify proxies /api/* and /health
+# to it, so the browser sees ONE origin: the Flutter client keeps calling
+# `${window.location.origin}/api/v2` (lib/data/remote/api_client.dart) and no
+# CORS change or --dart-define is needed. No backend secret lives on Netlify.
+
+[build]
+  command = "bash tool/netlify_build_web.sh"
+  publish = "build/web"
+
+[build.environment]
+  FLUTTER_VERSION = "3.47.9"
+
+# --- API proxy (must come before the SPA fallback) -------------------------
+[[redirects]]
+  from = "/api/*"
+  to = "https://taleemplus.vercel.app/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/health"
+  to = "https://taleemplus.vercel.app/health"
+  status = 200
+  force = true
+
+# --- SPA fallback: deep links / refreshes on internal routes ----------------
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# --- Headers ----------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), payment=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# Entry points are not content-hashed: always revalidate so a new deploy is
+# picked up immediately (Netlify answers unchanged files with 304 via ETag).
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/flutter_bootstrap.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/flutter_service_worker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/main.dart.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/version.json"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# Engine runtime, fonts, images and icons change rarely: cache for a day,
+# then revalidate.
+[[headers]]
+  for = "/canvaskit/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"

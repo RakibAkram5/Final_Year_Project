@@ -49,3 +49,7 @@ android/.kotlin/
 # Keep example env templates tracked
 !.env.example
 !**/.env.example
+
+# Netlify CLI local state and build cache
+.netlify/
+/.cache/

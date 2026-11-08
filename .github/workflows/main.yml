@@ -66,9 +66,27 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      # Optional release signing. Without these secrets the APK is signed with
+      # the debug key (fine for sideloading, not accepted by Google Play).
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+          else
+            echo "::notice::KEYSTORE_BASE64 is not set; the APK will be debug-signed."
+          fi
+
+      # The production API (Express on Vercel). Override with the repository
+      # variable API_BASE_URL if the backend moves.
       - name: Build APK
         env:
-          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL || 'https://taleemplus.vercel.app/api/v2' }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           case "$API_BASE_URL" in
             https://*/api/v2) ;;
@@ -76,14 +94,25 @@ jobs:
               echo "::error::API_BASE_URL must be an HTTPS origin ending in /api/v2 (got '${API_BASE_URL:-<empty>}')."
               exit 1 ;;
           esac
+          out=build/app/outputs/flutter-apk
+          # Universal APK (installs on any device).
+          flutter build apk --release \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
+          mkdir -p dist
+          cp "$out/app-release.apk" dist/taleemplus-release.apk
+          # Smaller per-architecture APKs.
           flutter build apk --release --split-per-abi \
             --dart-define=API_BASE_URL="$API_BASE_URL"
+          for f in "$out"/app-*-release.apk; do
+            name=$(basename "$f"); cp "$f" "dist/taleemplus-${name#app-}"
+          done
+          ls -la dist
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-release
-          path: build/app/outputs/flutter-apk/*.apk
+          path: dist/*.apk
           if-no-files-found: error
 
   build-web:
@@ -131,6 +160,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          name: TaleemPlus ${{ github.ref_name }}
           files: |
             *.apk
           draft: false

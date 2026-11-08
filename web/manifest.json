@@ -1,11 +1,11 @@
 {
-    "name": "Taleem Plus",
-    "short_name": "Taleem Plus",
+    "name": "TaleemPlus – AI Academy Management System",
+    "short_name": "TaleemPlus",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "TaleemPlus – AI Academy Management System",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

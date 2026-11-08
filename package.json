@@ -7,7 +7,7 @@
     "node": "22.x"
   },
   "scripts": {
-    "vercel-build": "prisma generate --schema=taleemplus_backend/prisma/schema.prisma",
+    "vercel-build": "prisma generate --schema=taleemplus_backend/prisma/schema.prisma && bash tool/vercel_build_web.sh",
     "postinstall": "prisma generate --schema=taleemplus_backend/prisma/schema.prisma"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
-    "prisma": "^5.14.0"
+    "prisma": "^5.14.0",
+    "zod": "^3.25.76"
   }
 }

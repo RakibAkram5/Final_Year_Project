@@ -1,9 +1,7 @@
 name: Build Android Release APK
 
+# Manual build only. Tagged releases are built and published by main.yml.
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -31,7 +29,7 @@ jobs:
 
       - name: Verify API origin is configured
         env:
-          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL || 'https://taleemplus.vercel.app/api/v2' }}
         run: |
           if [ -z "$API_BASE_URL" ]; then
             echo "::error::API_BASE_URL is not configured. Set the repository variable or secret API_BASE_URL to the production HTTPS API origin (for example https://api.example.com/api/v2)."
@@ -40,7 +38,7 @@ jobs:
 
       - name: Build Release APK
         env:
-          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL || 'https://taleemplus.vercel.app/api/v2' }}
         run: |
           flutter build apk --release --split-per-abi \
             --dart-define=API_BASE_URL="$API_BASE_URL"

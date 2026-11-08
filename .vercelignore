@@ -9,27 +9,27 @@ taleemplus_backend/generated/
 node_modules/
 **/node_modules/
 
-# Large local, tooling, and non-runtime directories
-.dart_tool/
-.idea/
-.junie/
-.agents/
-android/
-ios/
-ml_service/
-ml_training/
-data_export/
-docs/
-scripts/
-test/
-integration_test/
-lib/
-assets/
-web/
-pubspec.yaml
-pubspec.lock
-analysis_options.yaml
+# Large local, tooling, and non-runtime directories.
+# Patterns are anchored to the repository root. This file is shared by both
+# Vercel projects linked to this repo:
+#   - taleemplus (root ".") needs lib/, web/, assets/ and pubspec.* because
+#     tool/vercel_build_web.sh builds the Flutter web app during the build.
+#   - final-year-project (root "ml_service") needs ml_service/, so it must
+#     never be listed here.
+/.dart_tool/
+/.idea/
+/.junie/
+/.agents/
+/android/
+/ios/
+/ml_training/
+/data_export/
+/docs/
+/scripts/
+/test/
+/integration_test/
 *.apk
 
-# Flutter build artifacts are copied to vercel_web before deployment
-build/
+# Local build artifacts; the Vercel build regenerates both
+/build/
+/vercel_web/
