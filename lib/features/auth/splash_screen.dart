@@ -27,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 900),
     );
 
     // Logo: pops in with a soft bounce (0% - 45% of the timeline)
@@ -71,11 +71,14 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       final auth = context.read<AuthProvider>();
 
-      // Perform session restoration
+      // Run the minimum-display timer and session restore concurrently so
+      // the splash is never extended by a fixed delay after the network call.
+      final minimumDisplay =
+          Future<void>.delayed(const Duration(milliseconds: 700));
+
       final user = await auth.tryRestoreSession();
 
-      // Minimum splash time to ensure animation completes
-      await Future.delayed(const Duration(milliseconds: 2500));
+      await minimumDisplay;
 
       if (!mounted) return;
 
@@ -100,6 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final cacheSize = (180 * MediaQuery.of(context).devicePixelRatio).round();
     return Scaffold(
       body: GradientBackground(
         useSplashGlow: true,
@@ -133,6 +137,8 @@ class _SplashScreenState extends State<SplashScreen>
                             child: Image.asset(
                               'assets/images/splash_logo.png',
                               fit: BoxFit.cover,
+                              cacheWidth: cacheSize,
+                              cacheHeight: cacheSize,
                             ),
                           ),
                         ),

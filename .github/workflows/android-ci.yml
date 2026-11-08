@@ -83,7 +83,14 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: flutter build apk --release
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+        run: |
+          if [ -z "$API_BASE_URL" ]; then
+            echo "::error::API_BASE_URL is not configured. Set the repository variable or secret API_BASE_URL to the production HTTPS API origin."
+            exit 1
+          fi
+          flutter build apk --release \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

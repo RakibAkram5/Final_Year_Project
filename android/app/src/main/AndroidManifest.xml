@@ -3,10 +3,14 @@
     <!-- Camera Permission -->
     <uses-permission android:name="android.permission.CAMERA"/>
 
+    <!-- Required for REST API access in release builds. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="Taleem Plus"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="${usesCleartextTraffic}">
 
         <activity
             android:name=".MainActivity"

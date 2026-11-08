@@ -29,24 +29,29 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Configure Firebase options when available
-        id: firebase_config
+      - name: Validate API origin
+        id: api_config
         env:
-          FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS }}
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
         run: |
-          if [ -n "$FIREBASE_OPTIONS" ]; then
-            printf '%s' "$FIREBASE_OPTIONS" > lib/firebase_options.dart
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
+          if [ -z "$API_BASE_URL" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::FIREBASE_OPTIONS is not configured; lint and tests will run, and Firebase-dependent release builds will be skipped."
+            echo "::notice::API_BASE_URL is not configured; the Android release build will be skipped."
+            exit 0
           fi
+          case "$API_BASE_URL" in
+            https://*/api/v2) ;;
+            *)
+              echo "::error::API_BASE_URL must be an HTTPS origin ending in /api/v2."
+              exit 1 ;;
+          esac
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Install Flutter dependencies
         run: flutter pub get
 
       - name: Check Dart formatting
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed lib test integration_test
 
       - name: Analyze Flutter project
         run: flutter analyze
@@ -55,11 +60,9 @@ jobs:
         run: flutter test
 
       - name: Build Web release
-        if: steps.firebase_config.outputs.configured == 'true'
         run: flutter build web --release
 
       - name: Upload Web build
-        if: steps.firebase_config.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: taleemplus-web-release
@@ -67,11 +70,15 @@ jobs:
           if-no-files-found: error
 
       - name: Build Android release APK
-        if: steps.firebase_config.outputs.configured == 'true'
-        run: flutter build apk --release
+        if: steps.api_config.outputs.configured == 'true'
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+        run: |
+          flutter build apk --release \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
 
       - name: Upload Android APK
-        if: steps.firebase_config.outputs.configured == 'true'
+        if: steps.api_config.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: taleemplus-android-release

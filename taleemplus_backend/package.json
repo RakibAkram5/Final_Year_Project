@@ -9,10 +9,19 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
+    "migrate:export": "node scripts/migration/exportFirestore.js",
+    "migrate:identity": "node scripts/migration/runIdentityImport.js",
+    "migrate:verify": "node scripts/migration/verifyIdentity.js",
     "db:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-db.ps1 start",
     "db:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-db.ps1 stop",
     "db:status": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-db.ps1 status",
-    "test": "jest --runInBand --detectOpenHandles"
+    "test": "jest --runInBand --detectOpenHandles",
+    "test:contract": "jest --runInBand --detectOpenHandles tests/contract.test.js",
+    "check:routes": "node scripts/check-client-routes.js",
+    "db:backup": "node scripts/backup-db.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",
@@ -31,5 +40,11 @@
     "nodemon": "^3.1.2",
     "prisma": "^5.14.0",
     "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/tests/setupEnv.js"
+    ]
   }
 }

@@ -1,87 +1,13 @@
 const prisma = require('../config/db');
 const { canReadStudent } = require('../utils/studentAccess');
-
-const getQuizzes = async (req, res, next) => {
-  try {
-    const { classId } = req.query;
-
-    const whereClause = { academyId: req.academyId };
-    if (classId) whereClause.classId = String(classId);
-
-    const quizzes = await prisma.quiz.findMany({
-      where: whereClause,
-      include: { questions: true },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    const formatted = quizzes.map((q) => ({
-      id: q.id,
-      academy_id: q.academyId,
-      class_id: q.classId,
-      class_label: q.classLabel,
-      title: q.title,
-      subject: q.subject,
-      month: q.month || '',
-      session: q.session || '',
-      chapter: q.chapter || '',
-      difficulty: q.difficulty || '',
-      total_marks: q.totalMarks,
-      created_by_uid: q.createdById,
-      created_at: q.createdAt,
-      questions: q.questions.map((quest) => ({
-        id: quest.id,
-        text: quest.text,
-        type: quest.type,
-        options: quest.options,
-        correct_index: quest.correctIndex,
-        marks: quest.marks,
-        grading_keywords: quest.gradingKeywords
-      }))
-    }));
-
-    res.json({ success: true, data: formatted });
-  } catch (err) {
-    next(err);
-  }
-};
-
-const createQuiz = async (req, res, next) => {
-  try {
-    const { classId, classLabel, title, subject, totalMarks, questions, instructions } = req.body;
-
-    if (!classId || !title || !subject || !totalMarks || !questions) {
-      return res.status(400).json({ success: false, message: 'Missing required quiz fields.' });
-    }
-
-    const quiz = await prisma.quiz.create({
-      data: {
-        academyId: req.academyId,
-        classId,
-        classLabel: classLabel || subject,
-        title,
-        subject,
-        totalMarks: parseInt(totalMarks),
-        instructions: instructions || null,
-        createdById: req.user.id,
-        questions: {
-          create: questions.map((q) => ({
-            text: q.text,
-            type: q.type || 'short',
-            options: q.options || [],
-            correctIndex: q.correct_index != null ? q.correct_index : null,
-            marks: q.marks || 5,
-            gradingKeywords: q.grading_keywords || []
-          }))
-        }
-      },
-      include: { questions: true }
-    });
-
-    res.status(201).json({ success: true, message: 'Quiz created successfully.', data: quiz });
-  } catch (err) {
-    next(err);
-  }
-};
+const { forbidden, notFound } = require('../utils/apiError');
+const { sendSuccess } = require('../utils/response');
+const { toIso } = require('../utils/dto');
+const {
+  assertClassInAcademy,
+  assertStudentInAcademy,
+  assertEnrolledStudent
+} = require('../utils/tenant');
 
 const calculateGrade = (percentage) => {
   if (percentage >= 90) return 'A+';
@@ -90,6 +16,348 @@ const calculateGrade = (percentage) => {
   if (percentage >= 60) return 'C';
   if (percentage >= 50) return 'D';
   return 'F';
+};
+
+const formatQuestion = (question, includeAnswers) => ({
+  id: question.id,
+  text: question.text,
+  type: question.type,
+  options: question.options,
+  marks: question.marks,
+  ...(includeAnswers
+    ? {
+        correct_index: question.correctIndex,
+        grading_keywords: question.gradingKeywords
+      }
+    : {})
+});
+
+const formatQuiz = (quiz, includeAnswers) => ({
+  id: quiz.id,
+  academy_id: quiz.academyId,
+  class_id: quiz.classId,
+  class_label: quiz.classLabel,
+  title: quiz.title,
+  subject: quiz.subject,
+  month: quiz.month || '',
+  session: quiz.session || '',
+  chapter: quiz.chapter || '',
+  difficulty: quiz.difficulty || 'Medium',
+  total_marks: quiz.totalMarks,
+  test_date: toIso(quiz.testDate),
+  instructions: quiz.instructions || '',
+  created_by_uid: quiz.createdById,
+  created_by_name: quiz.createdBy?.fullName || '',
+  created_at: toIso(quiz.createdAt),
+  questions: (quiz.questions || []).map((question) =>
+    formatQuestion(question, includeAnswers)
+  )
+});
+
+const formatMark = (mark) => ({
+  id: mark.id,
+  academy_id: mark.academyId,
+  quiz_id: mark.quizId,
+  student_id: mark.studentId,
+  student_name: mark.studentName,
+  class_id: mark.classId,
+  subject: mark.subject,
+  month: mark.month || '',
+  marks_obtained: mark.marksObtained,
+  total_marks: mark.totalMarks,
+  percentage: mark.percentage,
+  grade_letter: mark.gradeLetter,
+  teacher_feedback: mark.teacherFeedback || '',
+  updated_at: toIso(mark.updatedAt)
+});
+
+const quizInclude = {
+  questions: true,
+  createdBy: { select: { fullName: true } }
+};
+
+const allowedQuizClasses = async (req) => {
+  if (req.user.role === 'ADMIN') return null;
+  if (req.user.role === 'TEACHER') {
+    const classes = await prisma.class.findMany({
+      where: { academyId: req.academyId, primaryTeacherId: req.user.id },
+      select: { id: true }
+    });
+    return classes.map((item) => item.id);
+  }
+  if (req.user.role === 'STUDENT') {
+    const enrollments = await prisma.studentEnrollment.findMany({
+      where: { studentId: req.user.id },
+      select: { classId: true }
+    });
+    return enrollments.map((item) => item.classId);
+  }
+  if (req.user.role === 'PARENT') {
+    const links = await prisma.parentStudent.findMany({
+      where: { parentId: req.user.id },
+      select: { studentId: true }
+    });
+    const enrollments = await prisma.studentEnrollment.findMany({
+      where: { studentId: { in: links.map((link) => link.studentId) } },
+      select: { classId: true }
+    });
+    return enrollments.map((item) => item.classId);
+  }
+  return [];
+};
+
+const getQuizzes = async (req, res, next) => {
+  try {
+    const whereClause = { academyId: req.academyId };
+    if (req.query.classId) {
+      await assertClassInAcademy(req.query.classId, req.academyId);
+      whereClause.classId = req.query.classId;
+    }
+    if (req.user.role !== 'ADMIN') {
+      const classIds = await allowedQuizClasses(req);
+      if (req.user.role === 'TEACHER') {
+        whereClause.OR = [
+          { createdById: req.user.id },
+          { classId: { in: classIds } }
+        ];
+      } else if (!whereClause.classId) {
+        whereClause.classId = { in: classIds };
+      } else if (!classIds.includes(whereClause.classId)) {
+        throw forbidden('You cannot access quizzes for this class.');
+      }
+    }
+
+    const quizzes = await prisma.quiz.findMany({
+      where: whereClause,
+      include: quizInclude,
+      orderBy: { createdAt: 'desc' },
+      take: 500
+    });
+    const includeAnswers = req.user.role === 'ADMIN' || req.user.role === 'TEACHER';
+    return sendSuccess(res, quizzes.map((quiz) => formatQuiz(quiz, includeAnswers)));
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Teachers may manage quizzes (and their marks) only for classes they
+// teach or quizzes they created; admins may manage any quiz in the academy.
+const assertCanManageQuiz = async (req, quiz) => {
+  if (req.user.role === 'ADMIN') return;
+  if (req.user.role !== 'TEACHER') throw forbidden();
+  const allowed = await allowedQuizClasses(req);
+  if (!allowed.includes(quiz.classId) && quiz.createdById !== req.user.id) {
+    throw forbidden('You can only manage quizzes for your own classes.');
+  }
+};
+
+const assertCanReadQuiz = async (req, quiz) => {
+  if (req.user.role === 'ADMIN') return;
+  if (req.user.role === 'TEACHER') return assertCanManageQuiz(req, quiz);
+  const allowed = await allowedQuizClasses(req);
+  if (!allowed.includes(quiz.classId)) {
+    throw forbidden('You cannot access this quiz.');
+  }
+};
+
+const roundMarks = (value, fallback) => {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : fallback;
+};
+
+const createQuiz = async (req, res, next) => {
+  try {
+    const {
+      classId,
+      classLabel,
+      title,
+      subject,
+      totalMarks,
+      questions,
+      instructions,
+      month,
+      session,
+      chapter,
+      difficulty,
+      testDate
+    } = req.body;
+
+    if (!classId || !title || !subject || !totalMarks || !Array.isArray(questions)) {
+      return res.status(400).json({ success: false, message: 'Missing required quiz fields.' });
+    }
+    const classEntity = await assertClassInAcademy(classId, req.academyId);
+    if (req.user.role === 'TEACHER' && classEntity.primaryTeacherId !== req.user.id) {
+      throw forbidden('You can only create quizzes for your classes.');
+    }
+
+    const quiz = await prisma.quiz.create({
+      data: {
+        academyId: req.academyId,
+        classId,
+        classLabel: classLabel || `${classEntity.className} - ${classEntity.section}`,
+        title: String(title).trim(),
+        subject: String(subject).trim(),
+        month: month || null,
+        session: session || null,
+        chapter: chapter || null,
+        difficulty: difficulty || null,
+        totalMarks: parseInt(totalMarks, 10),
+        testDate: testDate ? new Date(testDate) : null,
+        instructions: instructions || null,
+        createdById: req.user.id,
+        questions: {
+          create: questions.map((question) => ({
+            text: String(question.text || '').trim(),
+            type: question.type || 'short',
+            options: Array.isArray(question.options) ? question.options : [],
+            correctIndex: question.correct_index != null ? question.correct_index : null,
+            marks: roundMarks(question.marks, 5),
+            gradingKeywords: Array.isArray(question.grading_keywords)
+              ? question.grading_keywords
+              : []
+          }))
+        }
+      },
+      include: quizInclude
+    });
+
+    return sendSuccess(res, formatQuiz(quiz, true), {
+      status: 201,
+      message: 'Quiz created successfully.'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getQuizById = async (req, res, next) => {
+  try {
+    const quiz = await prisma.quiz.findFirst({
+      where: { id: req.params.id, academyId: req.academyId },
+      include: quizInclude
+    });
+    if (!quiz) throw notFound('Quiz not found in academy.');
+    await assertCanReadQuiz(req, quiz);
+    const includeAnswers = req.user.role === 'ADMIN' || req.user.role === 'TEACHER';
+    return sendSuccess(res, formatQuiz(quiz, includeAnswers));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateQuiz = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.quiz.findFirst({
+      where: { id, academyId: req.academyId }
+    });
+    if (!existing) throw notFound('Quiz not found in academy.');
+    if (req.user.role === 'TEACHER') {
+      const allowed = await allowedQuizClasses(req);
+      if (!allowed.includes(existing.classId) && existing.createdById !== req.user.id) {
+        throw forbidden('You cannot edit this quiz.');
+      }
+      if (req.body.classId !== undefined && !allowed.includes(req.body.classId)) {
+        throw forbidden('You cannot move this quiz to a class you do not teach.');
+      }
+    }
+
+    const data = {};
+    for (const field of ['title', 'subject', 'classLabel', 'month', 'session', 'chapter', 'difficulty', 'instructions']) {
+      if (req.body[field] !== undefined) {
+        data[field] = req.body[field] === null ? null : String(req.body[field]).trim() || null;
+      }
+    }
+    if (req.body.totalMarks !== undefined) data.totalMarks = parseInt(req.body.totalMarks, 10);
+    if (req.body.testDate !== undefined) {
+      data.testDate = req.body.testDate ? new Date(req.body.testDate) : null;
+    }
+    if (req.body.classId !== undefined) {
+      await assertClassInAcademy(req.body.classId, req.academyId);
+      data.classId = req.body.classId;
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (Array.isArray(req.body.questions)) {
+        await tx.quizQuestion.deleteMany({ where: { quizId: id } });
+        await tx.quizQuestion.createMany({
+          data: req.body.questions.map((question) => ({
+            quizId: id,
+            text: String(question.text || '').trim(),
+            type: question.type || 'short',
+            options: Array.isArray(question.options) ? question.options : [],
+            correctIndex: question.correct_index != null ? question.correct_index : null,
+            marks: roundMarks(question.marks, 5),
+            gradingKeywords: Array.isArray(question.grading_keywords)
+              ? question.grading_keywords
+              : []
+          }))
+        });
+      }
+      return tx.quiz.update({
+        where: { id },
+        data,
+        include: quizInclude
+      });
+    });
+
+    return sendSuccess(res, formatQuiz(updated, true), {
+      message: 'Quiz updated successfully.'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateQuizQuestions = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.quiz.findFirst({
+      where: { id, academyId: req.academyId }
+    });
+    if (!existing) throw notFound('Quiz not found in academy.');
+    await assertCanManageQuiz(req, existing);
+    if (!Array.isArray(req.body.questions)) {
+      return res.status(400).json({ success: false, message: 'questions must be an array.' });
+    }
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.quizQuestion.deleteMany({ where: { quizId: id } });
+      await tx.quizQuestion.createMany({
+        data: req.body.questions.map((question) => ({
+          quizId: id,
+          text: String(question.text || '').trim(),
+          type: question.type || 'short',
+          options: Array.isArray(question.options) ? question.options : [],
+          correctIndex: question.correct_index != null ? question.correct_index : null,
+          marks: roundMarks(question.marks, 5),
+          gradingKeywords: Array.isArray(question.grading_keywords)
+            ? question.grading_keywords
+            : []
+        }))
+      });
+      return tx.quiz.findUnique({ where: { id }, include: quizInclude });
+    });
+    return sendSuccess(res, formatQuiz(updated, true), {
+      message: 'Quiz questions updated successfully.'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const deleteQuiz = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.quiz.findFirst({
+      where: { id, academyId: req.academyId }
+    });
+    if (!existing) throw notFound('Quiz not found in academy.');
+    await assertCanManageQuiz(req, existing);
+    await prisma.quiz.delete({ where: { id } });
+    return sendSuccess(res, { deleted: true }, { message: 'Quiz deleted successfully.' });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const upsertTestMark = async (req, res, next) => {
@@ -103,17 +371,19 @@ const upsertTestMark = async (req, res, next) => {
     const quiz = await prisma.quiz.findFirst({
       where: { id: quizId, academyId: req.academyId }
     });
-
-    const student = await prisma.user.findFirst({
-      where: { id: studentId, academyId: req.academyId }
-    });
-
-    if (!quiz || !student) {
-      return res.status(404).json({ success: false, message: 'Quiz or student not found in academy.' });
-    }
+    if (!quiz) throw notFound('Quiz not found in academy.');
+    await assertCanManageQuiz(req, quiz);
+    await assertEnrolledStudent(quiz.classId, studentId, req.academyId);
+    const student = await assertStudentInAcademy(studentId, req.academyId);
 
     const total = quiz.totalMarks;
-    const obtained = parseFloat(marksObtained);
+    const obtained = Number(marksObtained);
+    if (!Number.isFinite(obtained) || obtained < 0 || obtained > total) {
+      return res.status(400).json({
+        success: false,
+        message: `marksObtained must be between 0 and ${total}.`
+      });
+    }
     const percentage = total > 0 ? (obtained / total) * 100 : 0;
     const gradeLetter = calculateGrade(percentage);
 
@@ -143,7 +413,9 @@ const upsertTestMark = async (req, res, next) => {
       }
     });
 
-    res.json({ success: true, message: 'Test mark saved successfully.', data: testMark });
+    return sendSuccess(res, formatMark(testMark), {
+      message: 'Test mark saved successfully.'
+    });
   } catch (err) {
     next(err);
   }
@@ -152,40 +424,111 @@ const upsertTestMark = async (req, res, next) => {
 const getStudentMarks = async (req, res, next) => {
   try {
     const { studentId } = req.params;
+    await assertStudentInAcademy(studentId, req.academyId);
     if (!(await canReadStudent(req, studentId))) {
-      return res.status(403).json({ success: false, message: 'You cannot access this student’s marks.' });
+      throw forbidden('You cannot access this student marks.');
     }
 
     const marks = await prisma.testMark.findMany({
-      where: {
-        academyId: req.academyId,
-        studentId
-      },
+      where: { academyId: req.academyId, studentId },
       include: { quiz: true },
       orderBy: { updatedAt: 'desc' }
     });
-
-    const formatted = marks.map((m) => ({
-      id: m.id,
-      academy_id: m.academyId,
-      quiz_id: m.quizId,
-      student_id: m.studentId,
-      student_name: m.studentName,
-      class_id: m.classId,
-      subject: m.subject,
-      month: m.month || '',
-      marks_obtained: m.marksObtained,
-      total_marks: m.totalMarks,
-      percentage: m.percentage,
-      grade_letter: m.gradeLetter,
-      teacher_feedback: m.teacherFeedback || '',
-      updated_at: m.updatedAt
-    }));
-
-    res.json({ success: true, data: formatted });
+    return sendSuccess(res, marks.map(formatMark));
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { getQuizzes, createQuiz, upsertTestMark, getStudentMarks };
+const getMarksByQuiz = async (req, res, next) => {
+  try {
+    const quiz = await prisma.quiz.findFirst({
+      where: { id: req.params.quizId, academyId: req.academyId }
+    });
+    if (!quiz) throw notFound('Quiz not found in academy.');
+    if (req.user.role === 'TEACHER') {
+      const allowed = await allowedQuizClasses(req);
+      if (!allowed.includes(quiz.classId) && quiz.createdById !== req.user.id) {
+        throw forbidden('You cannot access results for this quiz.');
+      }
+    }
+    const marks = await prisma.testMark.findMany({
+      where: { academyId: req.academyId, quizId: quiz.id },
+      orderBy: { studentName: 'asc' }
+    });
+    return sendSuccess(res, marks.map(formatMark));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getMarksByClass = async (req, res, next) => {
+  try {
+    const classId = req.params.classId;
+    await assertClassInAcademy(classId, req.academyId);
+    if (req.user.role === 'TEACHER') {
+      const allowed = await allowedQuizClasses(req);
+      if (!allowed.includes(classId)) throw forbidden('You cannot access marks for this class.');
+    }
+    const marks = await prisma.testMark.findMany({
+      where: { academyId: req.academyId, classId },
+      orderBy: [{ month: 'desc' }, { studentName: 'asc' }]
+    });
+    return sendSuccess(res, marks.map(formatMark));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getAllAcademyMarks = async (req, res, next) => {
+  try {
+    const where = { academyId: req.academyId };
+    if (req.query.month) where.month = String(req.query.month);
+    if (req.user.role === 'TEACHER') {
+      const allowed = await allowedQuizClasses(req);
+      where.classId = { in: allowed };
+    }
+    const marks = await prisma.testMark.findMany({
+      where,
+      orderBy: [{ updatedAt: 'desc' }],
+      take: 5000
+    });
+    return sendSuccess(res, marks.map(formatMark));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const deleteMark = async (req, res, next) => {
+  try {
+    const mark = await prisma.testMark.findFirst({
+      where: { id: req.params.id, academyId: req.academyId }
+    });
+    if (!mark) throw notFound('Test mark not found in academy.');
+    if (req.user.role === 'TEACHER') {
+      const allowed = await allowedQuizClasses(req);
+      if (!allowed.includes(mark.classId)) {
+        throw forbidden('You cannot delete this mark.');
+      }
+    }
+    await prisma.testMark.delete({ where: { id: mark.id } });
+    return sendSuccess(res, { deleted: true }, { message: 'Test mark deleted successfully.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = {
+  getQuizzes,
+  getQuizById,
+  createQuiz,
+  updateQuiz,
+  updateQuizQuestions,
+  deleteQuiz,
+  upsertTestMark,
+  getStudentMarks,
+  getMarksByQuiz,
+  getMarksByClass,
+  getAllAcademyMarks,
+  deleteMark
+};

@@ -1,11 +1,9 @@
 import java.util.Properties
 import java.io.FileInputStream
+import java.util.Base64
 
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    // id("com.google.gms.google-services") // Temporarily commented out until android/app/google-services.json is added
-    // END: FlutterFire Configuration
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -18,6 +16,21 @@ val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+
+// Cleartext (http://) traffic is allowed ONLY when this build's
+// API_BASE_URL dart-define is itself an http:// origin (local/LAN testing).
+// HTTPS production builds keep Android's default cleartext block.
+val dartDefines: List<String> = (project.findProperty("dart-defines") as String?)
+    ?.split(",")
+    ?.mapNotNull { encoded: String ->
+        runCatching { String(Base64.getDecoder().decode(encoded)) }.getOrNull()
+    }
+    ?: emptyList()
+val apiBaseUrl: String = dartDefines
+    .firstOrNull { it.startsWith("API_BASE_URL=") }
+    ?.removePrefix("API_BASE_URL=")
+    ?: ""
+val allowCleartext: Boolean = apiBaseUrl.startsWith("http://")
 
 android {
     namespace = "com.example.taleem_plus"
@@ -35,6 +48,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["usesCleartextTraffic"] = allowCleartext.toString()
     }
 
     signingConfigs {
@@ -71,6 +85,10 @@ android {
             )
         }
     }
+}
+
+base {
+    archivesName.set("Final_Year_Project-version-1")
 }
 
 kotlin {

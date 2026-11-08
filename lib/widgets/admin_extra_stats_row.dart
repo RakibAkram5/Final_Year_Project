@@ -50,7 +50,8 @@ class AdminExtraStatsRow extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: FutureBuilder(
-            future: AttendanceRepository().getAllForAcademy(academyId),
+            future: AttendanceRepository().getAllForAcademy(academyId,
+                from: DateTime.now(), to: DateTime.now()),
             builder: (context, snap) {
               final today = DateTime.now();
               final records = (snap.data ?? const []).where((r) =>

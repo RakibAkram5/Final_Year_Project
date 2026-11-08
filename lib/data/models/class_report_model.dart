@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../remote/api_client.dart';
 
 /// A point-in-time snapshot of one class+section's attendance and fee
 /// standing, generated on demand by an admin and kept until deleted.
@@ -32,7 +32,7 @@ class ClassReportModel {
   Map<String, dynamic> toMap() => {
         'academy_id': academyId,
         'class_label': classLabel,
-        'generated_at': Timestamp.fromDate(generatedAt),
+        'generated_at': generatedAt.toUtc().toIso8601String(),
         'total_students': totalStudents,
         'present': present,
         'absent': absent,
@@ -45,18 +45,22 @@ class ClassReportModel {
   factory ClassReportModel.fromMap(String id, Map<String, dynamic> map) {
     return ClassReportModel(
       id: id,
-      academyId: (map['academy_id'] ?? '') as String,
-      classLabel: (map['class_label'] ?? '') as String,
-      generatedAt: map['generated_at'] is Timestamp
-          ? (map['generated_at'] as Timestamp).toDate()
-          : DateTime.now(),
-      totalStudents: (map['total_students'] ?? 0) as int,
-      present: (map['present'] ?? 0) as int,
-      absent: (map['absent'] ?? 0) as int,
-      feePaid: (map['fee_paid'] ?? 0) as int,
-      feePending: (map['fee_pending'] ?? 0) as int,
-      feePaidAmount: (map['fee_paid_amount'] ?? 0).toDouble(),
-      feePendingAmount: (map['fee_pending_amount'] ?? 0).toDouble(),
+      academyId: (map['academy_id'] ?? '').toString(),
+      classLabel: (map['class_label'] ?? '').toString(),
+      generatedAt: ApiClient.parseRequiredDate(map['generated_at'],
+          field: 'generated_at'),
+      totalStudents: _int(map['total_students']),
+      present: _int(map['present']),
+      absent: _int(map['absent']),
+      feePaid: _int(map['fee_paid']),
+      feePending: _int(map['fee_pending']),
+      feePaidAmount: _double(map['fee_paid_amount']),
+      feePendingAmount: _double(map['fee_pending_amount']),
     );
   }
+
+  static int _int(dynamic v) =>
+      v is num ? v.toInt() : int.tryParse('${v ?? ''}') ?? 0;
+  static double _double(dynamic v) =>
+      v is num ? v.toDouble() : double.tryParse('${v ?? ''}') ?? 0;
 }

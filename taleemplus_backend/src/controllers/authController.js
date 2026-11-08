@@ -6,6 +6,65 @@ const crypto = require('crypto');
 
 const makeStudentCode = () => crypto.randomBytes(8).toString('hex');
 
+const MAX_FAILED_LOGINS = Number(process.env.MAX_FAILED_LOGINS || 5);
+const LOCKOUT_MINUTES = Number(process.env.LOCKOUT_MINUTES || 15);
+
+const normalizeEmail = (value) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+// New accounts are stored lower-case; legacy rows may be mixed case, so
+// lookups are case-insensitive.
+const findUserByEmail = (email, args = {}) =>
+  prisma.user.findFirst({
+    where: { email: { equals: normalizeEmail(email), mode: 'insensitive' } },
+    ...args
+  });
+
+// Academy codes are typed by hand, so they match case-insensitively.
+const findAcademyByCode = (code, select) =>
+  prisma.academy.findFirst({
+    where: { code: { equals: String(code || '').trim(), mode: 'insensitive' } },
+    ...(select ? { select } : {})
+  });
+
+const STATUS_MESSAGES = {
+  PENDING: 'Your account is pending approval by the academy admin.',
+  REJECTED: 'Your registration was rejected. Contact the academy admin.',
+  INACTIVE: 'Your account has been deactivated. Contact the academy admin.'
+};
+
+const hashSecurityAnswer = (answer) => {
+  if (typeof answer !== 'string' || !answer.trim()) return null;
+  return bcrypt.hash(answer.trim().toLowerCase(), 10);
+};
+
+const formatUser = (user, academy) => ({
+  id: user.id,
+  email: user.email,
+  fullName: user.fullName,
+  phoneNumber: user.phoneNumber,
+  role: user.role,
+  accountStatus: user.accountStatus,
+  academyId: user.academyId,
+  academyCode: academy?.code,
+  academyName: academy?.name,
+  academyAddress: academy?.address,
+  academyPhone: academy?.phone,
+  academyLogo: academy?.logo,
+  assignedSections: user.assignedSections,
+  studentCode: user.studentCode,
+  rollNumber: user.rollNumber,
+  subject: user.subject,
+  extraInfo: user.extraInfo,
+  joiningDate: user.joiningDate,
+  createdAt: user.createdAt,
+  linkedChildren: (user.parentLinks || []).map((link) => ({
+    id: link.student.id,
+    fullName: link.student.fullName,
+    email: link.student.email,
+  })),
+});
+
 const verifyPassword = async (req, res, next) => {
   try {
     const user = await prisma.user.findFirst({
@@ -75,9 +134,19 @@ if (!JWT_SECRET || !REFRESH_SECRET) {
   throw new Error('JWT_SECRET and REFRESH_TOKEN_SECRET must be configured.');
 }
 
+// Every token carries a random jti. Without it, two tokens for the same user
+// minted in the same second are byte-identical: refresh "rotation" would
+// re-issue the old token (so it stayed valid), and two same-second logins
+// would collide on the unique refresh_tokens.token column (HTTP 500).
 const generateTokens = (userId, academyId, role) => {
-  const accessToken = jwt.sign({ userId, academyId, role }, JWT_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ userId, academyId, role }, REFRESH_SECRET, { expiresIn: '7d' });
+  const accessToken = jwt.sign({ userId, academyId, role }, JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    jwtid: crypto.randomUUID()
+  });
+  const refreshToken = jwt.sign({ userId, academyId, role }, REFRESH_SECRET, {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
+    jwtid: crypto.randomUUID()
+  });
   return { accessToken, refreshToken };
 };
 
@@ -91,7 +160,7 @@ const registerAdmin = async (req, res, next) => {
     const passwordError = validatePassword(password);
     if (passwordError) return res.status(400).json({ success: false, message: passwordError });
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await findUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email address already registered.' });
     }
@@ -111,7 +180,7 @@ const registerAdmin = async (req, res, next) => {
 
       const user = await tx.user.create({
         data: {
-          email,
+          email: normalizeEmail(email),
           passwordHash,
           fullName,
           role: 'ADMIN',
@@ -158,37 +227,62 @@ const registerAdmin = async (req, res, next) => {
 
 const registerUser = async (req, res, next) => {
   try {
-    const { email, password, fullName, role, academyCode, phoneNumber } = req.body;
+    const {
+      email,
+      password,
+      fullName,
+      role,
+      academyCode,
+      phoneNumber,
+      securityQuestion,
+      securityAnswer
+    } = req.body;
 
     if (!email || !password || !fullName || !role || !academyCode) {
       return res.status(400).json({ success: false, message: 'Missing required registration fields.' });
     }
     const passwordError = validatePassword(password);
     if (passwordError) return res.status(400).json({ success: false, message: passwordError });
+    if ((securityQuestion && !securityAnswer) || (!securityQuestion && securityAnswer)) {
+      return res.status(400).json({
+        success: false,
+        message: 'A security question and answer must be provided together.'
+      });
+    }
 
-    const academy = await prisma.academy.findUnique({ where: { code: academyCode } });
+    const academy = await findAcademyByCode(academyCode);
     if (!academy) {
       return res.status(404).json({ success: false, message: 'Invalid academy code. Academy not found.' });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await findUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email address already registered.' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
     const userRole = role.toUpperCase();
+    if (userRole === 'ADMIN') {
+      return res.status(400).json({
+        success: false,
+        message: 'Admins must register a new academy instead of joining one.'
+      });
+    }
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizeEmail(email),
         passwordHash,
         fullName,
         phoneNumber: phoneNumber || null,
         role: userRole,
         accountStatus: 'PENDING',
         studentCode: userRole === 'STUDENT' ? makeStudentCode() : null,
-        academyId: academy.id
+        academyId: academy.id,
+        securityQuestion: securityQuestion || null,
+        securityAnswerHash: securityAnswer
+          ? await hashSecurityAnswer(securityAnswer)
+          : null
       }
     });
 
@@ -224,24 +318,59 @@ const login = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and password required.' });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { academy: true }
+    const user = await findUserByEmail(email, {
+      include: {
+        academy: true,
+        parentLinks: { include: { student: true } }
+      }
     });
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials. Check email and password.' });
     }
 
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const minutes = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+      return res.status(423).json({
+        success: false,
+        code: 'ACCOUNT_LOCKED',
+        message: `Too many failed sign-in attempts. Try again in ${minutes} minute(s).`
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
+      const attempts = user.failedLoginAttempts + 1;
+      const lock = attempts >= MAX_FAILED_LOGINS;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: lock ? 0 : attempts,
+          lockedUntil: lock ? new Date(Date.now() + LOCKOUT_MINUTES * 60000) : null
+        }
+      });
+      if (lock) {
+        return res.status(423).json({
+          success: false,
+          code: 'ACCOUNT_LOCKED',
+          message: `Too many failed sign-in attempts. Try again in ${LOCKOUT_MINUTES} minute(s).`
+        });
+      }
       return res.status(401).json({ success: false, message: 'Invalid credentials. Check email and password.' });
+    }
+
+    if (user.failedLoginAttempts || user.lockedUntil) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null }
+      });
     }
 
     if (user.accountStatus !== 'ACTIVE') {
       return res.status(403).json({
         success: false,
-        message: `Account status is '${user.accountStatus}'. Please wait for Admin approval.`
+        code: `ACCOUNT_${user.accountStatus}`,
+        message: STATUS_MESSAGES[user.accountStatus] || 'Your account is not active.'
       });
     }
 
@@ -258,21 +387,7 @@ const login = async (req, res, next) => {
     res.json({
       success: true,
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName,
-          role: user.role,
-          accountStatus: user.accountStatus,
-          academyId: user.academyId,
-          academyCode: user.academy.code,
-          academyName: user.academy.name,
-          academyAddress: user.academy.address,
-          academyPhone: user.academy.phone,
-          academyLogo: user.academy.logo,
-          assignedSections: user.assignedSections,
-          studentCode: user.studentCode
-        },
+        user: formatUser(user, user.academy),
         tokens
       }
     });
@@ -293,12 +408,21 @@ const refreshToken = async (req, res, next) => {
       include: { user: true }
     });
 
-    if (!savedToken || savedToken.revoked || savedToken.expiresAt < new Date()) {
+    if (
+      !savedToken ||
+      savedToken.revoked ||
+      savedToken.expiresAt < new Date() ||
+      !savedToken.user ||
+      savedToken.user.accountStatus !== 'ACTIVE'
+    ) {
       return res.status(403).json({ success: false, message: 'Invalid or expired refresh token.' });
     }
 
-    const decoded = jwt.verify(token, REFRESH_SECRET);
-    const newTokens = generateTokens(decoded.userId, decoded.academyId, decoded.role);
+    jwt.verify(token, REFRESH_SECRET);
+    // Re-derive claims from the database so role/academy changes apply on
+    // the next refresh instead of living on in the old token.
+    const { user } = savedToken;
+    const newTokens = generateTokens(user.id, user.academyId, user.role);
 
     await prisma.refreshToken.update({
       where: { id: savedToken.id },
@@ -328,8 +452,8 @@ const logout = async (req, res, next) => {
 
 const getMe = async (req, res, next) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+    const user = await prisma.user.findFirst({
+      where: { id: req.user.id, academyId: req.academyId },
       include: {
         academy: true,
         parentLinks: { include: { student: true } },
@@ -344,23 +468,11 @@ const getMe = async (req, res, next) => {
     res.json({
       success: true,
       data: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-        accountStatus: user.accountStatus,
-        academyId: user.academyId,
-        academyName: user.academy.name,
-        academyAddress: user.academy.address,
-        academyPhone: user.academy.phone,
-        academyLogo: user.academy.logo,
-        academyCode: user.academy.code,
-        assignedSections: user.assignedSections,
-        studentCode: user.studentCode,
-        linkedChildren: user.parentLinks.map((link) => ({
-          id: link.student.id,
-          fullName: link.student.fullName,
-          email: link.student.email
+        ...formatUser(user, user.academy),
+        linkedParents: user.studentLinks.map((link) => ({
+          id: link.parent.id,
+          fullName: link.parent.fullName,
+          email: link.parent.email
         }))
       }
     });
@@ -369,4 +481,123 @@ const getMe = async (req, res, next) => {
   }
 };
 
-module.exports = { registerAdmin, registerUser, login, refreshToken, logout, getMe, verifyPassword, changePassword, updateAcademyProfile };
+const getSecurityQuestion = async (req, res, next) => {
+  try {
+    const email = typeof req.query.email === 'string' ? req.query.email.trim() : '';
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+    const user = await findUserByEmail(email, { select: { securityQuestion: true } });
+    if (!user || !user.securityQuestion) {
+      return res.status(404).json({
+        success: false,
+        message: 'No security question is configured for this account.'
+      });
+    }
+    return res.json({ success: true, data: { question: user.securityQuestion } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const { email, securityAnswer, newPassword } = req.body;
+    if (!email || !securityAnswer || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, security answer, and new password are required.'
+      });
+    }
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      return res.status(400).json({ success: false, message: passwordError });
+    }
+    const user = await findUserByEmail(email);
+    if (!user || !user.securityAnswerHash) {
+      return res.status(404).json({
+        success: false,
+        message: 'Password recovery is not configured for this account.'
+      });
+    }
+    const valid = await bcrypt.compare(
+      String(securityAnswer).trim().toLowerCase(),
+      user.securityAnswerHash
+    );
+    if (!valid) {
+      return res.status(403).json({ success: false, message: 'The security answer is incorrect.' });
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash, failedLoginAttempts: 0, lockedUntil: null }
+      }),
+      prisma.refreshToken.updateMany({
+        where: { userId: user.id, revoked: false },
+        data: { revoked: true }
+      })
+    ]);
+    return res.json({
+      success: true,
+      message: 'Password reset successfully. Sign in with your new password.'
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const lookupAcademy = async (req, res, next) => {
+  try {
+    const code = String(req.query.code || '').trim();
+    if (!code || code.length > 50) {
+      return res.status(400).json({ success: false, message: 'Academy code is required.' });
+    }
+    const academy = await findAcademyByCode(code, { id: true, name: true, code: true });
+    if (!academy) {
+      return res.status(404).json({ success: false, message: 'Invalid academy code. Academy not found.' });
+    }
+    return res.json({ success: true, data: academy });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const setSecurityQuestion = async (req, res, next) => {
+  try {
+    const question = typeof req.body.question === 'string' ? req.body.question.trim() : '';
+    const answer = typeof req.body.answer === 'string' ? req.body.answer.trim() : '';
+    if (!question || !answer || question.length > 200 || answer.length > 200) {
+      return res.status(400).json({
+        success: false,
+        message: 'A security question and answer (max 200 characters each) are required.'
+      });
+    }
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        securityQuestion: question,
+        securityAnswerHash: await hashSecurityAnswer(answer)
+      }
+    });
+    return res.json({ success: true, message: 'Security question saved.' });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+module.exports = {
+  lookupAcademy,
+  setSecurityQuestion,
+  registerAdmin,
+  registerUser,
+  login,
+  refreshToken,
+  logout,
+  getMe,
+  verifyPassword,
+  changePassword,
+  updateAcademyProfile,
+  getSecurityQuestion,
+  resetPassword
+};

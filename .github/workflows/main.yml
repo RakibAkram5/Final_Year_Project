@@ -11,6 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   qa:
     name: Lint & Test 🧪
@@ -24,21 +27,17 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Inject Secrets
-        env:
-          FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS }}
-        run: |
-          echo "$FIREBASE_OPTIONS" > lib/firebase_options.dart
-          dart format lib/firebase_options.dart
-
+      # The app talks only to the REST API; no Firebase options or
+      # google-services.json are injected (an empty secret used to overwrite
+      # lib/firebase_options.dart and break compilation).
       - name: Install Dependencies
         run: flutter pub get
 
       - name: Check Format
-        run: dart format --set-exit-if-changed lib
+        run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Static Analysis
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: flutter analyze
 
       - name: Run Unit Tests
         run: flutter test --coverage
@@ -52,7 +51,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -64,29 +63,31 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Inject Secrets
-        env:
-          FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS }}
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: |
-          mkdir -p android/app
-          echo "$FIREBASE_OPTIONS" > lib/firebase_options.dart
-          echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
-
       - name: Install Dependencies
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release --split-per-abi
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+        run: |
+          case "$API_BASE_URL" in
+            https://*/api/v2) ;;
+            *)
+              echo "::error::API_BASE_URL must be an HTTPS origin ending in /api/v2 (got '${API_BASE_URL:-<empty>}')."
+              exit 1 ;;
+          esac
+          flutter build apk --release --split-per-abi \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-release
           path: build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
 
   build-web:
-    name: Web Deployment 🌐
+    name: Web Build 🌐
     needs: qa
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -99,24 +100,20 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Inject Secrets
-        env:
-          FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS }}
-        run: echo "$FIREBASE_OPTIONS" > lib/firebase_options.dart
-
       - name: Install Dependencies
         run: flutter pub get
 
+      # Vercel serves the API from the same origin (/api/v2), so the web
+      # build needs no API_BASE_URL. Deployment is handled by vercel.yml.
       - name: Build Web
         run: flutter build web --release
 
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
         with:
-          repoToken: "${{ secrets.GITHUB_TOKEN }}"
-          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_TALEEMPLUS_40755 || secrets.FIREBASE_SERVICE_ACCOUNT }}"
-          channelId: live
-          projectId: taleemplus-40755
+          name: web-release
+          path: build/web/
+          if-no-files-found: error
 
   create-release:
     name: Create GitHub Release 📦
@@ -132,7 +129,7 @@ jobs:
           name: android-release
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             *.apk

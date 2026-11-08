@@ -35,22 +35,14 @@ class _TeacherStatsRowState extends State<TeacherStatsRow> {
     _markedTodayFuture = _countMarkedToday();
   }
 
+  /// Records marked today in this teacher's classes. The server already
+  /// limits a teacher's attendance query to the classes they teach, so this
+  /// does not depend on the class list having loaded yet.
   Future<int> _countMarkedToday() async {
-    final myClassIds = context
-        .read<ClassProvider>()
-        .classes
-        .where((c) => c.primaryTeacherId == widget.teacherUid)
-        .map((c) => c.id)
-        .toSet();
     final today = DateTime.now();
-    final all = await _attendanceRepo.getAllForAcademy(widget.academyId);
-    return all
-        .where((r) =>
-            myClassIds.contains(r.classId) &&
-            r.logDate.year == today.year &&
-            r.logDate.month == today.month &&
-            r.logDate.day == today.day)
-        .length;
+    final records = await _attendanceRepo.getAllForAcademy(widget.academyId,
+        from: today, to: today);
+    return records.length;
   }
 
   @override

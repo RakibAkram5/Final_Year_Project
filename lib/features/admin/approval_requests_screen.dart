@@ -9,7 +9,6 @@ import '../../data/models/app_user.dart';
 import '../../data/remote/auth_service.dart';
 import '../../logic/auth_provider.dart';
 import '../../logic/member_provider.dart';
-import '../../data/remote/notification_service.dart'; // NEW
 import '../../widgets/gradient_background.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
@@ -66,35 +65,9 @@ class _ApprovalRequestsScreenState extends State<ApprovalRequestsScreen> {
 
     setState(() => _processingIds.add(u.uid));
     try {
-      // 1. Update status in Firebase to 'active' and tie to THIS admin's academy
+      // The server activates the account in this admin's academy and
+      // creates the user's "Account Approved" notification atomically.
       await _authService.approveUser(u.uid);
-
-      // 2. Notify the user
-      await NotificationService().send(
-        academyId: admin.uid,
-        recipientId: u.uid,
-        title: "Account Approved ✅",
-        message:
-            "Your account has been approved by ${admin.academyName ?? 'the administrator'}. You can now access all features.",
-        type: "approval",
-      );
-
-      // 3. Also mirror this user into the local User Management portal
-      if (u.role != UserRole.admin) {
-        if (!mounted) return;
-        final memberProvider =
-            Provider.of<MemberProvider>(context, listen: false);
-        final alreadyPresent = memberProvider.members.any((m) => m.id == u.uid);
-        if (!alreadyPresent) {
-          await memberProvider.addMember(
-            fullName: u.fullName,
-            email: u.email,
-            phone: u.phoneNumber,
-            role: u.role.value,
-            academyId: admin.uid,
-          );
-        }
-      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -148,18 +121,9 @@ class _ApprovalRequestsScreenState extends State<ApprovalRequestsScreen> {
 
     setState(() => _processingIds.add(u.uid));
     try {
-      // Only change the status; keep the record for admin history.
+      // Only change the status; keep the record for admin history. A
+      // rejected user cannot sign in, so the login screen tells them.
       await _authService.rejectUser(u.uid);
-
-      // Notify the user (They can see this if they try to login again)
-      await NotificationService().send(
-        academyId: admin.uid,
-        recipientId: u.uid,
-        title: "Account Rejected ❌",
-        message:
-            "Your signup request for ${admin.academyName ?? 'this academy'} was not approved.",
-        type: "approval",
-      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

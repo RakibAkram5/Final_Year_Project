@@ -1,5 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  output        = "../generated/client"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -18,6 +20,7 @@ enum AccountStatus {
   ACTIVE
   PENDING
   REJECTED
+  INACTIVE
 }
 
 enum AttendanceStatus {
@@ -39,24 +42,35 @@ enum PaymentProofStatus {
   REJECTED
 }
 
+enum LegacyMappingStatus {
+  PENDING
+  MAPPED
+  SKIPPED
+  FAILED
+}
+
 model Academy {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  name      String
-  address   String?
-  phone     String?
-  logo      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  paymentQrData Bytes?
-  paymentQrMimeType String?
-  paymentProvider String?
-  paymentAccountTitle String?
+  id                    String   @id @default(uuid())
+  code                  String   @unique
+  name                  String
+  address               String?
+  phone                 String?
+  logo                  String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  paymentQrData         Bytes?
+  paymentQrMimeType     String?
+  paymentProvider       String?
+  paymentAccountTitle   String?
   paymentAccountDetails String?
-  paymentQrEnabled Boolean @default(false)
+  paymentQrEnabled      Boolean  @default(false)
+  legacyFirebaseUid     String?  @unique
+  academicStructure     Json?
 
   users             User[]
   classes           Class[]
+  classSections     ClassSection[]
+  classReports      ClassReport[]
   attendanceRecords AttendanceRecord[]
   feeChallans       FeeChallan[]
   paymentProofs     FeePaymentProof[]
@@ -67,45 +81,59 @@ model Academy {
   studentQueries    StudentQuery[]
   notifications     Notification[]
   timetableSlots    TimetableSlot[]
+  ocrDocuments      OcrDocument[]
 
   @@map("academies")
 }
 
 model User {
-  id               String        @id @default(uuid())
-  email            String        @unique
-  passwordHash     String
-  fullName         String
-  studentCode      String?       @unique
-  phoneNumber      String?
-  role             Role
-  accountStatus    AccountStatus @default(PENDING)
-  academyId        String
-  assignedSections String[]      @default([])
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                String        @id @default(uuid())
+  email             String        @unique
+  passwordHash      String
+  fullName          String
+  studentCode       String?       @unique
+  rollNumber        String?
+  phoneNumber       String?
+  role              Role
+  accountStatus     AccountStatus @default(PENDING)
+  academyId         String
+  assignedSections  String[]      @default([])
+  legacyFirebaseUid String?       @unique
+  subject           String?
+  extraInfo         String?
+  joiningDate       DateTime?
+  securityQuestion  String?
+  securityAnswerHash String?
+  failedLoginAttempts Int     @default(0)
+  lockedUntil       DateTime?
+  deactivatedAt     DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  academy           Academy                   @relation(fields: [academyId], references: [id], onDelete: Cascade)
-  parentLinks       ParentStudent[]           @relation("ParentRelation")
-  studentLinks      ParentStudent[]           @relation("StudentRelation")
-  enrollments       StudentEnrollment[]
-  markedAttendance  AttendanceRecord[]        @relation("MarkedBy")
-  studentAttendance AttendanceRecord[]        @relation("StudentAttendance")
-  taughtClasses     Class[]                   @relation("PrimaryTeacher")
-  feeChallans       FeeChallan[]              @relation("StudentChallan")
+  academy                Academy                  @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  parentLinks            ParentStudent[]          @relation("ParentRelation")
+  studentLinks           ParentStudent[]          @relation("StudentRelation")
+  enrollments            StudentEnrollment[]
+  sectionEnrollments     ClassSectionEnrollment[]
+  markedAttendance       AttendanceRecord[]       @relation("MarkedBy")
+  studentAttendance      AttendanceRecord[]       @relation("StudentAttendance")
+  taughtClasses          Class[]                  @relation("PrimaryTeacher")
+  feeChallans            FeeChallan[]             @relation("StudentChallan")
   submittedPaymentProofs FeePaymentProof[]
-  reviewedPaymentProofs FeePaymentProof[] @relation("ReviewedPaymentProofs")
-  createdNotices    Announcement[]            @relation("CreatedBy")
-  createdQuizzes    Quiz[]                    @relation("QuizCreatedBy")
-  testMarks         TestMark[]                @relation("StudentMarks")
-  resources         SharedResource[]          @relation("TeacherResources")
-  askedQueries      StudentQuery[]            @relation("StudentQueries")
-  answeredQueries   StudentQuery[]            @relation("TeacherQueries")
-  ocrDocs           OcrDocument[]             @relation("UserOcrDocs")
-  notifications     Notification[]            @relation("RecipientNotifications")
-  timetableSlots    TimetableSlot[]           @relation("TeacherTimetable")
-  refreshTokens     RefreshToken[]
+  reviewedPaymentProofs  FeePaymentProof[]        @relation("ReviewedPaymentProofs")
+  createdNotices         Announcement[]           @relation("CreatedBy")
+  createdQuizzes         Quiz[]                   @relation("QuizCreatedBy")
+  testMarks              TestMark[]               @relation("StudentMarks")
+  resources              SharedResource[]         @relation("TeacherResources")
+  askedQueries           StudentQuery[]           @relation("StudentQueries")
+  answeredQueries        StudentQuery[]           @relation("TeacherQueries")
+  ocrDocs                OcrDocument[]            @relation("UserOcrDocs")
+  notifications          Notification[]           @relation("RecipientNotifications")
+  timetableSlots         TimetableSlot[]          @relation("TeacherTimetable")
+  refreshTokens          RefreshToken[]
 
+  @@index([academyId, role])
+  @@index([academyId, accountStatus, role])
   @@map("users")
 }
 
@@ -128,11 +156,14 @@ model Class {
   className        String
   section          String
   subject          String
+  program          String?
+  classSectionId   String?
   primaryTeacherId String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   academy           Academy             @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  classSection      ClassSection?       @relation(fields: [classSectionId], references: [id], onDelete: SetNull)
   primaryTeacher    User?               @relation("PrimaryTeacher", fields: [primaryTeacherId], references: [id], onDelete: SetNull)
   enrollments       StudentEnrollment[]
   attendanceRecords AttendanceRecord[]
@@ -143,20 +174,77 @@ model Class {
   timetableSlots    TimetableSlot[]
 
   @@unique([academyId, className, section, subject])
+  @@index([academyId, classSectionId])
   @@map("classes")
 }
 
-model StudentEnrollment {
+model ClassSection {
   id        String   @id @default(uuid())
-  classId   String
-  studentId String
-  rollNumber String?
+  academyId String
+  className String
+  program   String   @default("")
+  section   String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  academy     Academy                  @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  enrollments ClassSectionEnrollment[]
+  classes     Class[]
+
+  @@unique([academyId, className, program, section])
+  @@index([academyId, className])
+  @@map("class_sections")
+}
+
+model ClassSectionEnrollment {
+  id         String   @id @default(uuid())
+  sectionId  String
+  studentId  String
+  rollNumber String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  section ClassSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  student User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, studentId])
+  @@unique([sectionId, rollNumber])
+  @@index([studentId])
+  @@map("class_section_enrollments")
+}
+
+model ClassReport {
+  id               String   @id @default(uuid())
+  academyId        String
+  classLabel       String
+  generatedAt      DateTime @default(now())
+  totalStudents    Int      @default(0)
+  present          Int      @default(0)
+  absent           Int      @default(0)
+  feePaid          Int      @default(0)
+  feePending       Int      @default(0)
+  feePaidAmount    Decimal  @default(0) @db.Decimal(12, 2)
+  feePendingAmount Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt        DateTime @default(now())
+
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+
+  @@index([academyId, generatedAt])
+  @@map("class_reports")
+}
+
+model StudentEnrollment {
+  id         String   @id @default(uuid())
+  classId    String
+  studentId  String
+  rollNumber String?
+  createdAt  DateTime @default(now())
 
   class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
   student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([classId, studentId])
+  @@index([studentId])
   @@map("student_enrollments")
 }
 
@@ -176,6 +264,9 @@ model AttendanceRecord {
   markedBy User    @relation("MarkedBy", fields: [markedById], references: [id], onDelete: Cascade)
 
   @@unique([classId, studentId, logDate])
+  @@index([academyId, logDate])
+  @@index([academyId, classId, logDate])
+  @@index([studentId, logDate])
   @@map("attendance_records")
 }
 
@@ -202,16 +293,17 @@ model FeeChallan {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
-  student User    @relation("StudentChallan", fields: [studentId], references: [id], onDelete: Cascade)
+  academy       Academy           @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  student       User              @relation("StudentChallan", fields: [studentId], references: [id], onDelete: Cascade)
   paymentProofs FeePaymentProof[]
 
   @@unique([academyId, studentId, billingPeriod])
+  @@index([academyId, status, dueDate])
   @@map("fee_challans")
 }
 
 model FeePaymentProof {
-  id            String @id @default(uuid())
+  id            String             @id @default(uuid())
   academyId     String
   challanId     String
   submittedById String
@@ -219,12 +311,13 @@ model FeePaymentProof {
   imageData     Bytes
   mimeType      String
   status        PaymentProofStatus @default(PENDING)
-  submittedAt   DateTime @default(now())
+  submittedAt   DateTime           @default(now())
   reviewedAt    DateTime?
-  academy       Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
-  challan       FeeChallan @relation(fields: [challanId], references: [id], onDelete: Cascade)
-  submittedBy   User @relation(fields: [submittedById], references: [id], onDelete: Cascade)
-  reviewedBy    User? @relation("ReviewedPaymentProofs", fields: [reviewedById], references: [id], onDelete: SetNull)
+  academy       Academy            @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  challan       FeeChallan         @relation(fields: [challanId], references: [id], onDelete: Cascade)
+  submittedBy   User               @relation(fields: [submittedById], references: [id], onDelete: Cascade)
+  reviewedBy    User?              @relation("ReviewedPaymentProofs", fields: [reviewedById], references: [id], onDelete: SetNull)
+
   @@index([academyId, status, submittedAt])
   @@map("fee_payment_proofs")
 }
@@ -242,6 +335,7 @@ model Announcement {
   academy   Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
   createdBy User    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
 
+  @@index([academyId, createdAt])
   @@map("announcements")
 }
 
@@ -268,6 +362,7 @@ model Quiz {
   questions QuizQuestion[]
   testMarks TestMark[]
 
+  @@index([academyId, classId, createdAt])
   @@map("quizzes")
 }
 
@@ -308,6 +403,7 @@ model TestMark {
   student User    @relation("StudentMarks", fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([quizId, studentId])
+  @@index([academyId, classId, month])
   @@map("test_marks")
 }
 
@@ -318,13 +414,18 @@ model SharedResource {
   teacherId   String
   title       String
   description String?
-  fileUrl     String
+  fileUrl     String?
+  contentText String?
+  fileName    String?
+  mimeType    String?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
   class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
   teacher User    @relation("TeacherResources", fields: [teacherId], references: [id], onDelete: Cascade)
 
+  @@index([academyId, classId, createdAt])
   @@map("shared_resources")
 }
 
@@ -345,18 +446,27 @@ model StudentQuery {
   student User    @relation("StudentQueries", fields: [studentId], references: [id], onDelete: Cascade)
   teacher User?   @relation("TeacherQueries", fields: [teacherId], references: [id], onDelete: SetNull)
 
+  @@index([academyId, isResolved, createdAt])
+  @@index([teacherId, isResolved, createdAt])
+  @@index([studentId, createdAt])
   @@map("student_queries")
 }
 
 model OcrDocument {
   id            String   @id @default(uuid())
+  academyId     String?
   createdById   String
+  createdByName String?
   title         String
   extractedText String
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
-  createdBy User @relation("UserOcrDocs", fields: [createdById], references: [id], onDelete: Cascade)
+  academy   Academy? @relation(fields: [academyId], references: [id], onDelete: SetNull)
+  createdBy User     @relation("UserOcrDocs", fields: [createdById], references: [id], onDelete: Cascade)
 
+  @@index([academyId, createdById, createdAt])
+  @@index([createdById, createdAt])
   @@map("ocr_documents")
 }
 
@@ -373,25 +483,37 @@ model Notification {
   academy   Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
   recipient User    @relation("RecipientNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
 
+  @@index([academyId, recipientId, createdAt])
+  @@index([academyId, recipientId, isRead])
   @@map("notifications")
 }
 
 model TimetableSlot {
-  id        String   @id @default(uuid())
-  academyId String
-  classId   String
-  section   String
-  dayOfWeek String
-  startTime String
-  endTime   String
-  subject   String
-  teacherId String
-  createdAt DateTime @default(now())
+  id            String    @id @default(uuid())
+  academyId     String
+  classId       String?
+  section       String
+  dayOfWeek     String
+  startTime     String
+  endTime       String
+  subject       String
+  teacherId     String?
+  dayOfWeekInt  Int?
+  startMinutes  Int?
+  endMinutes    Int?
+  room          String?
+  semester      String?
+  isBreak       Boolean   @default(false)
+  effectiveFrom DateTime?
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
 
   academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
-  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
-  teacher User    @relation("TeacherTimetable", fields: [teacherId], references: [id], onDelete: Cascade)
+  class   Class?  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher User?   @relation("TeacherTimetable", fields: [teacherId], references: [id], onDelete: SetNull)
 
+  @@index([academyId, classId, dayOfWeekInt])
+  @@index([academyId, teacherId, dayOfWeekInt])
   @@map("timetable_slots")
 }
 
@@ -405,5 +527,21 @@ model RefreshToken {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, revoked])
   @@map("refresh_tokens")
+}
+
+model LegacyIdMap {
+  collection  String              @map("collection")
+  legacyId    String              @map("legacy_id")
+  targetTable String              @map("target_table")
+  targetId    String              @map("target_id")
+  status      LegacyMappingStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  @@id([collection, legacyId])
+  @@index([targetTable, targetId])
+  @@map("legacy_id_map")
 }

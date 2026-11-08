@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,19 +27,63 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _currentUser != null;
   bool get pendingApproval => _pendingApproval;
 
+  /// Restores the session from local state first so the splash never has to
+  /// wait for the network. The profile is then refreshed silently in the
+  /// background; a transient outage keeps the cached session instead of
+  /// signing the user out.
   Future<AppUser?> tryRestoreSession() async {
-    if (!await _authService.hasStoredSession()) return null;
+    if (!await _authService.hasStoredSession()) {
+      await _authService.clearCachedUser();
+      return null;
+    }
+
+    final cached = await _authService.getCachedUser();
+    if (cached != null && cached.isApproved) {
+      _currentUser = cached;
+      _status = AuthStatus.authenticated;
+      notifyListeners();
+      unawaited(_refreshProfileSilently());
+      return _currentUser;
+    }
+
     try {
-      final profile = await _authService.getCurrentUserProfile();
+      final profile = await _authService.getCurrentUserProfile(
+        timeout: const Duration(seconds: 4),
+      );
       if (profile != null && profile.isApproved) {
         _currentUser = profile;
         _status = AuthStatus.authenticated;
         notifyListeners();
         return _currentUser;
       }
-      return null;
     } catch (_) {
-      return null;
+      // No cached profile and the backend is unreachable: fall back to login.
+    }
+    return null;
+  }
+
+  Future<void> _refreshProfileSilently() async {
+    try {
+      final profile = await _authService.getCurrentUserProfile(
+        timeout: const Duration(seconds: 8),
+      );
+      if (profile == null) return;
+      // The user signed out or switched accounts while the refresh was in
+      // flight; never resurrect the old session.
+      if (_currentUser == null || _currentUser!.uid != profile.uid) return;
+      if (profile.isApproved) {
+        _currentUser = profile;
+        _status = AuthStatus.authenticated;
+        notifyListeners();
+        return;
+      }
+      // The account is no longer active: clear the stale session.
+      await _authService.signOut();
+      _currentUser = null;
+      _status = AuthStatus.idle;
+      notifyListeners();
+    } catch (_) {
+      // Network/auth transport failure: keep the cached session.
     }
   }
 

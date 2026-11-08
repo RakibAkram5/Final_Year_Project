@@ -1,104 +1,72 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/timetable_slot.dart';
+import 'api_client.dart';
+import 'live_query.dart';
 
+/// Timetable slots over REST (`/timetable`). The server scopes results by
+/// role: admins see the academy, teachers their own slots, students and
+/// parents the classes they (or their children) are enrolled in.
 class TimetableService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  CollectionReference get _col => _db.collection('timetables');
+  final ApiClient _api = ApiClient();
 
   Future<void> createSlot(TimetableSlot slot) async {
-    await _col.doc(slot.id).set(slot.toMap());
+    await _api.post('/timetable', slot.toMap());
+    DataChanges.notify(DataTopics.timetable);
   }
 
   Future<void> updateSlot(TimetableSlot slot) async {
-    await _col.doc(slot.id).update(slot.toMap());
+    await _api.put('/timetable/${slot.id}', slot.toMap());
+    DataChanges.notify(DataTopics.timetable);
   }
 
   Future<void> deleteSlot(String id) async {
-    await _col.doc(id).delete();
+    await _api.delete('/timetable/$id');
+    DataChanges.notify(DataTopics.timetable);
   }
 
-  /// Admin: real-time list of every slot in the academy.
-  Stream<List<TimetableSlot>> watchAll(String academyId) {
-    return _col.where('academy_id', isEqualTo: academyId).snapshots().map(
-      (snap) {
-        final list = snap.docs
-            .map((doc) => TimetableSlot.fromMap(
-                doc.id, doc.data() as Map<String, dynamic>))
-            .toList();
-        _sortByDayThenTime(list);
-        return list;
-      },
-    );
+  Future<List<TimetableSlot>> _fetch(String path) async {
+    final res = await _api.get(path);
+    final list = (res as List)
+        .map((item) => TimetableSlot.fromMap((item['id'] ?? '').toString(),
+            Map<String, dynamic>.from(item as Map)))
+        .toList();
+    _sortByDayThenTime(list);
+    return list;
   }
 
-  /// Teacher: real-time list of only their own assigned slots.
+  /// Admin: every slot in the academy.
+  Stream<List<TimetableSlot>> watchAll(String academyId) =>
+      liveQuery(DataTopics.timetable, () => _fetch('/timetable'));
+
+  /// Teacher: only their own assigned slots.
   Stream<List<TimetableSlot>> watchForTeacher(
-      String teacherId, String academyId) {
-    return _col
-        .where('academy_id', isEqualTo: academyId)
-        .where('teacher_id', isEqualTo: teacherId)
-        .snapshots()
-        .map((snap) {
-      final list = snap.docs
-          .map((doc) =>
-              TimetableSlot.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-          .toList();
-      _sortByDayThenTime(list);
-      return list;
-    });
-  }
+          String teacherId, String academyId) =>
+      liveQuery(
+          DataTopics.timetable,
+          () =>
+              _fetch('/timetable?teacherId=${Uri.encodeComponent(teacherId)}'));
 
-  /// Student/Parent: real-time list across every subject-class a student is
-  /// enrolled in (each subject is a separate `classId` in this app's data
-  /// model — see `ClassEntity`). Firestore's `whereIn` caps at 10 values,
-  /// which comfortably covers a realistic subject count; ids beyond the
-  /// cap are dropped rather than silently querying the wrong data.
+  /// Student/Parent: every slot across the given subject classes.
   Stream<List<TimetableSlot>> watchForClassIds(
       List<String> classIds, String academyId) {
-    if (classIds.isEmpty) return Stream.value([]);
-    final chunk = classIds.length > 10 ? classIds.sublist(0, 10) : classIds;
-    return _col
-        .where('academy_id', isEqualTo: academyId)
-        .where('class_id', whereIn: chunk)
-        .snapshots()
-        .map((snap) {
-      final list = snap.docs
-          .map((doc) =>
-              TimetableSlot.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-          .toList();
-      _sortByDayThenTime(list);
-      return list;
-    });
+    if (classIds.isEmpty) return Stream.value(const <TimetableSlot>[]);
+    final query = classIds.map(Uri.encodeComponent).join(',');
+    return liveQuery(
+        DataTopics.timetable, () => _fetch('/timetable?classIds=$query'));
   }
 
-  /// One-time fetch of every slot on a given day-of-week, used for conflict
-  /// detection before a create/update commits.
-  Future<List<TimetableSlot>> getSlotsForDay(
-      String academyId, int dayOfWeek) async {
-    final snap = await _col
-        .where('academy_id', isEqualTo: academyId)
-        .where('day_of_week', isEqualTo: dayOfWeek)
-        .get();
-    return snap.docs
-        .map((doc) =>
-            TimetableSlot.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-        .toList();
-  }
+  /// One-time fetch of every visible slot on a given day of the week
+  /// (1 = Monday … 7 = Sunday).
+  Future<List<TimetableSlot>> getSlotsForDay(String academyId, int dayOfWeek) =>
+      _fetch('/timetable?dayOfWeek=$dayOfWeek');
 
-  /// Cascade-delete every slot referencing a class that's being removed —
-  /// mirrors `ClassRepository.deleteClass`'s existing cascade into
-  /// `attendance_records`.
+  /// Deletes every slot referencing a class that is being removed.
   Future<void> deleteForClass(String classId, String academyId) async {
-    final snap = await _col
-        .where('academy_id', isEqualTo: academyId)
-        .where('class_id', isEqualTo: classId)
-        .get();
-    if (snap.docs.isEmpty) return;
-    final batch = _db.batch();
-    for (final doc in snap.docs) {
-      batch.delete(doc.reference);
+    final slots =
+        await _fetch('/timetable?classIds=${Uri.encodeComponent(classId)}');
+    for (final slot in slots) {
+      await _api.delete('/timetable/${slot.id}');
     }
-    await batch.commit();
+    if (slots.isNotEmpty) DataChanges.notify(DataTopics.timetable);
   }
 
   void _sortByDayThenTime(List<TimetableSlot> list) {

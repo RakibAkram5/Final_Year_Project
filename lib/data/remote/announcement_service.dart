@@ -1,91 +1,26 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
-import '../../core/constants/app_constants.dart';
 import '../models/announcement.dart';
-import 'auth_service.dart';
-import 'notification_service.dart';
+import 'api_client.dart';
+import 'live_query.dart';
 
+/// Announcements over REST (`/announcements`). The server returns only the
+/// announcements visible to the caller's role within their academy.
 class AnnouncementService {
-  final FirebaseFirestore _db;
-  final AuthService _authService;
-  final NotificationService _notificationService;
-  AnnouncementService({
-    FirebaseFirestore? db,
-    AuthService? authService,
-    NotificationService? notificationService,
-  })  : _db = db ?? FirebaseFirestore.instance,
-        _authService = authService ?? AuthService(),
-        _notificationService = notificationService ?? NotificationService();
+  final ApiClient _api = ApiClient();
 
-  CollectionReference<Map<String, dynamic>> get _col =>
-      _db.collection('announcements');
-
-  /// Admin/Teacher: create a new broadcast tied to an academy, and notify
-  /// every approved user in the targeted role(s) so they see a badge/alert
-  /// instead of only finding out if they happen to open Announcements.
   Future<void> create({
     required String title,
     required String message,
     required List<String> targetRoles,
     required String createdByUid,
     required String createdByName,
-    required String academyId, // NEW
+    required String academyId,
   }) async {
-    await _col.add({
+    await _api.post('/announcements', {
       'title': title.trim(),
       'message': message.trim(),
-      'target_roles': targetRoles,
-      'created_by_uid': createdByUid,
-      'created_by_name': createdByName,
-      'academy_id': academyId, // NEW
-      'created_at': FieldValue.serverTimestamp(),
-      'updated_at': FieldValue.serverTimestamp(),
+      'targetRoles': targetRoles,
     });
-
-    await _notifyTargets(
-      title: title.trim(),
-      targetRoles: targetRoles,
-      academyId: academyId,
-      excludeUid: createdByUid,
-    );
-  }
-
-  /// Best-effort: a notification-delivery failure shouldn't block the
-  /// announcement itself from being posted (it already saved successfully).
-  Future<void> _notifyTargets({
-    required String title,
-    required List<String> targetRoles,
-    required String academyId,
-    required String excludeUid,
-  }) async {
-    try {
-      final isForAll = targetRoles.any((r) => r.toLowerCase() == 'all');
-      final roles = isForAll
-          ? [UserRole.teacher, UserRole.student, UserRole.parent]
-          : targetRoles
-              .map((r) => UserRoleX.fromValue(r.toLowerCase()))
-              .toSet()
-              .toList();
-
-      final recipientIds = <String>{};
-      for (final role in roles) {
-        final users = await _authService.getApprovedByRole(academyId, role);
-        recipientIds
-            .addAll(users.map((u) => u.uid).where((uid) => uid != excludeUid));
-      }
-
-      if (recipientIds.isNotEmpty) {
-        await _notificationService.sendToMany(
-          academyId: academyId,
-          recipientIds: recipientIds.toList(),
-          title: 'New Announcement',
-          message: title,
-          type: 'announcement',
-        );
-      }
-    } catch (e) {
-      debugPrint('Announcement notification error: $e');
-    }
+    DataChanges.notify(DataTopics.announcements);
   }
 
   Future<void> update({
@@ -94,41 +29,38 @@ class AnnouncementService {
     required String message,
     required List<String> targetRoles,
   }) async {
-    await _col.doc(id).update({
+    await _api.put('/announcements/$id', {
       'title': title.trim(),
       'message': message.trim(),
-      'target_roles': targetRoles,
-      'updated_at': FieldValue.serverTimestamp(),
+      'targetRoles': targetRoles,
     });
+    DataChanges.notify(DataTopics.announcements);
   }
 
-  Future<void> delete(String id) => _col.doc(id).delete();
-
-  /// Admin: real-time list of academy-specific announcements.
-  Stream<List<Announcement>> watchAll(String academyId) {
-    return _col.where('academy_id', isEqualTo: academyId).snapshots().map(
-      (snap) {
-        final list =
-            snap.docs.map((d) => Announcement.fromMap(d.id, d.data())).toList();
-        // Client-side sorting (Newest First) to avoid mandatory composite index
-        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        return list;
-      },
-    );
+  Future<void> delete(String id) async {
+    await _api.delete('/announcements/$id');
+    DataChanges.notify(DataTopics.announcements);
   }
 
-  /// Teacher/Student/Parent: real-time list for their role in their academy.
-  Stream<List<Announcement>> watchForRole(String role, String academyId) {
-    return _col.where('academy_id', isEqualTo: academyId).snapshots().map(
-      (snap) {
-        final list = snap.docs
-            .map((d) => Announcement.fromMap(d.id, d.data()))
-            .where((a) => a.isForRole(role))
-            .toList();
-        // Client-side sorting (Newest First) to avoid mandatory composite index
-        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        return list;
-      },
-    );
+  Future<List<Announcement>> _fetch() async {
+    final res = await _api.get('/announcements');
+    final list = (res as List)
+        .map((d) => Announcement.fromMap(
+            (d['id'] ?? '').toString(), Map<String, dynamic>.from(d as Map)))
+        .toList();
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list;
   }
+
+  /// Admin: every announcement in the academy.
+  Stream<List<Announcement>> watchAll(String academyId) =>
+      liveQuery(DataTopics.announcements, _fetch,
+          pollEvery: const Duration(minutes: 2));
+
+  /// Teacher/Student/Parent: announcements targeted at [role].
+  Stream<List<Announcement>> watchForRole(String role, String academyId) =>
+      liveQuery(DataTopics.announcements, () async {
+        final all = await _fetch();
+        return all.where((a) => a.isForRole(role)).toList();
+      }, pollEvery: const Duration(minutes: 2));
 }

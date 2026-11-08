@@ -91,6 +91,16 @@ class _ClassSectionsScreenState extends State<ClassSectionsScreen> {
           );
         }
         final classNames = structure.flatClassNames;
+        if (sp.error != null && sp.sections.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('Could not load class sections.\n${sp.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.danger)),
+            ),
+          );
+        }
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           itemCount: classNames.length,
@@ -242,8 +252,8 @@ class _ClassSectionsScreenState extends State<ClassSectionsScreen> {
         title: const Text('Delete section?',
             style: TextStyle(color: AppColors.textPrimary)),
         content: Text(
-            'Remove ${s.displayLabel} and every subject offering, '
-            'attendance record, and timetable slot under it?',
+            'Remove ${s.displayLabel}? Its section roster is removed; '
+            'subject classes, attendance and timetable history are kept.',
             style: const TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(

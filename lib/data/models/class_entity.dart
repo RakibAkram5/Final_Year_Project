@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../remote/api_client.dart';
 
 /// A class/section stored in Firestore under the `classes` collection.
 ///
@@ -53,9 +53,9 @@ class ClassEntity {
         'student_ids': studentIds,
         'student_names': studentNames,
         'created_at': createdAt.millisecondsSinceEpoch == 0
-            ? FieldValue.serverTimestamp()
-            : Timestamp.fromDate(createdAt),
-        'updated_at': FieldValue.serverTimestamp(),
+            ? DateTime.now().toUtc().toIso8601String()
+            : createdAt.toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
 
   factory ClassEntity.fromMap(String id, Map<String, dynamic> map) {
@@ -71,11 +71,13 @@ class ClassEntity {
       primaryTeacherId: (map['primary_teacher_id'] ?? '') as String,
       primaryTeacherName: (map['primary_teacher_name'] ?? '') as String,
       primaryTeacherEmail: (map['primary_teacher_email'] ?? '') as String,
-      studentIds: (rawIds is List) ? rawIds.cast<String>() : const [],
+      studentIds: (rawIds is List)
+          ? rawIds.map((e) => e.toString()).toList()
+          : const [],
       studentNames: (rawNames is Map)
-          ? rawNames.map((k, v) => MapEntry(k as String, v as String))
+          ? rawNames.map((k, v) => MapEntry(k.toString(), (v ?? '').toString()))
           : const {},
-      createdAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
+      createdAt: ApiClient.parseDate(ts) ?? DateTime.now(),
     );
   }
 }

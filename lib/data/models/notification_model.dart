@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class NotificationModel {
   final String id;
   final String academyId;
@@ -31,21 +29,32 @@ class NotificationModel {
       'message': message,
       'type': type,
       'is_read': isRead,
-      'created_at': Timestamp.fromDate(createdAt),
+      'created_at': createdAt.toUtc().toIso8601String(),
     };
   }
 
+  static DateTime _parseDate(dynamic val) {
+    if (val == null) return DateTime.now();
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    return DateTime.now();
+  }
+
   factory NotificationModel.fromMap(String id, Map<String, dynamic> map) {
-    final ts = map['created_at'];
+    final rawCreatedAt = map['created_at'] ?? map['createdAt'];
     return NotificationModel(
-      id: id,
-      academyId: map['academy_id'] ?? '',
-      recipientId: map['recipient_id'] ?? '',
-      title: map['title'] ?? '',
-      message: map['message'] ?? '',
-      type: map['type'] ?? 'general',
-      isRead: map['is_read'] ?? false,
-      createdAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
+      id: id.isNotEmpty ? id : (map['id'] ?? '').toString(),
+      academyId: (map['academy_id'] ?? map['academyId'] ?? '').toString(),
+      recipientId: (map['recipient_id'] ?? map['recipientId'] ?? '').toString(),
+      title: (map['title'] ?? '').toString(),
+      message: (map['message'] ?? '').toString(),
+      type: (map['type'] ?? 'general').toString(),
+      isRead: map['is_read'] ?? map['isRead'] ?? false,
+      createdAt: _parseDate(rawCreatedAt),
     );
   }
 }

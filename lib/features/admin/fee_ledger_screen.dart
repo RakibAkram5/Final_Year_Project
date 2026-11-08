@@ -82,17 +82,18 @@ class _FeeLedgerScreenState extends State<FeeLedgerScreen> {
     if (_selectedMonth == 'All Months') return _challans;
     return _challans
         .where((c) =>
-            DateFormat('MMMM yyyy').format(c.issueDate) == _selectedMonth)
+            DateFormat('MMMM yyyy').format(c.billingMonth) == _selectedMonth)
         .toList();
   }
 
   List<String> get _availableMonths {
-    final months = _challans
-        .map((c) => DateFormat('MMMM yyyy').format(c.issueDate))
-        .toSet()
-        .toList()
+    // Sort chronologically (newest first), then format for display.
+    final months = _challans.map((c) => c.billingMonth).toSet().toList()
       ..sort((a, b) => b.compareTo(a));
-    return ['All Months', ...months];
+    return [
+      'All Months',
+      ...months.map((m) => DateFormat('MMMM yyyy').format(m)),
+    ];
   }
 
   @override

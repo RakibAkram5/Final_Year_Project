@@ -1,7 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../remote/api_client.dart';
 
-/// One attendance record: a single student on a single date.
-/// Stored in Firestore under `attendance_records/{docId}`.
+/// One attendance record: a single student on a single date
+/// (`/attendance`, unique per class + student + day on the server).
 class AttendanceRecord {
   final String id;
   final String academyId; // NEW
@@ -9,7 +9,7 @@ class AttendanceRecord {
   final String studentId;
   final String studentName;
   final DateTime logDate;
-  final String status; // 'present' | 'absent' | 'late'
+  final String status; // 'present' | 'absent' | 'late' | 'leave'
   final String markedByUid;
   final DateTime recordedAt;
 
@@ -28,6 +28,7 @@ class AttendanceRecord {
   bool get isPresent => status == 'present';
   bool get isAbsent => status == 'absent';
   bool get isLate => status == 'late';
+  bool get isLeave => status == 'leave';
 
   /// Deterministic Firestore doc id so that saving the same
   /// (class, student, date) upserts instead of duplicating.
@@ -48,22 +49,29 @@ class AttendanceRecord {
         'log_date': _dateOnly(logDate),
         'status': status,
         'marked_by_uid': markedByUid,
-        'recorded_at': FieldValue.serverTimestamp(),
+        'recorded_at': recordedAt.toUtc().toIso8601String(),
       };
 
   factory AttendanceRecord.fromMap(String id, Map<String, dynamic> map) {
-    final ts = map['recorded_at'];
+    // log_date is a calendar day ("YYYY-MM-DD"); parse it as a local date
+    // so it is never shifted across midnight by a time-zone conversion.
+    final rawDay = (map['log_date'] ?? '').toString();
+    final dayMatch = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(rawDay);
+    if (dayMatch == null) {
+      throw FormatException('Attendance record $id has an invalid log_date.');
+    }
+    final logDate = DateTime(int.parse(dayMatch.group(1)!),
+        int.parse(dayMatch.group(2)!), int.parse(dayMatch.group(3)!));
     return AttendanceRecord(
       id: id,
-      academyId: (map['academy_id'] ?? '') as String,
-      classId: (map['class_id'] ?? '') as String,
-      studentId: (map['student_id'] ?? '') as String,
-      studentName: (map['student_name'] ?? '') as String,
-      logDate: DateTime.tryParse((map['log_date'] ?? '') as String) ??
-          DateTime.now(),
-      status: (map['status'] ?? 'absent') as String,
-      markedByUid: (map['marked_by_uid'] ?? '') as String,
-      recordedAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
+      academyId: (map['academy_id'] ?? '').toString(),
+      classId: (map['class_id'] ?? '').toString(),
+      studentId: (map['student_id'] ?? '').toString(),
+      studentName: (map['student_name'] ?? '').toString(),
+      logDate: logDate,
+      status: (map['status'] ?? 'absent').toString().toLowerCase(),
+      markedByUid: (map['marked_by_uid'] ?? '').toString(),
+      recordedAt: ApiClient.parseDate(map['recorded_at']) ?? logDate,
     );
   }
 

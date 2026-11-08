@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/constants/app_constants.dart';
 import '../models/app_user.dart';
 import 'api_client.dart';
+import 'live_query.dart';
 
 class AuthException implements Exception {
   final String message;
@@ -19,6 +24,8 @@ class AcademyLookupResult {
 class AuthService {
   final ApiClient _api = ApiClient();
 
+  static const String _cachedProfileKey = 'tp_cached_profile_v1';
+
   AppUser? _currentUser;
   AppUser? get currentUser => _currentUser;
 
@@ -27,6 +34,60 @@ class AuthService {
 
   Future<bool> hasStoredSession() async =>
       (await _api.getAccessToken())?.isNotEmpty ?? false;
+
+  /// Returns the last approved profile cached locally so the first screen can
+  /// render without waiting for the network.
+  Future<AppUser?> getCachedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_cachedProfileKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        return _mapApiUser(Map<String, dynamic>.from(decoded));
+      }
+    } catch (_) {
+      // Corrupt cache: drop it and fall back to the network path.
+      await prefs.remove(_cachedProfileKey);
+    }
+    return null;
+  }
+
+  Future<void> clearCachedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_cachedProfileKey);
+  }
+
+  Future<void> _cacheUser(AppUser user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _cachedProfileKey,
+      jsonEncode(_userToApiJson(user)),
+    );
+  }
+
+  Map<String, dynamic> _userToApiJson(AppUser user) => {
+        'id': user.uid,
+        'fullName': user.fullName,
+        'email': user.email,
+        'phoneNumber': user.phoneNumber,
+        'role': user.role.name,
+        'accountStatus': user.accountStatus,
+        'academyId': user.academyId,
+        'academyName': user.academyName,
+        'academyAddress': user.academyAddress,
+        'academyPhone': user.academyPhone,
+        'academyLogo': user.academyLogo,
+        'academyCode': user.academyCode,
+        'assignedSections': user.assignedSections,
+        'linkedChildren': user.linkedChildren,
+        'studentCode': user.studentCode,
+        'rollNumber': user.rollNumber,
+        'subject': user.subject,
+        'extraInfo': user.extraInfo,
+        'joiningDate': user.joiningDate?.toUtc().toIso8601String(),
+        'createdAt': user.createdAt?.toUtc().toIso8601String(),
+      };
 
   Future<AppUser> signUp({
     required String fullName,
@@ -62,6 +123,7 @@ class AuthService {
           await _api.setTokens(tokens['accessToken'], tokens['refreshToken']);
         }
         _currentUser = _mapApiUser(userData);
+        await _cacheUser(_currentUser!);
         return _currentUser!;
       } else {
         final res = await _api.post(
@@ -100,20 +162,21 @@ class AuthService {
         await _api.setTokens(tokens['accessToken'], tokens['refreshToken']);
       }
       _currentUser = _mapApiUser(userData);
+      await _cacheUser(_currentUser!);
       return _currentUser!;
     } catch (e) {
       throw AuthException(e.toString().replaceAll('Exception: ', ''));
     }
   }
 
-  Future<AppUser?> getCurrentUserProfile() async {
-    try {
-      final res = await _api.get('/auth/me');
-      _currentUser = _mapApiUser(res);
-      return _currentUser;
-    } catch (e) {
-      return null;
-    }
+  /// Fetches the authoritative profile. Throws on network/transport failure so
+  /// callers can keep a cached session instead of treating an outage as a
+  /// sign-out. Pass [timeout] for bootstrap calls that must not block startup.
+  Future<AppUser?> getCurrentUserProfile({Duration? timeout}) async {
+    final res = await _api.get('/auth/me', timeout: timeout);
+    _currentUser = _mapApiUser(Map<String, dynamic>.from(res as Map));
+    await _cacheUser(_currentUser!);
+    return _currentUser;
   }
 
   Future<void> signOut() async {
@@ -123,17 +186,15 @@ class AuthService {
           withAuth: false);
     } catch (_) {}
     await _api.clearTokens();
+    await clearCachedUser();
     _currentUser = null;
   }
 
   Future<List<AppUser>> getPendingUsers(String academyId) async {
-    try {
-      final res = await _api.get('/users/pending');
-      final list = res as List;
-      return list.map((item) => _mapApiUser(item)).toList();
-    } catch (e) {
-      return [];
-    }
+    final res = await _api.get('/users/pending');
+    return (res as List)
+        .map((item) => _mapApiUser(Map<String, dynamic>.from(item as Map)))
+        .toList();
   }
 
   Future<void> approveUser(String uid) async {
@@ -142,6 +203,22 @@ class AuthService {
 
   Future<void> rejectUser(String uid) async {
     await _api.put('/users/$uid/reject', {});
+  }
+
+  /// Deactivates an account: the user can no longer sign in, but their
+  /// attendance, fee and marks history is preserved.
+  Future<void> deactivateUser(String uid) async {
+    await _api.put('/users/$uid/deactivate', {});
+  }
+
+  Future<void> reactivateUser(String uid) async {
+    await _api.put('/users/$uid/reactivate', {});
+  }
+
+  /// Admin-only: sets a new password for a member of the same academy and
+  /// signs them out everywhere.
+  Future<void> adminResetPassword(String uid, String newPassword) async {
+    await _api.put('/users/$uid/password', {'newPassword': newPassword});
   }
 
   Future<List<AppUser>> getUsersByRole(dynamic arg1, dynamic arg2) async {
@@ -155,10 +232,11 @@ class AuthService {
             : UserRoleX.fromValue((arg2 ?? '').toString().toLowerCase());
       }
       final res = await _api.get('/users/by-role?role=${role.name}');
-      final list = res as List;
-      return list.map((item) => _mapApiUser(item)).toList();
-    } catch (e) {
-      return [];
+      return (res as List)
+          .map((item) => _mapApiUser(Map<String, dynamic>.from(item as Map)))
+          .toList();
+    } on ApiException {
+      rethrow;
     }
   }
 
@@ -172,20 +250,50 @@ class AuthService {
       'parentId': parentId,
       'studentId': studentId,
     });
+    DataChanges.notify(DataTopics.users);
   }
 
   Future<void> addLinkedChild(String parentUid, String studentUid) async {
     await linkChild(parentId: parentUid, studentId: studentUid);
   }
 
-  Future<void> removeLinkedChild(String parentUid, String studentUid) async {}
+  Future<void> removeLinkedChild(String parentUid, String studentUid) async {
+    final isSelf = _currentUser?.uid == parentUid;
+    await _api.delete(isSelf
+        ? '/users/link-child/$studentUid'
+        : '/users/link-child/$studentUid?parentId=${Uri.encodeComponent(parentUid)}');
+    if (isSelf && _currentUser != null) {
+      _currentUser = _currentUser!.copyWith(
+        linkedChildren: _currentUser!.linkedChildren
+            .where((id) => id != studentUid)
+            .toList(),
+      );
+      await _cacheUser(_currentUser!);
+    }
+    DataChanges.notify(DataTopics.users);
+  }
 
+  /// Returns the profile for [uid], or null if it does not exist or is not
+  /// visible to the caller. Never substitutes the signed-in user's profile.
   Future<AppUser?> getProfile(String uid) async {
-    return _currentUser;
+    if (_currentUser?.uid == uid) return _currentUser;
+    try {
+      final res = await _api.get('/users/$uid');
+      if (res is Map) return _mapApiUser(Map<String, dynamic>.from(res));
+    } on ApiException catch (e) {
+      if (e.statusCode == 404 || e.statusCode == 403) return null;
+      rethrow;
+    }
+    return null;
   }
 
   Future<List<AppUser>> getProfilesByIds(List<String> uids) async {
-    return [];
+    final ids = uids.where((id) => id.isNotEmpty).toSet().toList();
+    if (ids.isEmpty) return [];
+    final res = await _api.post('/users/profiles', {'ids': ids});
+    return (res as List)
+        .map((item) => _mapApiUser(Map<String, dynamic>.from(item as Map)))
+        .toList();
   }
 
   Future<void> updateAcademyProfile({
@@ -219,6 +327,7 @@ class AuthService {
         academyPhone: response['academyPhone'] as String?,
         academyLogo: response['academyLogo'] as String?,
       );
+      await _cacheUser(_currentUser!);
     }
   }
 
@@ -240,9 +349,19 @@ class AuthService {
     }
   }
 
+  /// Server-side uniqueness check (case-insensitive, per academy). Throws
+  /// on network errors rather than reporting a roll number as free.
   Future<bool> isRollNumberTaken(String academyId, String rollNumber,
       {String? excludeUid}) async {
-    return false;
+    final roll = rollNumber.trim();
+    if (roll.isEmpty) return false;
+    final query = StringBuffer(
+        '/users/roll-number-available?rollNumber=${Uri.encodeComponent(roll)}');
+    if (excludeUid != null && excludeUid.isNotEmpty) {
+      query.write('&excludeId=${Uri.encodeComponent(excludeUid)}');
+    }
+    final res = await _api.get(query.toString());
+    return !(res is Map && res['available'] == true);
   }
 
   Future<void> updateUserProfile({
@@ -255,7 +374,32 @@ class AuthService {
     String? rollNumber,
     DateTime? joiningDate,
     List<String>? sections,
-  }) async {}
+  }) async {
+    final targetId = uid ?? user?.uid ?? _currentUser?.uid;
+    if (targetId == null) {
+      throw AuthException('No user selected to update.');
+    }
+    final isOwn = targetId == _currentUser?.uid;
+    final path = isOwn ? '/users/me' : '/users/$targetId';
+    final payload = <String, dynamic>{};
+    if (fullName != null) payload['fullName'] = fullName;
+    if (phoneNumber != null) payload['phoneNumber'] = phoneNumber;
+    if (extraInfo != null) payload['extraInfo'] = extraInfo;
+    if (subject != null) payload['subject'] = subject;
+    if (rollNumber != null) payload['rollNumber'] = rollNumber;
+    if (joiningDate != null) {
+      payload['joiningDate'] = joiningDate.toUtc().toIso8601String();
+    }
+    if (sections != null) payload['assignedSections'] = sections;
+
+    if (payload.isEmpty) return;
+    final response = await _api.put(path, payload);
+    if (isOwn && _currentUser != null && response is Map) {
+      _currentUser = _mapApiUser(Map<String, dynamic>.from(response));
+      await _cacheUser(_currentUser!);
+    }
+    DataChanges.notify(DataTopics.users);
+  }
 
   Future<AppUser> adminCreateUser({
     required String email,
@@ -271,54 +415,125 @@ class AuthService {
     DateTime? joiningDate,
     String? extraInfo,
   }) async {
-    final res = await _api.post('/users/create', {
+    final payload = <String, dynamic>{
       'email': email,
       'password': password,
       'fullName': fullName,
       'role': role.name,
       'phoneNumber': phoneNumber,
       'assignedSections': assignedSections ?? sections ?? [],
-    });
-    return _mapApiUser(res);
+    };
+    if (rollNumber != null) payload['rollNumber'] = rollNumber;
+    if (subject != null) payload['subject'] = subject;
+    if (extraInfo != null) payload['extraInfo'] = extraInfo;
+    if (joiningDate != null) {
+      payload['joiningDate'] = joiningDate.toUtc().toIso8601String();
+    }
+
+    final res = await _api.post('/users/create', payload);
+    return _mapApiUser(Map<String, dynamic>.from(res as Map));
   }
 
+  /// Returns {'question': ...} or null when the account has no recovery
+  /// question configured.
   Future<Map<String, String>?> getSecurityQuestion(String email) async {
-    return null;
+    try {
+      final res = await _api.get(
+          '/auth/security-question?email=${Uri.encodeComponent(email.trim())}',
+          withAuth: false);
+      final question = res is Map ? res['question']?.toString() : null;
+      return (question == null || question.isEmpty)
+          ? null
+          : {'question': question};
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      throw AuthException(e.message);
+    }
   }
 
-  Future<void> sendPasswordReset(String email) async {}
+  /// Resets the password after verifying the security answer server-side.
+  /// Throws [AuthException] with the server's reason on failure.
+  Future<void> resetPasswordWithSecurityAnswer({
+    required String email,
+    required String answer,
+    required String newPassword,
+  }) async {
+    try {
+      await _api.post(
+          '/auth/reset-password',
+          {
+            'email': email.trim(),
+            'securityAnswer': answer.trim(),
+            'newPassword': newPassword,
+          },
+          withAuth: false);
+    } on ApiException catch (e) {
+      throw AuthException(e.message);
+    }
+  }
 
-  Future<bool> verifySecurityAnswer(String email, String answer) async {
-    return true;
+  /// There is no email transport on the REST backend, so this cannot send a
+  /// reset link. It always throws with guidance instead of pretending.
+  Future<void> sendPasswordReset(String email) async {
+    throw AuthException(
+        'Email reset links are not available. Set a security question from '
+        'your profile, or ask your academy admin to reset your password.');
   }
 
   Future<AcademyLookupResult?> findAcademyByCode(String code) async {
-    return AcademyLookupResult(code, 'Academy $code');
-  }
-
-  Future<AppUser> relinkAcademy(String userId, String newAcademyCode) async {
-    if (_currentUser != null) {
-      _currentUser = _currentUser!.copyWith(academyId: newAcademyCode);
+    final trimmed = code.trim();
+    if (trimmed.isEmpty) return null;
+    try {
+      final res = await _api.get(
+          '/auth/academy-lookup?code=${Uri.encodeComponent(trimmed)}',
+          withAuth: false);
+      if (res is Map) {
+        return AcademyLookupResult((res['code'] ?? trimmed).toString(),
+            (res['name'] ?? '').toString());
+      }
+      return null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      throw AuthException(e.message);
     }
-    return _currentUser ??
-        AppUser(
-          uid: userId,
-          fullName: 'User',
-          email: '',
-          phoneNumber: '',
-          role: UserRole.student,
-          accountStatus: 'active',
-          academyId: newAcademyCode,
-          createdAt: DateTime.now(),
-          joiningDate: DateTime.now(),
-        );
   }
 
+  /// Academy membership is assigned by the server and changing it requires
+  /// the target academy's approval, so a user cannot move themselves.
+  /// Verifies the code and refreshes the profile if it already matches.
+  Future<AppUser> relinkAcademy(String userId, String newAcademyCode) async {
+    final current = await getCurrentUserProfile();
+    if (current == null) throw AuthException('No active session found.');
+    final code = newAcademyCode.trim().toUpperCase();
+    if ((current.academyCode ?? '').toUpperCase() == code) return current;
+    final academy = await findAcademyByCode(code);
+    if (academy == null) throw AuthException('Invalid academy code.');
+    throw AuthException(
+        'Your account belongs to ${current.academyName ?? 'another academy'}. '
+        'To join ${academy.academyName}, ask its admin to create an account '
+        'for you or register again with that academy code.');
+  }
+
+  /// Emits the cached profile immediately, then the server copy, and again
+  /// whenever user data changes locally (e.g. a child is linked).
   Stream<AppUser?> watchProfile(String uid) async* {
-    yield _currentUser;
+    if (_currentUser != null) yield _currentUser;
+    yield* liveQuery(DataTopics.users, () => getCurrentUserProfile());
   }
 
+  /// Exact (case-insensitive) email match within the caller's academy, or
+  /// null. Never falls back to a different student.
   Future<AppUser?> findStudentByEmail(String email, String academyId) async {
+    final target = email.trim().toLowerCase();
+    if (target.isEmpty) return null;
+    final res = await _api
+        .get('/users/search?role=STUDENT&q=${Uri.encodeComponent(target)}');
+    if (res is! List) return null;
+    for (final item in res) {
+      if ((item['email'] ?? '').toString().toLowerCase() == target) {
+        return _mapApiUser(Map<String, dynamic>.from(item as Map));
+      }
+    }
     return null;
   }
 
@@ -327,11 +542,27 @@ class AuthService {
     required String email,
     required String question,
     required String answer,
-  }) async {}
+  }) async {
+    try {
+      await _api.put('/auth/security-question', {
+        'question': question.trim(),
+        'answer': answer.trim(),
+      });
+    } on ApiException catch (e) {
+      throw AuthException(e.message);
+    }
+  }
 
   Future<List<AppUser>> searchStudentsByName(String academyId, String query,
       {String? excludeUid}) async {
-    return [];
+    if (query.trim().length < 2) return [];
+    final res = await _api.get(
+        '/users/search?role=STUDENT&q=${Uri.encodeComponent(query.trim())}');
+    if (res is! List) return [];
+    return res
+        .map((item) => _mapApiUser(Map<String, dynamic>.from(item as Map)))
+        .where((user) => user.uid != excludeUid)
+        .toList();
   }
 
   AppUser _mapApiUser(Map<String, dynamic> json) {
@@ -366,6 +597,12 @@ class AuthService {
           [],
       studentCode:
           (json['studentCode'] ?? json['student_code'] ?? '').toString(),
+      rollNumber: (json['rollNumber'] ?? json['roll_number'] ?? '').toString(),
+      subject: (json['subject'] ?? '').toString(),
+      extraInfo: (json['extraInfo'] ?? json['extra_info'])?.toString(),
+      joiningDate:
+          ApiClient.parseDate(json['joiningDate'] ?? json['joining_date']),
+      createdAt: ApiClient.parseDate(json['createdAt'] ?? json['created_at']),
     );
   }
 }

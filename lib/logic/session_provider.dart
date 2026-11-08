@@ -86,9 +86,14 @@ class SessionProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _loadBiometricPref() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('saved_pass_v1');
-    _biometricEnabled = prefs.getBool(_biometricKey) ?? false;
-    notifyListeners();
+    if (prefs.containsKey('saved_pass_v1')) {
+      await prefs.remove('saved_pass_v1');
+    }
+    final enabled = prefs.getBool(_biometricKey) ?? false;
+    if (_biometricEnabled != enabled) {
+      _biometricEnabled = enabled;
+      notifyListeners();
+    }
   }
 
   Future<void> setBiometricEnabled(bool value, {String? password}) async {

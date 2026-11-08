@@ -1,43 +1,40 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../models/app_user.dart';
 import '../models/class_section.dart';
-import 'class_repository.dart';
+import '../remote/api_client.dart';
+import '../remote/live_query.dart';
 
-/// Owns the canonical class+section roster (`class_sections` collection).
+/// Owns the canonical class+section roster (`/class-sections`).
 ///
-/// Subject offerings in `classes` (see [ClassRepository]) mirror this
-/// roster rather than keeping their own copy, so enrolling a student
-/// happens exactly once per section regardless of how many subjects or
-/// teachers are assigned to it.
+/// Subject offerings (`/classes`) linked to a section mirror its roster on
+/// the server, so enrolling a student happens exactly once per section
+/// regardless of how many subjects or teachers are assigned to it.
 class ClassSectionRepository {
-  final FirebaseFirestore _db;
-  final ClassRepository _classRepo;
-  ClassSectionRepository({FirebaseFirestore? db, ClassRepository? classRepo})
-      : _db = db ?? FirebaseFirestore.instance,
-        _classRepo = classRepo ?? ClassRepository(db: db);
+  final ApiClient _api = ApiClient();
 
-  CollectionReference<Map<String, dynamic>> get _col =>
-      _db.collection('class_sections');
+  // `db`/`classRepo` are accepted for source compatibility with older call
+  // sites; all persistence now goes through the REST API.
+  ClassSectionRepository({dynamic db, dynamic classRepo});
 
   // ---------- Reads ----------
 
-  Stream<List<ClassSectionEntity>> watchAll(String academyId) {
-    return _col.where('academy_id', isEqualTo: academyId).snapshots().map(
-      (snap) {
-        final list = snap.docs
-            .map((d) => ClassSectionEntity.fromMap(d.id, d.data()))
-            .toList();
-        list.sort((a, b) {
-          final byClass = a.className.compareTo(b.className);
-          if (byClass != 0) return byClass;
-          final byProgram = a.program.compareTo(b.program);
-          return byProgram != 0 ? byProgram : a.section.compareTo(b.section);
-        });
-        return list;
-      },
-    );
+  Future<List<ClassSectionEntity>> fetchAll() async {
+    final res = await _api.get('/class-sections');
+    final list = (res as List)
+        .map((item) => ClassSectionEntity.fromMap(
+            (item['id'] ?? '').toString(), Map<String, dynamic>.from(item)))
+        .toList();
+    list.sort((a, b) {
+      final byClass = a.className.compareTo(b.className);
+      if (byClass != 0) return byClass;
+      final byProgram = a.program.compareTo(b.program);
+      return byProgram != 0 ? byProgram : a.section.compareTo(b.section);
+    });
+    return list;
   }
+
+  /// Emits the academy's sections now and again after every local change.
+  Stream<List<ClassSectionEntity>> watchAll(String academyId) =>
+      liveQuery(DataTopics.classSections, fetchAll);
 
   // ---------- Writes ----------
 
@@ -46,73 +43,62 @@ class ClassSectionRepository {
     required String className,
     String program = '',
     required String section,
+    List<String> studentIds = const [],
   }) async {
-    final docRef = _col.doc();
-    final entity = ClassSectionEntity(
-      id: docRef.id,
-      academyId: academyId,
-      className: className.trim(),
-      program: program.trim(),
-      section: section.trim(),
-      createdAt: DateTime.now(),
-    );
-    await docRef.set(entity.toMap());
-    return docRef.id;
+    final res = await _api.post('/class-sections', {
+      'className': className.trim(),
+      'program': program.trim(),
+      'section': section.trim(),
+      if (studentIds.isNotEmpty) 'studentIds': studentIds,
+    });
+    _changed();
+    return (res['id'] ?? '').toString();
   }
 
-  /// Updates the section's roster and cascades it to every subject
-  /// offering under the same academy/class/section, so a single
-  /// enrollment edit keeps every `classes` document in sync.
+  /// Replaces the section roster; the server cascades it to every subject
+  /// offering linked to the section in one transaction.
   Future<void> updateEnrollment({
     required ClassSectionEntity section,
     required List<AppUser> students,
   }) async {
-    final studentIds = students.map((s) => s.uid).toList();
-    final studentNames = {for (final s in students) s.uid: s.fullName};
-
-    await _col.doc(section.id).update({
-      'student_ids': studentIds,
-      'student_names': studentNames,
-      'updated_at': FieldValue.serverTimestamp(),
+    await _api.put('/class-sections/${section.id}/enrollment', {
+      'studentIds': students.map((s) => s.uid).toList(),
     });
-
-    final offerings = await _offeringsFor(section);
-
-    const chunkSize = 450;
-    final docs = offerings.docs;
-    for (var i = 0; i < docs.length; i += chunkSize) {
-      final end = i + chunkSize > docs.length ? docs.length : i + chunkSize;
-      final batch = _db.batch();
-      for (final doc in docs.sublist(i, end)) {
-        batch.update(doc.reference, {
-          'student_ids': studentIds,
-          'student_names': studentNames,
-          'updated_at': FieldValue.serverTimestamp(),
-        });
-      }
-      await batch.commit();
-    }
+    _changed();
   }
 
-  /// Deletes the section and cascades: every subject offering under it
-  /// (and their attendance/timetable records, via
-  /// [ClassRepository.deleteClass]) is removed too, since a subject
-  /// offering can't exist without its section.
+  /// Adds one student (optionally with a roll number) to the section and to
+  /// every subject offering linked to it.
+  Future<void> enrollStudent({
+    required String sectionId,
+    required String studentId,
+    String? rollNumber,
+  }) async {
+    await _api.post('/class-sections/$sectionId/enroll', {
+      'studentId': studentId,
+      if (rollNumber != null && rollNumber.trim().isNotEmpty)
+        'rollNumber': rollNumber.trim(),
+    });
+    _changed();
+  }
+
+  Future<void> unenrollStudent({
+    required String sectionId,
+    required String studentId,
+  }) async {
+    await _api.delete('/class-sections/$sectionId/enroll/$studentId');
+    _changed();
+  }
+
+  /// Deletes the section. Subject offerings are kept (unlinked) so their
+  /// attendance, marks and timetable history are never lost.
   Future<void> deleteSection(ClassSectionEntity section) async {
-    final offerings = await _offeringsFor(section);
-    for (final doc in offerings.docs) {
-      await _classRepo.deleteClass(doc.id, section.academyId);
-    }
-    await _col.doc(section.id).delete();
+    await _api.delete('/class-sections/${section.id}');
+    _changed();
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> _offeringsFor(
-      ClassSectionEntity section) {
-    return _db
-        .collection('classes')
-        .where('academy_id', isEqualTo: section.academyId)
-        .where('class_name', isEqualTo: section.className)
-        .where('section', isEqualTo: section.section)
-        .get();
+  void _changed() {
+    DataChanges.notify(DataTopics.classSections);
+    DataChanges.notify(DataTopics.classes);
   }
 }

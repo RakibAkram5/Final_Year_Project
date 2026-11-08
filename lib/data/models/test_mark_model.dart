@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class TestMarkModel {
   final String id; // {quizId}_{studentUid}
   final String academyId; // NEW
@@ -57,28 +55,41 @@ class TestMarkModel {
       'percentage': percentage,
       'grade_letter': gradeLetter,
       'teacher_feedback': teacherFeedback,
-      'updated_at': Timestamp.fromDate(updatedAt),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
     };
   }
 
+  static DateTime _parseDate(dynamic val) {
+    if (val == null) return DateTime.now();
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    return DateTime.now();
+  }
+
   factory TestMarkModel.fromMap(String id, Map<String, dynamic> map) {
+    final rawUpdated = map['updated_at'] ?? map['updatedAt'];
+
     return TestMarkModel(
-      id: id,
-      academyId: map['academy_id'] ?? '', // NEW
-      quizId: map['quiz_id'] ?? '',
-      studentId: map['student_id'] ?? '',
-      studentName: map['student_name'] ?? '',
-      classId: map['class_id'] ?? '',
-      subject: map['subject'] ?? 'General',
-      month: map['month'] ?? '',
-      marksObtained: (map['marks_obtained'] ?? 0).toDouble(),
-      totalMarks: (map['total_marks'] ?? 0).toDouble(),
-      percentage: (map['percentage'] ?? 0).toDouble(),
-      gradeLetter: map['grade_letter'] ?? 'F',
-      teacherFeedback: map['teacher_feedback'],
-      updatedAt: map['updated_at'] is Timestamp
-          ? (map['updated_at'] as Timestamp).toDate()
-          : DateTime.now(),
+      id: id.isNotEmpty ? id : (map['id'] ?? '').toString(),
+      academyId: (map['academy_id'] ?? map['academyId'] ?? '').toString(),
+      quizId: (map['quiz_id'] ?? map['quizId'] ?? '').toString(),
+      studentId: (map['student_id'] ?? map['studentId'] ?? '').toString(),
+      studentName: (map['student_name'] ?? map['studentName'] ?? '').toString(),
+      classId: (map['class_id'] ?? map['classId'] ?? '').toString(),
+      subject: (map['subject'] ?? 'General').toString(),
+      month: (map['month'] ?? '').toString(),
+      marksObtained:
+          ((map['marks_obtained'] ?? map['marksObtained']) ?? 0).toDouble(),
+      totalMarks: ((map['total_marks'] ?? map['totalMarks']) ?? 0).toDouble(),
+      percentage: ((map['percentage'] ?? map['percentage']) ?? 0).toDouble(),
+      gradeLetter:
+          (map['grade_letter'] ?? map['gradeLetter'] ?? 'F').toString(),
+      teacherFeedback: map['teacher_feedback'] ?? map['teacherFeedback'],
+      updatedAt: _parseDate(rawUpdated),
     );
   }
 }

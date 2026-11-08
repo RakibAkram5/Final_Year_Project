@@ -8,6 +8,15 @@
 node_modules/
 **/node_modules/
 
+# Generated Prisma client
+taleemplus_backend/generated/
+
+# Migration exports (may contain PII; never commit)
+migration_exports/
+**/migration_exports/
+*.jsonl
+
+
 # Flutter
 .dart_tool/
 build/
@@ -24,3 +33,19 @@ build/
 *.keystore
 key.properties
 local.properties
+.vercel
+.env*
+
+# Vercel prebuilt web output
+vercel_web/
+
+# Local PostgreSQL data directory and DB backups (never commit)
+taleemplus_backend/.pgdata/
+taleemplus_backend/backups/
+
+# Kotlin compiler daemon session files
+android/.kotlin/
+
+# Keep example env templates tracked
+!.env.example
+!**/.env.example

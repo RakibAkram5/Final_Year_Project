@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 /// A broadcast message from an admin to one or more user roles.
 class Announcement {
   final String id;
@@ -62,27 +60,42 @@ class Announcement {
         'created_by_uid': createdByUid,
         'created_by_name': createdByName,
         'created_at': createdAt.millisecondsSinceEpoch == 0
-            ? FieldValue.serverTimestamp()
-            : Timestamp.fromDate(createdAt),
-        'updated_at': FieldValue.serverTimestamp(),
+            ? DateTime.now().toUtc().toIso8601String()
+            : createdAt.toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
 
+  static DateTime _parseDate(dynamic val, [DateTime? fallback]) {
+    if (val == null) return fallback ?? DateTime.now();
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    return fallback ?? DateTime.now();
+  }
+
   factory Announcement.fromMap(String id, Map<String, dynamic> map) {
-    final rolesRaw = map['target_roles'];
-    final roles =
-        (rolesRaw is List) ? rolesRaw.cast<String>() : <String>['all'];
-    final ts = map['created_at'];
-    final ts2 = map['updated_at'];
+    final rolesRaw = map['target_roles'] ?? map['targetRoles'];
+    final roles = (rolesRaw is List)
+        ? rolesRaw.map((e) => e.toString()).toList()
+        : <String>['all'];
+    final rawCreatedAt = map['created_at'] ?? map['createdAt'];
+    final rawUpdatedAt = map['updated_at'] ?? map['updatedAt'];
+
     return Announcement(
-      id: id,
-      academyId: (map['academy_id'] ?? '') as String,
-      title: (map['title'] ?? '') as String,
-      message: (map['message'] ?? '') as String,
+      id: id.isNotEmpty ? id : (map['id'] ?? '').toString(),
+      academyId: (map['academy_id'] ?? map['academyId'] ?? '').toString(),
+      title: (map['title'] ?? '').toString(),
+      message: (map['message'] ?? '').toString(),
       targetRoles: roles,
-      createdByUid: (map['created_by_uid'] ?? '') as String,
-      createdByName: (map['created_by_name'] ?? 'Admin') as String,
-      createdAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
-      updatedAt: ts2 is Timestamp ? ts2.toDate() : null,
+      createdByUid:
+          (map['created_by_uid'] ?? map['createdById'] ?? '').toString(),
+      createdByName: (map['created_by_name'] ?? map['createdByName'] ?? 'Admin')
+          .toString(),
+      createdAt: _parseDate(rawCreatedAt),
+      updatedAt: rawUpdatedAt != null ? _parseDate(rawUpdatedAt) : null,
     );
   }
 }

@@ -100,41 +100,31 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Accounts that never set a recovery question (e.g. created before
-    // this feature, or by an admin who skipped it) fall back to the plain
-    // emailed reset link so they aren't locked out of recovery entirely.
-    final questionMap = await AuthService().getSecurityQuestion(email);
+    Map<String, String>? questionMap;
+    try {
+      questionMap = await AuthService().getSecurityQuestion(email);
+    } on AuthException catch (e) {
+      _showError(e.message);
+      return;
+    }
     if (!mounted) return;
+    // No email transport exists on the backend, so accounts without a
+    // recovery question must be reset by their academy admin.
     if (questionMap == null || questionMap.isEmpty) {
-      await _sendResetEmail(email);
+      _showError('No security question is set for this account. Ask your '
+          'academy admin to reset your password.');
       return;
     }
     final questionStr = questionMap['question'] ?? questionMap.values.first;
     await _showSecurityAnswerDialog(email, questionStr);
   }
 
-  Future<void> _sendResetEmail(String email) async {
-    try {
-      await AuthService().sendPasswordReset(email);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Password reset link sent — check your email (and spam folder).')),
-        );
-      }
-    } on AuthException catch (e) {
-      _showError(e.message);
-    }
-  }
-
-  /// Verifies the account's security answer before re-sending the reset
-  /// email. This is a self-service identity check, not a password change —
-  /// Firebase only lets a password actually change via that emailed link
-  /// (or an active session), so the answer being right just unlocks the
-  /// same [sendPasswordReset] call [_forgotPassword] would've made anyway.
+  /// Verifies the security answer on the server and sets a new password in
+  /// the same request; all existing sessions for the account are revoked.
   Future<void> _showSecurityAnswerDialog(String email, String question) async {
     final answerCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
     String? error;
     bool verifying = false;
 
@@ -145,25 +135,39 @@ class _LoginScreenState extends State<LoginScreen> {
           backgroundColor: AppColors.surfaceAlt,
           title: const Text('Verify Your Identity',
               style: TextStyle(color: AppColors.textPrimary)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(question,
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600)),
-              const SizedBox(height: 12),
-              LabeledField(
-                  label: 'Your Answer', hint: '', controller: answerCtrl),
-              if (error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(error!,
-                      style: const TextStyle(
-                          color: AppColors.danger, fontSize: 12)),
-                ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(question,
+                    style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 12),
+                LabeledField(
+                    label: 'Your Answer', hint: '', controller: answerCtrl),
+                const SizedBox(height: 8),
+                LabeledField(
+                    label: 'New Password',
+                    hint: '',
+                    controller: passwordCtrl,
+                    obscure: true),
+                const SizedBox(height: 8),
+                LabeledField(
+                    label: 'Confirm New Password',
+                    hint: '',
+                    controller: confirmCtrl,
+                    obscure: true),
+                if (error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(error!,
+                        style: const TextStyle(
+                            color: AppColors.danger, fontSize: 12)),
+                  ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -175,23 +179,48 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: verifying
                   ? null
                   : () async {
+                      final passwordError =
+                          Validators.password(passwordCtrl.text);
+                      String? localError;
+                      if (answerCtrl.text.trim().isEmpty) {
+                        localError = 'Enter your security answer.';
+                      } else if (passwordError != null) {
+                        localError = passwordError;
+                      } else if (passwordCtrl.text != confirmCtrl.text) {
+                        localError = 'Passwords do not match.';
+                      }
+                      if (localError != null) {
+                        setDialogState(() => error = localError);
+                        return;
+                      }
                       setDialogState(() {
                         verifying = true;
                         error = null;
                       });
-                      final ok = await AuthService()
-                          .verifySecurityAnswer(email, answerCtrl.text);
-                      if (!ok) {
+                      try {
+                        await AuthService().resetPasswordWithSecurityAnswer(
+                          email: email,
+                          answer: answerCtrl.text,
+                          newPassword: passwordCtrl.text,
+                        );
+                      } on AuthException catch (e) {
                         setDialogState(() {
                           verifying = false;
-                          error = 'Incorrect answer. Please try again.';
+                          error = e.message;
                         });
                         return;
                       }
                       if (ctx.mounted) Navigator.pop(ctx);
-                      await _sendResetEmail(email);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Password reset. Sign in with your new password.'),
+                              backgroundColor: AppColors.success),
+                        );
+                      }
                     },
-              child: Text(verifying ? 'VERIFYING...' : 'VERIFY',
+              child: Text(verifying ? 'RESETTING...' : 'RESET PASSWORD',
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, color: AppColors.accent)),
             ),
@@ -199,6 +228,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+    answerCtrl.dispose();
+    passwordCtrl.dispose();
+    confirmCtrl.dispose();
   }
 
   void _showError(String msg) {

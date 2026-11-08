@@ -1,10 +1,10 @@
 // Taleem Plus - Academy Management System
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyEvent;
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'firebase_options.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'core/web/web_theme.dart';
@@ -30,10 +30,6 @@ import 'features/parent/parent_dashboard.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   runApp(
     MultiProvider(
@@ -124,10 +120,11 @@ class TaleemPlusApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ThemeProvider, AuthProvider>(
-      builder: (context, theme, auth, _) {
-        void resetTimer([_]) =>
-            context.read<SessionProvider>().resetTimer(context, auth);
+    return Consumer<ThemeProvider>(
+      builder: (context, theme, _) {
+        void resetTimer([_]) => context
+            .read<SessionProvider>()
+            .resetTimer(context, context.read<AuthProvider>());
         return _ActivityListener(
           onActivity: resetTimer,
           child: Listener(

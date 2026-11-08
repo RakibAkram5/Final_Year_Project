@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class StudentQuery {
   final String id;
   final String academyId;
@@ -36,24 +34,38 @@ class StudentQuery {
         'question': question.trim(),
         'answer': answer,
         'is_resolved': isResolved,
-        'created_at': FieldValue.serverTimestamp(),
-        'answered_at':
-            answeredAt != null ? Timestamp.fromDate(answeredAt!) : null,
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'answered_at': answeredAt?.toUtc().toIso8601String(),
       };
 
+  static DateTime _parseDate(dynamic val, [DateTime? fallback]) {
+    if (val == null) return fallback ?? DateTime.now();
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    return fallback ?? DateTime.now();
+  }
+
   factory StudentQuery.fromMap(String id, Map<String, dynamic> map) {
+    final rawCreatedAt = map['created_at'] ?? map['createdAt'];
+    final rawAnsweredAt = map['answered_at'] ?? map['answeredAt'];
+
     return StudentQuery(
-      id: id,
-      academyId: map['academy_id'] ?? '',
-      classId: map['class_id'] ?? '',
-      studentId: map['student_id'] ?? '',
-      studentName: map['student_name'] ?? 'Student',
-      teacherId: map['teacher_id'] ?? '',
-      question: map['question'] ?? '',
+      id: id.isNotEmpty ? id : (map['id'] ?? '').toString(),
+      academyId: (map['academy_id'] ?? map['academyId'] ?? '').toString(),
+      classId: (map['class_id'] ?? map['classId'] ?? '').toString(),
+      studentId: (map['student_id'] ?? map['studentId'] ?? '').toString(),
+      studentName:
+          (map['student_name'] ?? map['studentName'] ?? 'Student').toString(),
+      teacherId: (map['teacher_id'] ?? map['teacherId'] ?? '').toString(),
+      question: (map['question'] ?? '').toString(),
       answer: map['answer'],
-      isResolved: map['is_resolved'] ?? false,
-      createdAt: (map['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      answeredAt: (map['answered_at'] as Timestamp?)?.toDate(),
+      isResolved: map['is_resolved'] ?? map['isResolved'] ?? false,
+      createdAt: _parseDate(rawCreatedAt),
+      answeredAt: rawAnsweredAt != null ? _parseDate(rawAnsweredAt) : null,
     );
   }
 }
