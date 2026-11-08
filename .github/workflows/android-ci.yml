@@ -35,8 +35,13 @@ jobs:
       - name: Run Dart & Flutter Tests
         run: flutter test
 
+      # The Gradle wrapper is gitignored (Flutter default); --config-only
+      # regenerates android/gradlew and the Gradle settings without building.
+      - name: Generate Android Gradle wrapper
+        run: flutter build apk --debug --config-only
+
       - name: Grant Execute Permission for Gradlew
-        run: chmod +x android/gradlew || true
+        run: chmod +x android/gradlew
 
       - name: Run Android Lint & Unit Tests
         working-directory: android
