@@ -45,7 +45,11 @@ jobs:
 
       - name: Run Android Lint & Unit Tests
         working-directory: android
-        run: ./gradlew lintDebug testDebugUnitTest --continue
+        # Scope to the app module: `testDebugUnitTest` on every subproject also
+        # runs the bundled Robolectric suites of third-party plugins
+        # (image_picker, local_auth, shared_preferences), which cannot start
+        # on this runner (SDK 36 under JDK 17) and are not TaleemPlus code.
+        run: ./gradlew :app:lintDebug :app:testDebugUnitTest --continue
 
 # Signed APK builds and GitHub Releases are produced only by main.yml
 # ("TaleemPlus CI/CD") so a v* tag creates exactly one release.
