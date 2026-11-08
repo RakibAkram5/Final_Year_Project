@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -56,41 +55,31 @@ class _AdminDashboardState extends State<AdminDashboard> {
         final user = auth.currentUser;
         if (user != null) {
           members.load(user.uid);
-          _verifyLegacyAdminData(user);
+          _scheduleLegacyAdminDataCheck(user);
         }
       }
     });
   }
 
-  /// Ensures old admins get an Academy Code and ID if they don't have one.
-  /// Best-effort: a failure here shouldn't surface as an unhandled Future
-  /// rejection since this runs unawaited from initState — it'll simply be
-  /// retried the next time the dashboard loads.
+  /// Runs the legacy academy-data fix outside the startup window. This only
+  /// affects old accounts missing an Academy Code/ID, so there is no reason to
+  /// compete with the dashboard's first paint and data loads.
+  void _scheduleLegacyAdminDataCheck(AppUser user) {
+    if (user.academyCode != null && user.academyId != null) return;
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) _verifyLegacyAdminData(user);
+    });
+  }
+
+  /// The server always assigns an academy id and code, so a profile missing
+  /// either is a stale local cache: refresh it from `/auth/me` instead of
+  /// writing placeholder academy data. Runs unawaited from initState.
   Future<void> _verifyLegacyAdminData(AppUser user) async {
     if (user.academyCode == null || user.academyId == null) {
       try {
-        final newCode = "TP-${user.uid.substring(0, 5).toUpperCase()}";
-        await AuthService().updateAcademyProfile(
-          uid: user.uid,
-          name: user.academyName ?? "My Academy",
-          address: user.academyAddress ?? "N/A",
-          phone: user.academyPhone ?? user.phoneNumber,
-        );
-        // Update firestore directly for the missing fields
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .update({
-          'academy_code': newCode,
-          'academy_id': user.uid,
-          'joining_date': user.createdAt ?? FieldValue.serverTimestamp(),
-        });
-        if (mounted) {
-          // Refresh local user state
-          context.read<AuthProvider>().tryRestoreSession();
-        }
+        await context.read<AuthProvider>().tryRestoreSession();
       } catch (e) {
-        debugPrint('Legacy admin data migration failed: $e');
+        debugPrint('Admin profile refresh failed: $e');
       }
     }
   }

@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../remote/api_client.dart';
 import '../../core/constants/app_constants.dart';
 
 class AppUser {
@@ -73,12 +73,12 @@ class AppUser {
       'subject': subject,
       'extra_info': extraInfo,
       'created_at': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
+          ? createdAt!.toUtc().toIso8601String()
+          : DateTime.now().toUtc().toIso8601String(),
       'joining_date': joiningDate != null
-          ? Timestamp.fromDate(joiningDate!)
-          : FieldValue.serverTimestamp(),
-      'updated_at': FieldValue.serverTimestamp(),
+          ? joiningDate!.toUtc().toIso8601String()
+          : DateTime.now().toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
   }
 
@@ -97,10 +97,10 @@ class AppUser {
       academyPhone: map['academy_phone'] as String?,
       academyLogo: map['academy_logo'] as String?,
       academyCode: map['academy_code'] as String?,
-      createdAt: ts is Timestamp ? ts.toDate() : null,
-      joiningDate: map['joining_date'] is Timestamp
-          ? (map['joining_date'] as Timestamp).toDate()
-          : (ts is Timestamp ? ts.toDate() : null), // Fallback to createdAt
+      createdAt: ApiClient.parseDate(ts),
+      // Fall back to createdAt when no explicit joining date was recorded.
+      joiningDate:
+          ApiClient.parseDate(map['joining_date']) ?? ApiClient.parseDate(ts),
       assignedSections: (map['sections'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??

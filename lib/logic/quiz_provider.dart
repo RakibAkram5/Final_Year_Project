@@ -48,8 +48,8 @@ class QuizProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> deleteMark(String quizId, String studentId) async {
-    await _service.deleteMark(quizId, studentId);
+  Future<void> deleteMark(String markId, {String academyId = ''}) async {
+    await _service.deleteMark(markId, academyId);
   }
 
   // --- Streams (Real-time data) ---

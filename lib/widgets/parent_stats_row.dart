@@ -62,11 +62,17 @@ class _ParentStatsRowState extends State<ParentStatsRow> {
 
   Future<double> _computePendingFee() async {
     if (widget.children.isEmpty) return 0;
-    final childUids = widget.children.map((c) => c.uid).toSet();
-    final all = await FeeChallanRepository().getAll(widget.academyId);
-    return all
-        .where((c) => childUids.contains(c.studentId) && !c.isPaid)
-        .fold<double>(0.0, (sum, c) => sum + c.totalAmount);
+    // Parents may only read their own children's challans
+    // (/fees/challans is admin-only).
+    final repo = FeeChallanRepository();
+    var total = 0.0;
+    for (final child in widget.children) {
+      final challans = await repo.getForStudent(child.uid, widget.academyId);
+      total += challans
+          .where((c) => !c.isPaid)
+          .fold<double>(0.0, (sum, c) => sum + c.totalAmount);
+    }
+    return total;
   }
 
   @override

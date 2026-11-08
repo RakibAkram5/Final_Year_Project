@@ -29,21 +29,29 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Configure Firebase options
+      - name: Validate API origin
+        id: api_config
         env:
-          FIREBASE_OPTIONS: ${{ secrets.FIREBASE_OPTIONS }}
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
         run: |
-          if [ -z "$FIREBASE_OPTIONS" ]; then
-            echo "::error::Configure the FIREBASE_OPTIONS repository secret before running Flutter CI."
-            exit 1
+          if [ -z "$API_BASE_URL" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::API_BASE_URL is not configured; the Android release build will be skipped."
+            exit 0
           fi
-          printf '%s' "$FIREBASE_OPTIONS" > lib/firebase_options.dart
+          case "$API_BASE_URL" in
+            https://*/api/v2) ;;
+            *)
+              echo "::error::API_BASE_URL must be an HTTPS origin ending in /api/v2."
+              exit 1 ;;
+          esac
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Install Flutter dependencies
         run: flutter pub get
 
       - name: Check Dart formatting
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed lib test integration_test
 
       - name: Analyze Flutter project
         run: flutter analyze
@@ -61,20 +69,16 @@ jobs:
           path: build/web/
           if-no-files-found: error
 
-      - name: Configure Android Firebase services
-        env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: |
-          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
-            echo "::error::Configure the GOOGLE_SERVICES_JSON repository secret before building Android."
-            exit 1
-          fi
-          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
-
       - name: Build Android release APK
-        run: flutter build apk --release
+        if: steps.api_config.outputs.configured == 'true'
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+        run: |
+          flutter build apk --release \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
 
       - name: Upload Android APK
+        if: steps.api_config.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: taleemplus-android-release

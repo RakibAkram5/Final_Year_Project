@@ -1,12 +1,14 @@
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/db');
+const { ERROR_CODES } = require('../utils/apiError');
+const { sendError } = require('../utils/response');
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ success: false, message: 'Access token required.' });
+    return sendError(res, 401, ERROR_CODES.UNAUTHENTICATED, 'Access token required.');
   }
 
   try {
@@ -17,11 +19,16 @@ const authenticateToken = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid session user.' });
+      return sendError(res, 401, ERROR_CODES.UNAUTHENTICATED, 'Invalid session user.');
     }
 
     if (user.accountStatus !== 'ACTIVE') {
-      return res.status(403).json({ success: false, message: 'Account is pending approval or disabled.' });
+      return sendError(
+        res,
+        403,
+        ERROR_CODES.FORBIDDEN,
+        'Account is pending approval or disabled.'
+      );
     }
 
     req.user = {
@@ -36,7 +43,7 @@ const authenticateToken = async (req, res, next) => {
     req.academyId = user.academyId;
     next();
   } catch (err) {
-    return res.status(403).json({ success: false, message: 'Token expired or invalid.' });
+    return sendError(res, 403, ERROR_CODES.UNAUTHENTICATED, 'Token expired or invalid.');
   }
 };
 

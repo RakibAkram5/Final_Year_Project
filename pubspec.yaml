@@ -20,11 +20,6 @@ dependencies:
   sqflite: ^2.3.3
   path: ^1.9.0
 
-  # Firebase (Auth + Firestore for cloud sync)
-  firebase_core: ^3.1.0
-  firebase_auth: ^5.1.0
-  cloud_firestore: ^5.0.1
-
   # Connectivity (drives offline-first sync logic)
   connectivity_plus: ^6.0.3
 

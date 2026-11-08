@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum QuestionType { mcq, short, long }
 
 class QuizQuestion {
@@ -123,39 +121,49 @@ class QuizModel {
       'chapter': chapter,
       'difficulty': difficulty,
       'total_marks': totalMarks,
-      'test_date': Timestamp.fromDate(testDate),
+      'test_date': testDate.toUtc().toIso8601String(),
       'instructions': instructions,
       'created_by_uid': createdByUid,
       'created_by_name': createdByName,
       'created_at': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
+          ? createdAt!.toUtc().toIso8601String()
+          : DateTime.now().toUtc().toIso8601String(),
       'questions': questions.map((q) => q.toMap()).toList(),
     };
   }
 
+  static DateTime _parseDate(dynamic val) {
+    if (val == null) return DateTime.now();
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    return DateTime.now();
+  }
+
   factory QuizModel.fromMap(String id, Map<String, dynamic> map) {
+    final rawTestDate = map['test_date'] ?? map['testDate'];
+    final rawCreatedAt = map['created_at'] ?? map['createdAt'];
+
     return QuizModel(
-      id: id,
-      academyId: map['academy_id'] ?? '',
-      classId: map['class_id'] ?? '',
-      classLabel: map['class_label'] ?? '',
+      id: id.isNotEmpty ? id : (map['id'] ?? '').toString(),
+      academyId: map['academy_id'] ?? map['academyId'] ?? '',
+      classId: map['class_id'] ?? map['classId'] ?? '',
+      classLabel: map['class_label'] ?? map['classLabel'] ?? '',
       title: map['title'] ?? '',
       subject: map['subject'] ?? '',
       month: map['month'] ?? '',
       session: map['session'] ?? '',
       chapter: map['chapter'] ?? '',
       difficulty: map['difficulty'] ?? 'Medium',
-      totalMarks: (map['total_marks'] ?? 0).toDouble(),
-      testDate: map['test_date'] is Timestamp
-          ? (map['test_date'] as Timestamp).toDate()
-          : DateTime.now(),
+      totalMarks: ((map['total_marks'] ?? map['totalMarks']) ?? 0).toDouble(),
+      testDate: _parseDate(rawTestDate),
       instructions: map['instructions'] ?? '',
-      createdByUid: map['created_by_uid'] ?? '',
-      createdByName: map['created_by_name'] ?? '',
-      createdAt: map['created_at'] != null
-          ? (map['created_at'] as Timestamp).toDate()
-          : null,
+      createdByUid: map['created_by_uid'] ?? map['createdById'] ?? '',
+      createdByName: map['created_by_name'] ?? map['createdByName'] ?? '',
+      createdAt: rawCreatedAt != null ? _parseDate(rawCreatedAt) : null,
       questions: (map['questions'] as List? ?? [])
           .map((q) => QuizQuestion.fromMap(q as Map<String, dynamic>))
           .toList(),

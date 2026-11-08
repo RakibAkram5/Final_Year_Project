@@ -1,9 +1,10 @@
 // Taleem Plus - Academy Management System
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart' show HardwareKeyboard, KeyEvent;
 import 'package:provider/provider.dart';
-import 'firebase_options.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'core/web/web_theme.dart';
@@ -29,10 +30,6 @@ import 'features/parent/parent_dashboard.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   runApp(
     MultiProvider(
@@ -86,24 +83,54 @@ class _ActivityNavigatorObserver extends NavigatorObserver {
 
 final _activityNavigatorObserver = _ActivityNavigatorObserver();
 
+class _ActivityListener extends StatefulWidget {
+  const _ActivityListener({required this.onActivity, required this.child});
+
+  final VoidCallback onActivity;
+  final Widget child;
+
+  @override
+  State<_ActivityListener> createState() => _ActivityListenerState();
+}
+
+class _ActivityListenerState extends State<_ActivityListener> {
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_handleKey);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKey);
+    super.dispose();
+  }
+
+  bool _handleKey(KeyEvent event) {
+    widget.onActivity();
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
 class TaleemPlusApp extends StatelessWidget {
   const TaleemPlusApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ThemeProvider, AuthProvider>(
-      builder: (context, theme, auth, _) {
-        void resetTimer([_]) =>
-            context.read<SessionProvider>().resetTimer(context, auth);
-        return Listener(
-          onPointerDown: resetTimer,
-          onPointerMove: resetTimer,
-          onPointerSignal: resetTimer,
-          child: Focus(
-            onKeyEvent: (node, event) {
-              resetTimer();
-              return KeyEventResult.ignored;
-            },
+    return Consumer<ThemeProvider>(
+      builder: (context, theme, _) {
+        void resetTimer([_]) => context
+            .read<SessionProvider>()
+            .resetTimer(context, context.read<AuthProvider>());
+        return _ActivityListener(
+          onActivity: resetTimer,
+          child: Listener(
+            onPointerDown: resetTimer,
+            onPointerMove: resetTimer,
+            onPointerSignal: resetTimer,
             child: MaterialApp(
               navigatorKey: rootNavigatorKey,
               navigatorObservers: [_activityNavigatorObserver],

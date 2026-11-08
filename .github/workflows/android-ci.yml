@@ -35,8 +35,13 @@ jobs:
       - name: Run Dart & Flutter Tests
         run: flutter test
 
+      # The Gradle wrapper is gitignored (Flutter default); --config-only
+      # regenerates android/gradlew and the Gradle settings without building.
+      - name: Generate Android Gradle wrapper
+        run: flutter build apk --debug --config-only
+
       - name: Grant Execute Permission for Gradlew
-        run: chmod +x android/gradlew || true
+        run: chmod +x android/gradlew
 
       - name: Run Android Lint & Unit Tests
         working-directory: android
@@ -83,7 +88,14 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: flutter build apk --release
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+        run: |
+          if [ -z "$API_BASE_URL" ]; then
+            echo "::error::API_BASE_URL is not configured. Set the repository variable or secret API_BASE_URL to the production HTTPS API origin."
+            exit 1
+          fi
+          flutter build apk --release \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -91,7 +103,7 @@ jobs:
           name: "Version 1"
           tag_name: ${{ github.ref_name }}
           files: |
-            build/app/outputs/flutter-apk/Final_Year_Project-version-1.apk
+            build/app/outputs/flutter-apk/app-release.apk
           draft: false
           prerelease: false
           generate_release_notes: true

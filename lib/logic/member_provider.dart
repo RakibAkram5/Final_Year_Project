@@ -34,18 +34,24 @@ class MemberProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Kick off the three independent role requests together; waiting for
+      // them sequentially added two avoidable network round trips to startup.
+      final rolesFuture = Future.wait([
+        _authService.getApprovedByRole(academyId, UserRole.teacher),
+        _authService.getApprovedByRole(academyId, UserRole.student),
+        _authService.getApprovedByRole(academyId, UserRole.parent),
+      ]);
+
       // 1. Fetch SQLite local members for THIS academy — sqflite has no web
-      // implementation, so skip it there and rely on Firestore alone.
+      // implementation, so skip it there and rely on remote profiles alone.
       final sqliteMembers =
           kIsWeb ? <AcademyMember>[] : await _repo.getAll(academyId);
 
-      // 2. Fetch Firestore approved users profiles for THIS academy
-      final firestoreTeachers =
-          await _authService.getApprovedByRole(academyId, UserRole.teacher);
-      final firestoreStudents =
-          await _authService.getApprovedByRole(academyId, UserRole.student);
-      final firestoreParents =
-          await _authService.getApprovedByRole(academyId, UserRole.parent);
+      // 2. Fetch remote approved users profiles for THIS academy
+      final roles = await rolesFuture;
+      final firestoreTeachers = roles[0];
+      final firestoreStudents = roles[1];
+      final firestoreParents = roles[2];
 
       // 3. Convert Firestore users to AcademyMember model for a unified list
       final List<AcademyMember> firestoreMembers = [
@@ -130,19 +136,20 @@ class MemberProvider extends ChangeNotifier {
     await load(academyId);
   }
 
+  /// Removes a member from the active roster.
+  ///
+  /// Server accounts are *deactivated* (sign-in blocked, refresh tokens
+  /// revoked) rather than deleted, so attendance, fee and marks history is
+  /// preserved. Offline-only (SQLite) entries are removed locally.
   Future<void> removeMember(String id, String academyId) async {
-    // 1. Attempt to delete from local SQLite (if it exists there) — no-op
-    // on web since sqflite isn't available there.
-    if (!kIsWeb) {
+    final remote = await _authService.getProfile(id);
+    if (remote != null) {
+      await _authService.deactivateUser(id);
+    } else if (!kIsWeb) {
       await _repo.delete(id);
+    } else {
+      throw Exception('Member not found in this academy.');
     }
-
-    // 2. Attempt to delete from Firestore (if it exists there)
-    final doc = await _authService.getProfile(id);
-    if (doc != null) {
-      await _authService.rejectUser(id);
-    }
-
     await load(academyId);
   }
 }

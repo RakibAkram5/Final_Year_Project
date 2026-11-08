@@ -23,15 +23,27 @@ jobs:
       - name: Set up Flutter Stable
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.x'
           channel: 'stable'
           cache: true
 
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Verify API origin is configured
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+        run: |
+          if [ -z "$API_BASE_URL" ]; then
+            echo "::error::API_BASE_URL is not configured. Set the repository variable or secret API_BASE_URL to the production HTTPS API origin (for example https://api.example.com/api/v2)."
+            exit 1
+          fi
+
       - name: Build Release APK
-        run: flutter build apk --release --split-per-abi
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+        run: |
+          flutter build apk --release --split-per-abi \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
 
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4

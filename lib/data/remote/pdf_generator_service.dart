@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/quiz_model.dart';
 import '../models/app_user.dart';
+import 'auth_service.dart';
 
 class PdfGeneratorService {
   /// Print preview kholta hai
@@ -27,19 +27,17 @@ class PdfGeneratorService {
 
   /// PDF document banata hai
   static Future<pw.Document> _buildDocument(QuizModel quiz) async {
-    // 1. Fetch Academy Details
-    final academyDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(quiz.academyId)
-        .get();
-    AppUser? academy;
-    if (academyDoc.exists && academyDoc.data() != null) {
-      academy = AppUser.fromMap(academyDoc.id, academyDoc.data()!);
+    // 1. Academy details come from the signed-in staff member's profile
+    // (`/auth/me` includes the academy name, address, phone and logo).
+    // Fails loudly rather than printing a paper without the academy header.
+    final AppUser? academy = await AuthService().getCurrentUserProfile();
+    if (academy == null) {
+      throw StateError('Sign in again to load your academy details.');
     }
 
     // Load network image if logo exists
     pw.ImageProvider? logoImage;
-    if (academy?.academyLogo != null && academy!.academyLogo!.isNotEmpty) {
+    if (academy.academyLogo != null && academy.academyLogo!.isNotEmpty) {
       try {
         logoImage = await networkImage(academy.academyLogo!);
       } catch (e) {
@@ -70,11 +68,11 @@ class PdfGeneratorService {
                     crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
                       pw.Text(
-                          academy?.academyName?.toUpperCase() ??
+                          academy.academyName?.toUpperCase() ??
                               "TALEEMPLUS ACADEMY",
                           style: const pw.TextStyle(
                               fontSize: 18, fontWeight: pw.FontWeight.bold)),
-                      pw.Text(academy?.academyAddress ?? "",
+                      pw.Text(academy.academyAddress ?? "",
                           style: const pw.TextStyle(fontSize: 10)),
                     ],
                   ),

@@ -67,7 +67,8 @@ Future<void> publishOcrDocumentsToClass(
         teacherId: user.uid,
         teacherName: user.fullName,
         title: doc.title,
-        description: doc.extractedText,
+        description: '',
+        contentText: doc.extractedText,
         createdAt: DateTime.now(),
       ));
     }

@@ -1,37 +1,28 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../models/academic_structure.dart';
+import 'api_client.dart';
+import 'live_query.dart';
 
-/// Firestore-backed storage for each academy's configurable academic
-/// structure (one doc per academy in `academy_settings/{academyId}`).
+/// REST-backed storage for each academy's configurable academic structure
+/// (`/academic-structure`, stored on the academy row). The server returns
+/// the defaults until an admin saves a custom structure, so no seeding
+/// write is needed.
 class AcademicStructureService {
-  final _settings = FirebaseFirestore.instance.collection('academy_settings');
+  final ApiClient _api = ApiClient();
 
-  /// Reads the academy's structure, seeding it with [AcademicStructure.defaults]
-  /// on first access if no doc exists yet — safe/additive, no migration
-  /// needed for existing academies.
-  Future<AcademicStructure> getOrSeed(String academyId) async {
-    final doc = await _settings.doc(academyId).get();
-    if (doc.exists && doc.data()?['academic_structure'] != null) {
-      return AcademicStructure.fromMap(
-          doc.data()!['academic_structure'] as Map<dynamic, dynamic>);
-    }
-    await _settings.doc(academyId).set({
-      'academic_structure': AcademicStructure.defaults.toMap(),
-    }, SetOptions(merge: true));
+  Future<AcademicStructure> fetch() async {
+    final res = await _api.get('/academic-structure');
+    if (res is Map) return AcademicStructure.fromMap(res);
     return AcademicStructure.defaults;
   }
 
-  Stream<AcademicStructure> watch(String academyId) {
-    return _settings.doc(academyId).snapshots().map((doc) {
-      final raw = doc.data()?['academic_structure'];
-      if (raw == null) return AcademicStructure.defaults;
-      return AcademicStructure.fromMap(raw as Map<dynamic, dynamic>);
-    });
-  }
+  /// Kept for call-site compatibility: reading never needs to seed.
+  Future<AcademicStructure> getOrSeed(String academyId) => fetch();
+
+  Stream<AcademicStructure> watch(String academyId) =>
+      liveQuery(DataTopics.academicStructure, fetch);
 
   Future<void> update(String academyId, AcademicStructure structure) async {
-    await _settings.doc(academyId).set(
-        {'academic_structure': structure.toMap()}, SetOptions(merge: true));
+    await _api.put('/academic-structure', structure.toMap());
+    DataChanges.notify(DataTopics.academicStructure);
   }
 }

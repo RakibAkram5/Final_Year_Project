@@ -1,0 +1,35 @@
+# Secrets and local runtime data
+.env
+.env.*
+.vercel/
+taleemplus_backend/.env
+taleemplus_backend/.env.*
+taleemplus_backend/.pgdata/
+taleemplus_backend/generated/
+node_modules/
+**/node_modules/
+
+# Large local, tooling, and non-runtime directories
+.dart_tool/
+.idea/
+.junie/
+.agents/
+android/
+ios/
+ml_service/
+ml_training/
+data_export/
+docs/
+scripts/
+test/
+integration_test/
+lib/
+assets/
+web/
+pubspec.yaml
+pubspec.lock
+analysis_options.yaml
+*.apk
+
+# Flutter build artifacts are copied to vercel_web before deployment
+build/

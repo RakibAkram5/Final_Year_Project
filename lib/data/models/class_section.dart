@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../remote/api_client.dart';
 
 /// A class + section (e.g. "10th - A") is the single enrollment unit,
 /// stored under the `class_sections` collection.
@@ -15,6 +15,7 @@ class ClassSectionEntity {
   final String section;
   final List<String> studentIds;
   final Map<String, String> studentNames;
+  final Map<String, String> studentRollNumbers;
   final DateTime createdAt;
 
   const ClassSectionEntity({
@@ -25,6 +26,7 @@ class ClassSectionEntity {
     required this.section,
     this.studentIds = const [],
     this.studentNames = const {},
+    this.studentRollNumbers = const {},
     required this.createdAt,
   });
 
@@ -45,27 +47,29 @@ class ClassSectionEntity {
         'section': section,
         'student_ids': studentIds,
         'student_names': studentNames,
-        'created_at': createdAt.millisecondsSinceEpoch == 0
-            ? FieldValue.serverTimestamp()
-            : Timestamp.fromDate(createdAt),
-        'updated_at': FieldValue.serverTimestamp(),
+        'student_roll_numbers': studentRollNumbers,
+        'created_at': createdAt.toUtc().toIso8601String(),
       };
 
   factory ClassSectionEntity.fromMap(String id, Map<String, dynamic> map) {
     final rawIds = map['student_ids'];
     final rawNames = map['student_names'];
-    final ts = map['created_at'];
+    final rawRolls = map['student_roll_numbers'];
+    Map<String, String> asStringMap(dynamic raw) => raw is Map
+        ? raw.map((k, v) => MapEntry(k.toString(), (v ?? '').toString()))
+        : const {};
     return ClassSectionEntity(
       id: id,
-      academyId: (map['academy_id'] ?? '') as String,
-      className: (map['class_name'] ?? '') as String,
-      program: (map['program'] ?? '') as String,
-      section: (map['section'] ?? '') as String,
-      studentIds: (rawIds is List) ? rawIds.cast<String>() : const [],
-      studentNames: (rawNames is Map)
-          ? rawNames.map((k, v) => MapEntry(k as String, v as String))
-          : const {},
-      createdAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
+      academyId: (map['academy_id'] ?? '').toString(),
+      className: (map['class_name'] ?? '').toString(),
+      program: (map['program'] ?? '').toString(),
+      section: (map['section'] ?? '').toString(),
+      studentIds: (rawIds is List)
+          ? rawIds.map((e) => e.toString()).toList()
+          : const [],
+      studentNames: asStringMap(rawNames),
+      studentRollNumbers: asStringMap(rawRolls),
+      createdAt: ApiClient.parseDate(map['created_at']) ?? DateTime.now(),
     );
   }
 }

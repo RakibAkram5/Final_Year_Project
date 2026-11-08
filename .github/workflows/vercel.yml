@@ -1,0 +1,61 @@
+name: Vercel deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require Vercel secrets
+        run: |
+          for name in VERCEL_ORG_ID VERCEL_PROJECT_ID VERCEL_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured."; exit 1
+            fi
+          done
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build Flutter web
+        run: |
+          flutter pub get
+          flutter build web --release
+
+      # vercel.json serves static files from vercel_web/ and deploys the
+      # Express API from api/. Populate vercel_web/ and let `vercel build`
+      # honour vercel.json, so the prebuilt output contains BOTH the web app
+      # and the API functions (a hand-written static-only output dropped
+      # the API).
+      - name: Stage web output for Vercel
+        run: |
+          rm -rf vercel_web
+          cp -R build/web vercel_web
+
+      - name: Pull Vercel project settings
+        run: npx --yes vercel@39 pull --yes --environment=production --token "$VERCEL_TOKEN"
+
+      - name: Build with Vercel (static + API functions)
+        run: npx --yes vercel@39 build --prod --token "$VERCEL_TOKEN"
+
+      - name: Deploy prebuilt output
+        run: npx --yes vercel@39 deploy --prebuilt --prod --token "$VERCEL_TOKEN"

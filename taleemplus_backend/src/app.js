@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('./config/env').assertValidEnv();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -9,6 +10,10 @@ const { errorHandler } = require('./middleware/errorMiddleware');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const classRoutes = require('./routes/classRoutes');
+const classSectionRoutes = require('./routes/classSectionRoutes');
+const classReportRoutes = require('./routes/classReportRoutes');
+const academicStructureRoutes = require('./routes/academicStructureRoutes');
+const ocrRoutes = require('./routes/ocrRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const feeRoutes = require('./routes/feeRoutes');
 const quizRoutes = require('./routes/quizRoutes');
@@ -53,26 +58,55 @@ app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '1500kb' }));
 app.use(morgan('dev'));
 
+// API v2 Version & Metadata endpoint. Registered before the routers because
+// the notification router applies authentication to every unmatched
+// `/api/v2/*` request.
+app.get('/api/v2/version', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      api_version: '2.0.0',
+      service: 'TaleemPlus Enterprise Backend',
+      environment: process.env.NODE_ENV || 'development',
+      database: 'PostgreSQL + Prisma',
+      release_date: '2026-10-30',
+      supported_roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT']
+    }
+  });
+});
+
 // Versioned API v2 Routes
 app.use('/api/v2/auth', authRoutes);
 app.use('/api/v2/users', userRoutes);
 app.use('/api/v2/classes', classRoutes);
+app.use('/api/v2/class-sections', classSectionRoutes);
+app.use('/api/v2/class-reports', classReportRoutes);
+app.use('/api/v2/academic-structure', academicStructureRoutes);
+app.use('/api/v2/ocr', ocrRoutes);
 app.use('/api/v2/attendance', attendanceRoutes);
 app.use('/api/v2/fees', feeRoutes);
 app.use('/api/v2/quizzes', quizRoutes);
-app.use('/api/v2/resources', resourceRoutes);
+// The resource router owns both /resources and /queries collections, so it is
+// mounted at the version root rather than under /resources.
+app.use('/api/v2', resourceRoutes);
 app.use('/api/v2', notificationRoutes);
 app.use('/api/v2/timetable', timetableRoutes);
 app.use('/api/v2/admin/ml', mlRoutes);
 
-// Backward compatibility v1 Routes
+// Backward compatibility v1 Routes. v1 is deprecated and exists only for
+// already-released clients; new work targets v2.
+app.use('/api/v1', (req, res, next) => {
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Link', '</api/v2>; rel="successor-version"');
+  next();
+});
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/classes', classRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/fees', feeRoutes);
 app.use('/api/v1/quizzes', quizRoutes);
-app.use('/api/v1/resources', resourceRoutes);
+app.use('/api/v1', resourceRoutes);
 app.use('/api/v1', notificationRoutes);
 app.use('/api/v1/timetable', timetableRoutes);
 
@@ -92,21 +126,6 @@ app.get('/health', async (req, res) => {
     service: 'TaleemPlus Backend Service',
     database,
     timestamp: new Date(),
-  });
-});
-
-// API v2 Version & Metadata endpoint
-app.get('/api/v2/version', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      api_version: '2.0.0',
-      service: 'TaleemPlus Enterprise Backend',
-      environment: process.env.NODE_ENV || 'development',
-      database: 'PostgreSQL + Prisma',
-      release_date: '2026-10-30',
-      supported_roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT']
-    }
   });
 });
 

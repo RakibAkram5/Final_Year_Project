@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../remote/api_client.dart';
 
 class AnswerModel {
   final String questionId;
@@ -85,8 +85,8 @@ class QuizSubmissionModel {
       'percentage': percentage,
       'grade_letter': gradeLetter,
       'status': status,
-      'submitted_at': Timestamp.fromDate(submittedAt),
-      'graded_at': gradedAt != null ? Timestamp.fromDate(gradedAt!) : null,
+      'submitted_at': submittedAt.toUtc().toIso8601String(),
+      'graded_at': gradedAt?.toUtc().toIso8601String(),
       'teacher_feedback': teacherFeedback,
     };
   }
@@ -105,12 +105,8 @@ class QuizSubmissionModel {
       percentage: (map['percentage'] ?? 0).toDouble(),
       gradeLetter: map['grade_letter'] ?? 'F',
       status: map['status'] ?? 'submitted',
-      submittedAt: map['submitted_at'] is Timestamp
-          ? (map['submitted_at'] as Timestamp).toDate()
-          : DateTime.now(),
-      gradedAt: map['graded_at'] != null
-          ? (map['graded_at'] as Timestamp).toDate()
-          : null,
+      submittedAt: ApiClient.parseDate(map['submitted_at']) ?? DateTime.now(),
+      gradedAt: ApiClient.parseDate(map['graded_at']),
       teacherFeedback: map['teacher_feedback'],
     );
   }

@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 /// A single recurring weekly period in a class's schedule — e.g. "Class 9-B
@@ -90,41 +89,52 @@ class TimetableSlot {
       'end_minutes': endMinutes,
       'room': room,
       'semester': semester,
-      'effective_from': Timestamp.fromDate(effectiveFrom),
-      'effective_to':
-          effectiveTo != null ? Timestamp.fromDate(effectiveTo!) : null,
+      'effective_from': effectiveFrom.toUtc().toIso8601String(),
+      'effective_to': effectiveTo?.toUtc().toIso8601String(),
       'created_at': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
-      'updated_at': FieldValue.serverTimestamp(),
+          ? createdAt!.toUtc().toIso8601String()
+          : DateTime.now().toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
   }
 
+  static DateTime _parseDate(dynamic val, [DateTime? fallback]) {
+    if (val == null) return fallback ?? DateTime.now();
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    return fallback ?? DateTime.now();
+  }
+
   factory TimetableSlot.fromMap(String id, Map<String, dynamic> map) {
-    final effectiveFrom = map['effective_from'];
-    final effectiveTo = map['effective_to'];
-    final createdAt = map['created_at'];
-    final updatedAt = map['updated_at'];
+    final rawEffFrom = map['effective_from'] ?? map['effectiveFrom'];
+    final rawEffTo = map['effective_to'] ?? map['effectiveTo'];
+    final rawCreatedAt = map['created_at'] ?? map['createdAt'];
+    final rawUpdatedAt = map['updated_at'] ?? map['updatedAt'];
+
     return TimetableSlot(
-      id: id,
-      academyId: map['academy_id'] ?? '',
-      isBreak: map['is_break'] ?? false,
-      classId: map['class_id'] ?? '',
-      className: map['class_name'] ?? '',
-      section: map['section'] ?? '',
-      subject: map['subject'] ?? '',
-      teacherId: map['teacher_id'] ?? '',
-      teacherName: map['teacher_name'] ?? '',
-      dayOfWeek: (map['day_of_week'] ?? DateTime.monday) as int,
-      startMinutes: (map['start_minutes'] ?? 0) as int,
-      endMinutes: (map['end_minutes'] ?? 0) as int,
-      room: map['room'] ?? '',
-      semester: map['semester'] ?? '',
-      effectiveFrom:
-          effectiveFrom is Timestamp ? effectiveFrom.toDate() : DateTime.now(),
-      effectiveTo: effectiveTo is Timestamp ? effectiveTo.toDate() : null,
-      createdAt: createdAt is Timestamp ? createdAt.toDate() : null,
-      updatedAt: updatedAt is Timestamp ? updatedAt.toDate() : null,
+      id: id.isNotEmpty ? id : (map['id'] ?? '').toString(),
+      academyId: (map['academy_id'] ?? map['academyId'] ?? '').toString(),
+      isBreak: map['is_break'] ?? map['isBreak'] ?? false,
+      classId: (map['class_id'] ?? map['classId'] ?? '').toString(),
+      className: (map['class_name'] ?? map['className'] ?? '').toString(),
+      section: (map['section'] ?? '').toString(),
+      subject: (map['subject'] ?? '').toString(),
+      teacherId: (map['teacher_id'] ?? map['teacherId'] ?? '').toString(),
+      teacherName: (map['teacher_name'] ?? map['teacherName'] ?? '').toString(),
+      dayOfWeek:
+          (map['day_of_week'] ?? map['dayOfWeek'] ?? DateTime.monday) as int,
+      startMinutes: (map['start_minutes'] ?? map['startMinutes'] ?? 0) as int,
+      endMinutes: (map['end_minutes'] ?? map['endMinutes'] ?? 0) as int,
+      room: (map['room'] ?? '').toString(),
+      semester: (map['semester'] ?? '').toString(),
+      effectiveFrom: _parseDate(rawEffFrom),
+      effectiveTo: rawEffTo != null ? _parseDate(rawEffTo) : null,
+      createdAt: rawCreatedAt != null ? _parseDate(rawCreatedAt) : null,
+      updatedAt: rawUpdatedAt != null ? _parseDate(rawUpdatedAt) : null,
     );
   }
 }

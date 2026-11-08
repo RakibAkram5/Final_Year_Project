@@ -2,19 +2,15 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_extensions.dart';
 import '../../../core/web/web_breakpoints.dart';
 import '../../../data/models/class_report_model.dart';
 import '../../../data/models/class_section.dart';
-import '../../../data/repositories/attendance_repository.dart';
 import '../../../data/repositories/class_report_repository.dart';
-import '../../../data/repositories/fee_challan_repository.dart';
 import '../../../logic/auth_provider.dart';
 import '../../../logic/class_section_provider.dart';
-import '../../../logic/fee_analytics_service.dart';
 import '../../../widgets/gradient_background.dart';
 import '../../../widgets/web/web_empty_state.dart';
 import '../../../widgets/web/web_nav_items.dart';
@@ -34,8 +30,9 @@ class ClassReportsScreen extends StatefulWidget {
 
 class _ClassReportsScreenState extends State<ClassReportsScreen> {
   final _reportRepo = ClassReportRepository();
-  final _attendanceRepo = AttendanceRepository();
-  final _feeRepo = FeeChallanRepository();
+  // Created once so rebuilds don't refetch; refreshed via DataChanges.
+  late final Stream<List<ClassReportModel>> _reportsStream =
+      _reportRepo.watchAll(_academyId);
   bool _generating = false;
 
   @override
@@ -140,7 +137,7 @@ class _ClassReportsScreenState extends State<ClassReportsScreen> {
 
   Widget _body() {
     return StreamBuilder<List<ClassReportModel>>(
-      stream: _reportRepo.watchAll(_academyId),
+      stream: _reportsStream,
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(
@@ -301,43 +298,9 @@ class _ClassReportsScreenState extends State<ClassReportsScreen> {
   Future<void> _generateReport(ClassSectionEntity section) async {
     setState(() => _generating = true);
     try {
-      final academyId = _academyId;
-      final today = DateTime.now();
-      final todayKey = DateTime(today.year, today.month, today.day);
-
-      final attendance = await _attendanceRepo.getAllForAcademy(academyId);
-      final presentToday = attendance
-          .where((r) =>
-              section.studentIds.contains(r.studentId) &&
-              DateTime(r.logDate.year, r.logDate.month, r.logDate.day) ==
-                  todayKey &&
-              (r.isPresent || r.isLate))
-          .map((r) => r.studentId)
-          .toSet();
-
-      final challans = await _feeRepo.getAll(academyId);
-      final analytics =
-          FeeAnalyticsService.computeClassAnalytics(challans, [section]);
-      final match =
-          analytics.where((a) => a.classLabel == section.displayLabel);
-      final feeSummary = match.isEmpty ? null : match.first;
-
-      final report = ClassReportModel(
-        id: const Uuid().v4(),
-        academyId: academyId,
-        classLabel: section.displayLabel,
-        generatedAt: DateTime.now(),
-        totalStudents: section.enrollmentCount,
-        present: presentToday.length,
-        absent: section.enrollmentCount - presentToday.length,
-        feePaid: feeSummary?.paidCount ?? 0,
-        feePending:
-            (feeSummary?.pendingCount ?? 0) + (feeSummary?.overdueCount ?? 0),
-        feePaidAmount: feeSummary?.paidAmount ?? 0,
-        feePendingAmount:
-            (feeSummary?.pendingAmount ?? 0) + (feeSummary?.overdueAmount ?? 0),
-      );
-      await _reportRepo.create(report);
+      // Counts are computed server-side from stored attendance and fee
+      // records for the caller's local "today".
+      await _reportRepo.generate(sectionId: section.id, asOf: DateTime.now());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Report generated for ${section.displayLabel}')));

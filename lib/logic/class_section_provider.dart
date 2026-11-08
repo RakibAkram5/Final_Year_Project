@@ -5,7 +5,8 @@ import '../data/models/app_user.dart';
 import '../data/models/class_section.dart';
 import '../data/repositories/class_section_repository.dart';
 
-/// Streams the academy's class+section rosters from Firestore in real time.
+/// Loads the academy's class+section rosters from the REST API and
+/// refreshes them after every create/enroll/delete.
 class ClassSectionProvider extends ChangeNotifier {
   final ClassSectionRepository _repo;
   ClassSectionProvider({ClassSectionRepository? repo})
@@ -13,10 +14,14 @@ class ClassSectionProvider extends ChangeNotifier {
 
   List<ClassSectionEntity> _sections = [];
   bool _loading = true;
+  String? _error;
   StreamSubscription? _sub;
 
   List<ClassSectionEntity> get sections => _sections;
   bool get loading => _loading;
+
+  /// Last load error, or null after a successful load.
+  String? get error => _error;
 
   List<ClassSectionEntity> forClass(String className) =>
       _sections.where((s) => s.className == className).toList();
@@ -48,11 +53,13 @@ class ClassSectionProvider extends ChangeNotifier {
       (list) {
         _sections = list;
         _loading = false;
+        _error = null;
         notifyListeners();
       },
       onError: (e) {
-        debugPrint('Error listening to class sections: $e');
-        _sections = [];
+        debugPrint('Error loading class sections: $e');
+        // Keep the last good roster visible; surface the failure.
+        _error = e.toString();
         _loading = false;
         notifyListeners();
       },
@@ -78,6 +85,16 @@ class ClassSectionProvider extends ChangeNotifier {
     required List<AppUser> students,
   }) {
     return _repo.updateEnrollment(section: section, students: students);
+  }
+
+  /// Adds a single student to a section (and its subject offerings).
+  Future<void> enrollStudent({
+    required ClassSectionEntity section,
+    required String studentId,
+    String? rollNumber,
+  }) {
+    return _repo.enrollStudent(
+        sectionId: section.id, studentId: studentId, rollNumber: rollNumber);
   }
 
   Future<void> deleteSection(ClassSectionEntity section) {

@@ -1,6 +1,43 @@
 const prisma = require('../config/db');
 const crypto = require('crypto');
 const { canReadStudent } = require('../utils/studentAccess');
+const { toIso } = require('../utils/dto');
+
+// Start of the current UTC day: a challan due "today" is not yet overdue.
+const startOfTodayUtc = () => {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+};
+
+const isOverdue = (c) =>
+  c.status === 'OVERDUE' || (c.status === 'PENDING' && c.dueDate < startOfTodayUtc());
+
+// Single wire format for every challan response (snake_case, ISO dates,
+// numeric amounts) so the Flutter model parses all endpoints identically.
+const formatChallan = (c) => ({
+  id: c.id,
+  academy_id: c.academyId,
+  challan_number: c.challanNumber,
+  student_id: c.studentId,
+  student_code: c.student?.studentCode || c.studentId,
+  student_name: c.studentName,
+  father_name: c.fatherName || '',
+  billing_period: c.billingPeriod,
+  class_label: c.classLabel,
+  roll_number: c.rollNumber || '',
+  issue_date: toIso(c.issueDate),
+  due_date: toIso(c.dueDate),
+  paid_at: toIso(c.paidAt),
+  monthly_fee: Number(c.monthlyFee),
+  admission_fee: Number(c.admissionFee),
+  exam_fee: Number(c.examFee),
+  transport_fee: Number(c.transportFee),
+  fine: Number(c.fine),
+  total_amount: Number(c.totalAmount),
+  status: isOverdue(c) ? 'overdue' : c.status.toLowerCase(),
+  created_at: toIso(c.createdAt),
+  updated_at: toIso(c.updatedAt)
+});
 
 const createStudentChallan = async (req, res, next) => {
   try {
@@ -47,7 +84,7 @@ const createStudentChallan = async (req, res, next) => {
       },
       include: { student: { select: { studentCode: true } } }
     });
-    res.status(201).json({ success: true, data: { ...challan, student_code: challan.student.studentCode } });
+    res.status(201).json({ success: true, data: formatChallan(challan) });
   } catch (err) {
     if (err.code === 'P2002') return res.status(409).json({ success: false, message: 'A challan already exists for this student and billing period.' });
     next(err);
@@ -61,17 +98,7 @@ const getAllChallans = async (req, res, next) => {
       include: { student: { select: { studentCode: true } } },
       orderBy: { createdAt: 'desc' },
     });
-    res.json({ success: true, data: rows.map((c) => ({
-      id: c.id, academy_id: c.academyId, challan_number: c.challanNumber,
-      student_id: c.studentId, student_code: c.student.studentCode || c.studentId,
-      student_name: c.studentName, father_name: c.fatherName || '',
-      billing_period: c.billingPeriod,
-      class_label: c.classLabel, roll_number: c.rollNumber || '',
-      issue_date: c.issueDate, due_date: c.dueDate,
-      monthly_fee: Number(c.monthlyFee), admission_fee: Number(c.admissionFee),
-      exam_fee: Number(c.examFee), transport_fee: Number(c.transportFee), fine: Number(c.fine),
-      total_amount: Number(c.totalAmount), status: c.status.toLowerCase(), created_at: c.createdAt,
-    })) });
+    res.json({ success: true, data: rows.map(formatChallan) });
   } catch (err) { next(err); }
 };
 
@@ -100,11 +127,30 @@ const generateChallans = async (req, res, next) => {
     const fFee = parseFloat(fine) || 0;
     const totalAmount = mFee + aFee + eFee + tFee + fFee;
     const parsedDueDate = new Date(dueDate);
+    if (Number.isNaN(parsedDueDate.getTime())) {
+      return res.status(400).json({ success: false, message: 'A valid dueDate is required.' });
+    }
+    const billingPeriod =
+      req.body.billingPeriod ||
+      `${parsedDueDate.getUTCFullYear()}-${String(parsedDueDate.getUTCMonth() + 1).padStart(2, '0')}`;
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(billingPeriod)) {
+      return res.status(400).json({ success: false, message: 'billingPeriod must use YYYY-MM format.' });
+    }
 
     const createdChallans = [];
     for (const enrollment of classObj.enrollments) {
-      const challanNumber = 'CH-' + Math.floor(100000 + Math.random() * 900000);
+      const duplicate = await prisma.feeChallan.findFirst({
+        where: {
+          academyId: req.academyId,
+          studentId: enrollment.studentId,
+          billingPeriod
+        },
+        select: { id: true }
+      });
+      if (duplicate) continue;
+      const challanNumber = `CH-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
       const challan = await prisma.feeChallan.create({
+        include: { student: { select: { studentCode: true } } },
         data: {
           academyId: req.academyId,
           challanNumber,
@@ -113,6 +159,7 @@ const generateChallans = async (req, res, next) => {
           classLabel,
           rollNumber: enrollment.rollNumber || null,
           dueDate: parsedDueDate,
+          billingPeriod,
           monthlyFee: mFee,
           admissionFee: aFee,
           examFee: eFee,
@@ -128,7 +175,11 @@ const generateChallans = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: `Generated ${createdChallans.length} fee challans successfully.`,
-      data: createdChallans
+      data: createdChallans.map(formatChallan),
+      meta: {
+        created: createdChallans.length,
+        skipped_existing: classObj.enrollments.length - createdChallans.length
+      }
     });
   } catch (err) {
     next(err);
@@ -151,30 +202,7 @@ const getStudentChallans = async (req, res, next) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    const formatted = challans.map((c) => ({
-      id: c.id,
-      academy_id: c.academyId,
-      challan_number: c.challanNumber,
-      student_id: c.studentId,
-      student_code: c.student.studentCode || c.studentId,
-      billing_period: c.billingPeriod,
-      student_name: c.studentName,
-      father_name: c.fatherName || '',
-      class_label: c.classLabel,
-      roll_number: c.rollNumber || '',
-      issue_date: c.issueDate,
-      due_date: c.dueDate,
-      monthly_fee: Number(c.monthlyFee),
-      admission_fee: Number(c.admissionFee),
-      exam_fee: Number(c.examFee),
-      transport_fee: Number(c.transportFee),
-      fine: Number(c.fine),
-      total_amount: Number(c.totalAmount),
-      status: c.status.toLowerCase(),
-      created_at: c.createdAt
-    }));
-
-    res.json({ success: true, data: formatted });
+    res.json({ success: true, data: challans.map(formatChallan) });
   } catch (err) {
     next(err);
   }
@@ -194,10 +222,11 @@ const markChallanPaid = async (req, res, next) => {
 
     const updated = await prisma.feeChallan.update({
       where: { id },
-      data: { status: 'PAID', paidAt: existing.paidAt || new Date() }
+      data: { status: 'PAID', paidAt: existing.paidAt || new Date() },
+      include: { student: { select: { studentCode: true } } }
     });
 
-    res.json({ success: true, message: 'Fee challan marked as PAID.', data: updated });
+    res.json({ success: true, message: 'Fee challan marked as PAID.', data: formatChallan(updated) });
   } catch (err) {
     next(err);
   }
@@ -211,17 +240,25 @@ const getFeeLedgerStats = async (req, res, next) => {
 
     let totalBilled = 0;
     let totalCollected = 0;
+    let totalOverdue = 0;
     let pendingCount = 0;
     let paidCount = 0;
     let overdueCount = 0;
+    const monthly = {};
 
     for (const c of challans) {
       const amount = Number(c.totalAmount);
+      const period = c.billingPeriod || toIso(c.dueDate).slice(0, 7);
+      const bucket = (monthly[period] ||= { billed: 0, collected: 0, overdue: 0 });
       totalBilled += amount;
+      bucket.billed += amount;
       if (c.status === 'PAID') {
         totalCollected += amount;
+        bucket.collected += amount;
         paidCount++;
-      } else if (c.status === 'OVERDUE') {
+      } else if (isOverdue(c)) {
+        totalOverdue += amount;
+        bucket.overdue += amount;
         overdueCount++;
       } else {
         pendingCount++;
@@ -239,7 +276,13 @@ const getFeeLedgerStats = async (req, res, next) => {
         collection_percentage: Number(collectionPercentage),
         paid_count: paidCount,
         pending_count: pendingCount,
-        overdue_count: overdueCount
+        overdue_count: overdueCount,
+        total_overdue: totalOverdue,
+        monthly: Object.keys(monthly).sort().map((period) => ({
+          billing_period: period,
+          ...monthly[period],
+          pending: monthly[period].billed - monthly[period].collected
+        }))
       }
     });
   } catch (err) {

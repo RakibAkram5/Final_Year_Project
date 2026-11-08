@@ -313,9 +313,7 @@ class QuizResultsScreen extends StatelessWidget {
     if (ok != true || !context.mounted) return;
 
     try {
-      await context
-          .read<QuizProvider>()
-          .deleteMark(mark.quizId, mark.studentId);
+      await context.read<QuizProvider>().deleteMark(mark.id);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

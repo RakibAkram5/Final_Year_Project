@@ -1,61 +1,71 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/shared_resource.dart';
 import '../models/student_query.dart';
+import 'api_client.dart';
+import 'live_query.dart';
 
+/// Classroom resources and student questions over REST (`/resources`,
+/// `/queries`). The server enforces class membership: teachers see their
+/// classes, students only classes they are enrolled in.
 class ClassroomService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final ApiClient _api = ApiClient();
 
   // --- Shared Resources ---
   Future<void> uploadResource(SharedResource res) async {
-    await _db.collection('learning_resources').add(res.toMap());
+    await _api.post('/resources', res.toApiBody());
+    DataChanges.notify(DataTopics.resources);
+  }
+
+  Future<void> deleteResource(String id) async {
+    await _api.delete('/resources/$id');
+    DataChanges.notify(DataTopics.resources);
   }
 
   Stream<List<SharedResource>> watchResources(
-      String classId, String academyId) {
-    return _db
-        .collection('learning_resources')
-        .where('academy_id', isEqualTo: academyId)
-        .where('class_id', isEqualTo: classId)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => SharedResource.fromMap(d.id, d.data()))
-            .toList());
-  }
+          String classId, String academyId) =>
+      liveQuery(DataTopics.resources, () async {
+        final response = await _api
+            .get('/resources?classId=${Uri.encodeComponent(classId)}');
+        return (response as List)
+            .map((d) => SharedResource.fromMap((d['id'] ?? '').toString(),
+                Map<String, dynamic>.from(d as Map)))
+            .toList();
+      });
 
   // --- Student Queries ---
   Future<void> postQuery(StudentQuery query) async {
-    await _db.collection('student_queries').add(query.toMap());
+    await _api.post('/queries', {
+      'classId': query.classId,
+      'question': query.question,
+    });
+    DataChanges.notify(DataTopics.queries);
   }
 
   Future<void> answerQuery(String queryId, String answer) async {
-    await _db.collection('student_queries').doc(queryId).update({
+    await _api.put('/queries/$queryId/answer', {
       'answer': answer,
-      'is_resolved': true,
-      'answered_at': FieldValue.serverTimestamp(),
     });
+    DataChanges.notify(DataTopics.queries);
+  }
+
+  Future<List<StudentQuery>> _queries(String path) async {
+    final response = await _api.get(path);
+    return (response as List)
+        .map((d) => StudentQuery.fromMap(
+            (d['id'] ?? '').toString(), Map<String, dynamic>.from(d as Map)))
+        .toList();
   }
 
   Stream<List<StudentQuery>> watchQueriesForClass(
-      String classId, String academyId) {
-    return _db
-        .collection('student_queries')
-        .where('academy_id', isEqualTo: academyId)
-        .where('class_id', isEqualTo: classId)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => StudentQuery.fromMap(d.id, d.data()))
-            .toList());
-  }
+          String classId, String academyId) =>
+      liveQuery(DataTopics.queries,
+          () => _queries('/queries?classId=${Uri.encodeComponent(classId)}'),
+          pollEvery: const Duration(minutes: 1));
 
   Stream<List<StudentQuery>> watchQueriesForTeacher(
-      String teacherId, String academyId) {
-    return _db
-        .collection('student_queries')
-        .where('academy_id', isEqualTo: academyId)
-        .where('teacher_id', isEqualTo: teacherId)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => StudentQuery.fromMap(d.id, d.data()))
-            .toList());
-  }
+          String teacherId, String academyId) =>
+      liveQuery(
+          DataTopics.queries,
+          () =>
+              _queries('/queries?teacherId=${Uri.encodeComponent(teacherId)}'),
+          pollEvery: const Duration(minutes: 1));
 }

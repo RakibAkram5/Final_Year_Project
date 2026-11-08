@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "vercel_web",
+  "functions": {
+    "api/v2/[...path].js": {
+      "memory": 1024,
+      "maxDuration": 30,
+      "includeFiles": "{taleemplus_backend/prisma/**,taleemplus_backend/generated/**,node_modules/@prisma/client/**}"
+    },
+    "api/v1/[...path].js": {
+      "memory": 1024,
+      "maxDuration": 30,
+      "includeFiles": "{taleemplus_backend/prisma/**,taleemplus_backend/generated/**,node_modules/@prisma/client/**}"
+    },
+    "api/health.js": {
+      "memory": 512,
+      "maxDuration": 15,
+      "includeFiles": "{taleemplus_backend/generated/**,node_modules/@prisma/client/**}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    }
+  ]
+}

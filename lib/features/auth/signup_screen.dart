@@ -98,7 +98,11 @@ class _SignupScreenState extends State<SignupScreen>
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isSearchingAcademy = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Could not verify academy code: $e'),
+          backgroundColor: AppColors.danger));
     }
   }
 

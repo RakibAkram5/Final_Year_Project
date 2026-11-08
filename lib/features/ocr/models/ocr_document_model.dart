@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class OcrDocumentModel {
   final String id;
   final String title;
@@ -18,19 +16,27 @@ class OcrDocumentModel {
   });
 
   // Firestore se data map mein convert karne ke liye helper
+  static DateTime _parseDate(dynamic val) {
+    if (val == null) return DateTime.now();
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    return DateTime.now();
+  }
+
   factory OcrDocumentModel.fromMap(
       Map<String, dynamic> map, String documentId) {
-    final ts = map['created_at'];
+    final rawTs = map['created_at'] ?? map['createdAt'];
     return OcrDocumentModel(
-      id: documentId,
+      id: documentId.isNotEmpty ? documentId : (map['id'] ?? '').toString(),
       title: map['title'] ?? '',
-      extractedText: map['extracted_text'] ?? '',
-      createdByUid: map['created_by_uid'] ?? '',
-      createdByName: map['created_by_name'] ?? '',
-      // `created_at` is written via FieldValue.serverTimestamp(), so the
-      // first snapshot of a pending local write has it as null before the
-      // server round-trip resolves — fall back instead of crashing.
-      createdAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
+      extractedText: map['extracted_text'] ?? map['extractedText'] ?? '',
+      createdByUid: map['created_by_uid'] ?? map['createdById'] ?? '',
+      createdByName: map['created_by_name'] ?? map['createdByName'] ?? '',
+      createdAt: _parseDate(rawTs),
     );
   }
 
@@ -41,7 +47,7 @@ class OcrDocumentModel {
       'extracted_text': extractedText,
       'created_by_uid': createdByUid,
       'created_by_name': createdByName,
-      'created_at': FieldValue.serverTimestamp(),
+      'created_at': DateTime.now().toUtc().toIso8601String(),
     };
   }
 

@@ -15,28 +15,27 @@ class FeeChallanRepository {
       'examFee': challan.examFee,
       'transportFee': challan.transportFee,
       'fine': challan.fine,
-      'dueDate': challan.dueDate.toIso8601String(),
+      'dueDate': ApiClient.dateOnly(challan.dueDate),
       'billingPeriod': challan.billingPeriod,
     });
   }
 
+  /// Throws on network/authorization errors so screens can show them
+  /// instead of an misleading empty state.
   Future<List<FeeChallanModel>> getForStudent(
       String studentId, String academyId) async {
-    try {
-      final res = await _api.get('/fees/challans/student/$studentId');
-      final list = res as List;
-      return list
-          .map((item) => FeeChallanModel.fromMap(item['id'] ?? '', item))
-          .toList();
-    } catch (_) {
-      return [];
-    }
+    final res = await _api.get('/fees/challans/student/$studentId');
+    return (res as List)
+        .map((item) => FeeChallanModel.fromMap(
+            (item['id'] ?? '').toString(), Map<String, dynamic>.from(item)))
+        .toList();
   }
 
   Future<List<FeeChallanModel>> getAll(String academyId) async {
     final response = await _api.get('/fees/challans');
     return (response as List)
-        .map((item) => FeeChallanModel.fromMap(item['id'] ?? '', item))
+        .map((item) => FeeChallanModel.fromMap(
+            (item['id'] ?? '').toString(), Map<String, dynamic>.from(item)))
         .toList();
   }
 
@@ -44,13 +43,23 @@ class FeeChallanRepository {
       String studentId, String academyId,
       {String? month}) async {
     final list = await getForStudent(studentId, academyId);
+    return _latestMatching(list, month);
+  }
+
+  FeeChallanModel? _latestMatching(List<FeeChallanModel> list, String? month) {
     if (list.isEmpty) return null;
-    if (month == null || month.isEmpty) return list.first;
+    final sorted = [...list]..sort((a, b) => b.dueDate.compareTo(a.dueDate));
+    if (month == null || month.isEmpty) return sorted.first;
     final target = month.contains('-')
         ? month
         : '${DateTime.now().year}-${_monthNumber(month)}';
-    final matches = list.where((challan) => challan.billingPeriod == target);
-    return matches.isEmpty ? null : matches.first;
+    for (final challan in sorted) {
+      final period = challan.billingPeriod.isNotEmpty
+          ? challan.billingPeriod
+          : '${challan.dueDate.year}-${challan.dueDate.month.toString().padLeft(2, '0')}';
+      if (period == target) return challan;
+    }
+    return null;
   }
 
   String _monthNumber(String month) {
@@ -75,16 +84,23 @@ class FeeChallanRepository {
   Future<Map<String, FeeChallanModel?>> getLatestForStudents(
       List<String> studentIds, String academyId,
       {String? month}) async {
-    final result = <String, FeeChallanModel?>{};
-    for (final id in studentIds) {
-      result[id] = await getLatestForStudent(id, academyId, month: month);
+    // Admin-only screen: one academy-wide request instead of one per student.
+    final all = await getAll(academyId);
+    final byStudent = <String, List<FeeChallanModel>>{};
+    for (final challan in all) {
+      byStudent.putIfAbsent(challan.studentId, () => []).add(challan);
     }
-    return result;
+    return {
+      for (final id in studentIds)
+        id: _latestMatching(byStudent[id] ?? const [], month),
+    };
   }
 
   Future<void> updateStatus(String id, String status) async {
-    if (status.toLowerCase() == 'paid') {
-      await _api.put('/fees/challans/$id/pay', {});
+    if (status.toLowerCase() != 'paid') {
+      throw UnsupportedError(
+          'Only marking a challan as paid is supported by the server.');
     }
+    await _api.put('/fees/challans/$id/pay', {});
   }
 }

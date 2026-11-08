@@ -542,9 +542,11 @@ class _RoleListTabState extends State<_RoleListTab>
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: AppColors.surfaceAlt,
-        title: const Text('Delete member?',
+        title: const Text('Deactivate member?',
             style: TextStyle(color: AppColors.textPrimary)),
-        content: Text('Remove ${m.fullName} permanently?',
+        content: Text(
+            '${m.fullName} will no longer be able to sign in. Their '
+            'attendance, fee and marks history is kept.',
             style: const TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(
@@ -554,8 +556,8 @@ class _RoleListTabState extends State<_RoleListTab>
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx, true),
-            child:
-                const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child: const Text('Deactivate',
+                style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -567,7 +569,7 @@ class _RoleListTabState extends State<_RoleListTab>
           await ctx.read<MemberProvider>().removeMember(m.id, user.uid);
           if (ctx.mounted) {
             ScaffoldMessenger.of(ctx).showSnackBar(
-              SnackBar(content: Text('${m.fullName} removed')),
+              SnackBar(content: Text('${m.fullName} deactivated')),
             );
           }
         } catch (e) {
@@ -777,11 +779,20 @@ class _EditMemberSheetState extends State<_EditMemberSheet> {
     final admin = Provider.of<AuthProvider>(context, listen: false).currentUser;
 
     if (widget.member.role == 'student' && admin != null) {
-      final taken = await AuthService().isRollNumberTaken(
-        admin.uid,
-        _rollNumberCtrl.text,
-        excludeUid: widget.member.id,
-      );
+      final bool taken;
+      try {
+        taken = await AuthService().isRollNumberTaken(
+          admin.uid,
+          _rollNumberCtrl.text,
+          excludeUid: widget.member.id,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Could not verify roll number: $e'),
+            backgroundColor: AppColors.danger));
+        return;
+      }
       if (taken) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -977,10 +988,89 @@ class _EditMemberSheetState extends State<_EditMemberSheet> {
                 icon: Icons.check_rounded,
                 loading: _saving,
                 onPressed: _save),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: _saving ? null : _resetPassword,
+              icon: const Icon(Icons.lock_reset_rounded,
+                  color: AppColors.textSecondary),
+              label: const Text('Reset password',
+                  style: TextStyle(color: AppColors.textSecondary)),
+            ),
           ],
         ),
       ),
     );
+  }
+}
+
+extension on _EditMemberSheetState {
+  /// Lets the admin set a new password when a member is locked out and has
+  /// no security question. The member is signed out on all devices.
+  Future<void> _resetPassword() async {
+    final ctrl = TextEditingController();
+    String? error;
+    final newPassword = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surfaceAlt,
+          title: Text('Reset password for ${widget.member.fullName}?',
+              style: const TextStyle(color: AppColors.textPrimary)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LabeledField(
+                  label: 'New Password',
+                  hint: '',
+                  controller: ctrl,
+                  obscure: true),
+              if (error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(error!,
+                      style: const TextStyle(
+                          color: AppColors.danger, fontSize: 12)),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel',
+                  style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            TextButton(
+              onPressed: () {
+                final problem = Validators.password(ctrl.text);
+                if (problem != null) {
+                  setDialogState(() => error = problem);
+                  return;
+                }
+                Navigator.pop(ctx, ctrl.text);
+              },
+              child: const Text('RESET',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: AppColors.accent)),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
+    if (newPassword == null || !mounted) return;
+    try {
+      await AuthService().adminResetPassword(widget.member.id, newPassword);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Password reset for ${widget.member.fullName}. '
+              'Share it with them privately.'),
+          backgroundColor: AppColors.success));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to reset password: $e'),
+          backgroundColor: AppColors.danger));
+    }
   }
 }
 
@@ -1069,8 +1159,16 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
     // Roll number must be unique academy-wide before we create the account
     // (avoids an orphaned auth user on collision).
     if (widget.role == 'student') {
-      final taken =
-          await auth.isRollNumberTaken(admin.uid, _rollNumberCtrl.text);
+      final bool taken;
+      try {
+        taken = await auth.isRollNumberTaken(admin.uid, _rollNumberCtrl.text);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Could not verify roll number: $e'),
+            backgroundColor: AppColors.danger));
+        return;
+      }
       if (taken) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1085,9 +1183,11 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
 
     setState(() => _saving = true);
 
+    AppUser? newUser;
+    final followUpErrors = <String>[];
     try {
-      // 1. Create account in Firebase directly as 'active' and tie to current admin academy
-      final newUser = await auth.adminCreateUser(
+      // 1. Create the active account in the admin's academy (server-scoped).
+      newUser = await auth.adminCreateUser(
         fullName: _nameCtrl.text,
         email: _emailCtrl.text,
         phoneNumber: _phoneCtrl.text,
@@ -1101,36 +1201,6 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
             widget.role == 'teacher' ? _selectedSectionKeys.toList() : null,
         rollNumber: widget.role == 'student' ? _rollNumberCtrl.text : null,
       );
-
-      // 2. Student: enroll into the chosen class+section roster.
-      if (widget.role == 'student' && _selectedSection != null) {
-        final section = _selectedSection!;
-        final currentStudents = await auth.getProfilesByIds(section.studentIds);
-        if (mounted) {
-          await context.read<ClassSectionProvider>().updateEnrollment(
-            section: section,
-            students: [...currentStudents, newUser],
-          );
-        }
-      }
-
-      // 2b. Parent: link the selected children (existing linkedChildren
-      // backend, see AuthService.addLinkedChild).
-      if (widget.role == 'parent' && _selectedChildren.isNotEmpty) {
-        for (final child in _selectedChildren) {
-          await auth.addLinkedChild(newUser.uid, child.uid);
-        }
-      }
-
-      // 3. Refresh counts in Provider
-      if (mounted) {
-        await context.read<MemberProvider>().load(admin.uid);
-        if (!mounted) return;
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${_nameCtrl.text} added with active portal')),
-        );
-      }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
@@ -1140,7 +1210,57 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
               backgroundColor: AppColors.danger),
         );
       }
+      return;
     }
+
+    // The account now exists. Follow-up steps are reported separately so a
+    // failure here is never shown as "failed to add user".
+    final created = newUser;
+
+    // 2. Student: enroll into the chosen class+section (single-student
+    // enroll; avoids rewriting the roster from a stale copy).
+    if (widget.role == 'student' && _selectedSection != null && mounted) {
+      try {
+        await context.read<ClassSectionProvider>().enrollStudent(
+              section: _selectedSection!,
+              studentId: created.uid,
+              rollNumber: _rollNumberCtrl.text,
+            );
+      } catch (e) {
+        followUpErrors.add('section enrollment failed ($e)');
+      }
+    }
+
+    // 2b. Parent: link the selected children.
+    if (widget.role == 'parent') {
+      for (final child in _selectedChildren) {
+        try {
+          await auth.addLinkedChild(created.uid, child.uid);
+        } catch (e) {
+          followUpErrors.add('linking ${child.fullName} failed ($e)');
+        }
+      }
+    }
+
+    // 3. Refresh the member list.
+    if (!mounted) return;
+    try {
+      await context.read<MemberProvider>().load(admin.uid);
+    } catch (_) {
+      // The list refresh failing does not undo the creation.
+    }
+    if (!mounted) return;
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      followUpErrors.isEmpty
+          ? SnackBar(
+              content: Text('${_nameCtrl.text} added with active portal'))
+          : SnackBar(
+              content: Text('${_nameCtrl.text} was created, but '
+                  '${followUpErrors.join('; ')}. Retry from Edit.'),
+              backgroundColor: AppColors.warning,
+              duration: const Duration(seconds: 8)),
+    );
   }
 
   @override

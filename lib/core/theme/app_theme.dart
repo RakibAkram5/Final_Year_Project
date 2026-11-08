@@ -5,7 +5,9 @@ import 'theme_extensions.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get dark {
+  static final ThemeData dark = _buildDark();
+
+  static ThemeData _buildDark() {
     final base = ThemeData.dark(useMaterial3: true);
     return base.copyWith(
       extensions: [AppColorsExtension.dark],
@@ -67,7 +69,9 @@ class AppTheme {
     );
   }
 
-  static ThemeData get light {
+  static final ThemeData light = _buildLight();
+
+  static ThemeData _buildLight() {
     final base = ThemeData.light(useMaterial3: true);
     return base.copyWith(
       extensions: [AppColorsExtension.light],
