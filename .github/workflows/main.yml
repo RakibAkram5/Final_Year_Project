@@ -99,10 +99,13 @@ jobs:
           flutter build apk --release \
             --dart-define=API_BASE_URL="$API_BASE_URL"
           cp build/app/outputs/flutter-apk/app-release.apk dist/app-release.apk
-          # Android App Bundle (Google Play distribution).
+          # Android App Bundle (Google Play distribution). The bundle filename
+          # follows Gradle's archivesName (see android/app/build.gradle.kts), so
+          # resolve it by glob rather than assuming app-release.aab.
           flutter build appbundle --release \
             --dart-define=API_BASE_URL="$API_BASE_URL"
-          cp build/app/outputs/bundle/release/app-release.aab dist/app-release.aab
+          aab=$(ls build/app/outputs/bundle/release/*.aab | head -1)
+          cp "$aab" dist/app-release.aab
           ls -la dist
 
       - name: Upload Android Artifacts
