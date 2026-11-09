@@ -145,6 +145,8 @@ model User {
   uploadedFiles          StoredFile[]             @relation("FileUploader")
   createdAssignments     Assignment[]             @relation("AssignmentCreator")
   assignmentSubmissions  AssignmentSubmission[]   @relation("AssignmentStudent")
+  parentLinkRequests     ParentLinkRequest[]      @relation("LinkRequestParent")
+  studentLinkRequests    ParentLinkRequest[]      @relation("LinkRequestStudent")
 
   @@index([academyId, role])
   @@index([academyId, accountStatus, role])
@@ -162,6 +164,39 @@ model ParentStudent {
 
   @@unique([parentId, studentId])
   @@map("parent_student_relationships")
+}
+
+// A parent's request to be linked to an existing student. A parent submits the
+// child's identifying details; an academy admin verifies and approves, which
+// creates the ParentStudent link. This keeps self-service linking from exposing
+// any student's data to an unrelated parent (see parentPortal security fix).
+enum LinkRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ParentLinkRequest {
+  id          String            @id @default(uuid())
+  academyId   String
+  parentId    String
+  studentId   String? // the matched student, resolved by the backend/admin
+  childName   String
+  childEmail  String?
+  rollNumber  String?
+  status      LinkRequestStatus @default(PENDING)
+  note        String? // admin's reason on reject, or a system note
+  decidedById String? // admin user id who approved/rejected
+  decidedAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  parent  User  @relation("LinkRequestParent", fields: [parentId], references: [id], onDelete: Cascade)
+  student User? @relation("LinkRequestStudent", fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@index([academyId, status])
+  @@index([parentId, status])
+  @@map("parent_link_requests")
 }
 
 model Class {

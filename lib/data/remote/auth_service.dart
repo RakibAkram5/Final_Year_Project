@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../models/app_user.dart';
+import '../models/parent_link_request.dart';
 import 'api_client.dart';
 import 'live_query.dart';
 
@@ -274,6 +275,55 @@ class AuthService {
       await _cacheUser(_currentUser!);
     }
     DataChanges.notify(DataTopics.users);
+  }
+
+  // --- Parent → child link requests (admin-approved) ------------------------
+
+  /// Parent submits a request to be linked to an existing child. The backend
+  /// verifies and an admin approves; this never links directly.
+  Future<ParentLinkRequest> submitLinkRequest({
+    required String childName,
+    String? childEmail,
+    String? rollNumber,
+  }) async {
+    final res = await _api.post('/users/link-requests', {
+      'childName': childName,
+      if (childEmail != null && childEmail.isNotEmpty) 'childEmail': childEmail,
+      if (rollNumber != null && rollNumber.isNotEmpty) 'rollNumber': rollNumber,
+    });
+    return ParentLinkRequest.fromJson(Map<String, dynamic>.from(res as Map));
+  }
+
+  /// The signed-in parent's own link requests and their statuses.
+  Future<List<ParentLinkRequest>> getMyLinkRequests() async {
+    final res = await _api.get('/users/link-requests/mine');
+    return (res as List)
+        .map((e) => ParentLinkRequest.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  /// Admin: link requests for the academy, filtered by [status] (default PENDING).
+  Future<List<ParentLinkRequest>> getLinkRequests({String status = 'PENDING'}) async {
+    final res = await _api.get('/users/link-requests?status=$status');
+    return (res as List)
+        .map((e) => ParentLinkRequest.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  /// Admin: approve a request, linking the parent to [studentId] (or the
+  /// backend's auto-matched student when [studentId] is omitted).
+  Future<void> approveLinkRequest(String requestId, {String? studentId}) async {
+    await _api.post('/users/link-requests/$requestId/approve', {
+      if (studentId != null && studentId.isNotEmpty) 'studentId': studentId,
+    });
+    DataChanges.notify(DataTopics.users);
+  }
+
+  /// Admin: reject a request with an optional [note] explaining why.
+  Future<void> rejectLinkRequest(String requestId, {String? note}) async {
+    await _api.post('/users/link-requests/$requestId/reject', {
+      if (note != null && note.isNotEmpty) 'note': note,
+    });
   }
 
   /// Returns the profile for [uid], or null if it does not exist or is not

@@ -25,6 +25,7 @@ import '../../widgets/security_question_dialog.dart';
 import '../../core/theme/theme_extensions.dart';
 import 'user_management_screen.dart';
 import 'approval_requests_screen.dart';
+import 'parent_link_requests_screen.dart';
 import 'fee_ledger_screen.dart';
 import 'announcements_screen.dart';
 import 'class_management_screen.dart';
@@ -598,6 +599,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         context,
                         MaterialPageRoute(
                             builder: (_) => const ApprovalRequestsScreen())),
+                  ),
+                  _gridTile(
+                    'Parent Link Requests',
+                    'Review & approve child links',
+                    Icons.family_restroom_rounded,
+                    () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const ParentLinkRequestsScreen())),
                   ),
                 ]),
                 _gridSection('ACADEMICS', [

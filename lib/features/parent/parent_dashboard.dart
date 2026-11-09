@@ -26,6 +26,7 @@ import 'screens/all_challans_screen.dart';
 import 'screens/academy_contact_screen.dart'; // NEW
 import '../../widgets/academy_relink_dialog.dart';
 import '../../widgets/security_question_dialog.dart';
+import 'link_child_request_screen.dart';
 
 class ParentDashboard extends StatelessWidget {
   const ParentDashboard({super.key});
@@ -283,6 +284,24 @@ class ParentDashboard extends StatelessWidget {
               },
             ),
             const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const LinkChildRequestScreen()),
+              ),
+              icon: const Icon(Icons.person_add_alt_1_rounded),
+              label: const Text("Link a Child"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () => _showChangePasswordDialog(context),
               icon: const Icon(Icons.lock_reset_rounded),
