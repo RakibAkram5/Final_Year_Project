@@ -24,7 +24,7 @@ import '../../features/teacher/screens/my_timetable_screen.dart' as teacher_tt;
 import '../../features/quiz/screens/teacher_quiz_list_screen.dart';
 import '../../features/quiz/screens/monthly_report_screen.dart';
 import '../../features/shared/view_announcements_screen.dart';
-import '../../features/ocr/screens/ocr_scanner_screen.dart';
+import '../../features/ocr/screens/ocr_capture_screen.dart';
 import '../../features/ocr/screens/ocr_history_screen.dart';
 
 import '../../features/student/screens/my_classroom_hub.dart';
@@ -228,7 +228,7 @@ List<WebNavSection> buildTeacherNavSections(
           id: 'ocr_scanner',
           label: 'OCR Scanner',
           icon: Icons.document_scanner_rounded,
-          onTap: () => push(const OcrScannerScreen())),
+          onTap: () => push(const OcrCaptureScreen())),
       WebNavItem(
           id: 'ocr_history',
           label: 'OCR History',

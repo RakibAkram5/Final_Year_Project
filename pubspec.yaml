@@ -26,6 +26,9 @@ dependencies:
   # OCR
   google_mlkit_text_recognition: ^0.13.0
   image_picker: ^1.1.2
+  # Web OCR engine (Tesseract.js) is reached through JS interop; `web` provides
+  # the browser bindings. Harmless on mobile (only imported in the web engine).
+  web: ^1.1.0
 
   # Machine learning runs in ml_service/ (Python, FastAPI) and is reached
   # through the backend's /admin/ml endpoints; nothing runs on-device.
