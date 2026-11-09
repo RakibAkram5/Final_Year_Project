@@ -368,6 +368,10 @@ model Quiz {
   totalMarks   Int
   testDate     DateTime?
   instructions String?
+  // Examination-paper layout + teacher answer key (sections, attempt-any
+  // counts, exam metadata and short/long model answers). Nullable so legacy
+  // quizzes and non-exam quizzes are unaffected.
+  paperMeta    Json?
   createdById  String
   createdAt    DateTime  @default(now())
 

@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const aiQuestionService = require('../services/aiQuestionService');
 const { canReadStudent } = require('../utils/studentAccess');
 const { forbidden, notFound } = require('../utils/apiError');
 const { sendSuccess } = require('../utils/response');
@@ -32,6 +33,16 @@ const formatQuestion = (question, includeAnswers) => ({
     : {})
 });
 
+// The paperMeta JSON carries the teacher answer key (short/long model answers
+// under `answers`). Students must never receive it, so strip that key unless
+// the caller is allowed to see answers.
+const sanitizePaperMeta = (paperMeta, includeAnswers) => {
+  if (!paperMeta || typeof paperMeta !== 'object') return paperMeta || null;
+  if (includeAnswers) return paperMeta;
+  const { answers, ...safe } = paperMeta;
+  return safe;
+};
+
 const formatQuiz = (quiz, includeAnswers) => ({
   id: quiz.id,
   academy_id: quiz.academyId,
@@ -46,6 +57,7 @@ const formatQuiz = (quiz, includeAnswers) => ({
   total_marks: quiz.totalMarks,
   test_date: toIso(quiz.testDate),
   instructions: quiz.instructions || '',
+  paper_meta: sanitizePaperMeta(quiz.paperMeta, includeAnswers),
   created_by_uid: quiz.createdById,
   created_by_name: quiz.createdBy?.fullName || '',
   created_at: toIso(quiz.createdAt),
@@ -53,6 +65,11 @@ const formatQuiz = (quiz, includeAnswers) => ({
     formatQuestion(question, includeAnswers)
   )
 });
+
+// Accepts the client paperMeta only when it is a plain object, guarding the
+// JSON column against arrays/strings/garbage.
+const normalizePaperMeta = (value) =>
+  value && typeof value === 'object' && !Array.isArray(value) ? value : null;
 
 const formatMark = (mark) => ({
   id: mark.id,
@@ -179,7 +196,8 @@ const createQuiz = async (req, res, next) => {
       session,
       chapter,
       difficulty,
-      testDate
+      testDate,
+      paperMeta
     } = req.body;
 
     if (!classId || !title || !subject || !totalMarks || !Array.isArray(questions)) {
@@ -204,6 +222,7 @@ const createQuiz = async (req, res, next) => {
         totalMarks: parseInt(totalMarks, 10),
         testDate: testDate ? new Date(testDate) : null,
         instructions: instructions || null,
+        paperMeta: normalizePaperMeta(paperMeta),
         createdById: req.user.id,
         questions: {
           create: questions.map((question) => ({
@@ -226,6 +245,55 @@ const createQuiz = async (req, res, next) => {
       message: 'Quiz created successfully.'
     });
   } catch (err) {
+    next(err);
+  }
+};
+
+// Optional AI question generation. Returns 501 (not an error) when no AI key
+// is configured, so the Flutter client transparently falls back to its offline
+// generator. Only returns raw question *items*; the client assembles the paper
+// (sections, marks, answer key) exactly as it does for offline generation.
+const aiGenerate = async (req, res, next) => {
+  try {
+    if (!aiQuestionService.isConfigured()) {
+      return res.status(501).json({
+        success: false,
+        code: 'AI_NOT_CONFIGURED',
+        message: 'AI generation is not enabled on this server.'
+      });
+    }
+    const { subject } = req.body || {};
+    if (!subject || !String(subject).trim()) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'subject is required.' });
+    }
+    const items = await aiQuestionService.generateItems({
+      subject: String(subject).trim(),
+      classLabel: String(req.body.classLabel || '').trim(),
+      chapters: Array.isArray(req.body.chapters)
+        ? req.body.chapters.map((c) => String(c))
+        : [],
+      difficulty: req.body.difficulty || 'Medium',
+      mcqCount: Number(req.body.mcqCount) || 10,
+      shortCount: Number(req.body.shortCount) || 8,
+      longCount: Number(req.body.longCount) || 3
+    });
+    if (!items.length) {
+      return res.status(502).json({
+        success: false,
+        code: 'AI_EMPTY',
+        message: 'The AI returned no usable questions. Try again or use the '
+          + 'offline generator.'
+      });
+    }
+    return sendSuccess(res, { items });
+  } catch (err) {
+    if (err.status) {
+      return res
+        .status(err.status)
+        .json({ success: false, code: 'AI_ERROR', message: err.message });
+    }
     next(err);
   }
 };
@@ -269,6 +337,9 @@ const updateQuiz = async (req, res, next) => {
       }
     }
     if (req.body.totalMarks !== undefined) data.totalMarks = parseInt(req.body.totalMarks, 10);
+    if (req.body.paperMeta !== undefined) {
+      data.paperMeta = normalizePaperMeta(req.body.paperMeta);
+    }
     if (req.body.testDate !== undefined) {
       data.testDate = req.body.testDate ? new Date(req.body.testDate) : null;
     }
@@ -521,6 +592,7 @@ const deleteMark = async (req, res, next) => {
 module.exports = {
   getQuizzes,
   getQuizById,
+  aiGenerate,
   createQuiz,
   updateQuiz,
   updateQuizQuestions,

@@ -139,6 +139,7 @@ class LabeledField extends StatelessWidget {
   final bool obscure;
   final Widget? suffix;
   final TextInputAction textInputAction;
+  final ValueChanged<String>? onChanged;
 
   const LabeledField({
     super.key,
@@ -150,6 +151,7 @@ class LabeledField extends StatelessWidget {
     this.obscure = false,
     this.suffix,
     this.textInputAction = TextInputAction.next,
+    this.onChanged,
   });
 
   @override
@@ -172,6 +174,7 @@ class LabeledField extends StatelessWidget {
           keyboardType: keyboardType,
           obscureText: obscure,
           textInputAction: textInputAction,
+          onChanged: onChanged,
           style: TextStyle(color: context.appColors.textPrimary),
           decoration: InputDecoration(
             hintText: hint,

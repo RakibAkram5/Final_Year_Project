@@ -31,6 +31,23 @@ def test_status_does_not_claim_training_when_database_is_unconfigured(monkeypatc
     assert response.json()["performance"]["status"] == "NOT_READY"
 
 
+def test_monitor_requires_authentication(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "INTERNAL_TOKEN", "internal-test-token-1234567890123456")
+    monkeypatch.setattr(config, "ARTIFACT_DIR", tmp_path)
+    response = _request("POST", "/models/monitor")
+    assert response.status_code == 401
+
+
+def test_monitor_accepts_authorized_trigger(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "INTERNAL_TOKEN", "internal-test-token-1234567890123456")
+    monkeypatch.setattr(config, "DATABASE_URL", "")  # sweep is a safe no-op without a DB
+    monkeypatch.setattr(config, "ARTIFACT_DIR", tmp_path)
+    response = _request("POST", "/models/monitor",
+                        headers={"Authorization": "Bearer internal-test-token-1234567890123456"})
+    assert response.status_code == 202
+    assert response.json()["status"] == "MONITORING"
+
+
 def test_prediction_refuses_unavailable_model(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "INTERNAL_TOKEN", "internal-test-token-1234567890123456")
     monkeypatch.setattr(config, "ARTIFACT_DIR", tmp_path)

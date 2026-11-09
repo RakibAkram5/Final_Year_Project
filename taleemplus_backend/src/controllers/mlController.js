@@ -99,6 +99,7 @@ const handle = (path, method = 'GET') => async (req, res, next) => {
 
 module.exports = {
   status: handle('/models/status'),
+  dashboard: handle('/models/dashboard'),
   metrics: handle('/models/metrics'),
   history: handle('/models/history'),
   trainFee: handle('/models/train/fee-risk', 'POST'),

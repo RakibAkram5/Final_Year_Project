@@ -9,6 +9,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
+    "seed:demo": "node prisma/seed-demo-academy.js",
+    "cleanup:demo": "node prisma/cleanup-demo-academy.js",
     "migrate:export": "node scripts/migration/exportFirestore.js",
     "migrate:identity": "node scripts/migration/runIdentityImport.js",
     "migrate:verify": "node scripts/migration/verifyIdentity.js",

@@ -18,6 +18,7 @@ const limitTraining = (req, res, next) => {
   next();
 };
 router.get('/status', controller.status);
+router.get('/dashboard', controller.dashboard);
 router.get('/metrics', controller.metrics);
 router.get('/history', controller.history);
 router.post('/predict/fee-risk', limitTraining, controller.predictFee);

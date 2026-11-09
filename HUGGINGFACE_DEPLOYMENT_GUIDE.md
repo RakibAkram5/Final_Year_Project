@@ -24,7 +24,7 @@ deploying; they can change.
 4. Space → Settings → *Variables and secrets* → add **secrets**:
    `ML_INTERNAL_TOKEN`, `DATABASE_URL` (read-only role, see `ML_TRAINING_GUIDE.md` §5),
    `HF_TOKEN`, `HF_ARTIFACT_REPO`.
-
+[remote](lib/data/remote)
 ## Deploy
 
 ```powershell

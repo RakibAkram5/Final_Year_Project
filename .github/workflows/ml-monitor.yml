@@ -1,0 +1,71 @@
+name: ML Monitor & Retrain
+
+# Best-effort scheduled monitoring for the Render-hosted ML service.
+# NOTE: GitHub's cron is best-effort — runs can be delayed or skipped under load,
+# so this does NOT guarantee 24/7 uptime or exact timing. It wakes the (free,
+# sleeping) Render service and asks it to run an ELIGIBILITY-GATED sweep that
+# trains only models meeting their thresholds — it never blindly forces training.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"      # every ~6h (aligned with ML_CHECK_INTERVAL_HOURS)
+  workflow_dispatch:
+    inputs:
+      run_monitor:
+        description: "Run the eligibility-based monitoring sweep (trains only ready models)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# Never let two monitoring runs overlap.
+concurrency:
+  group: ml-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Health check (wake Render, tolerate cold start)
+        env:
+          ML_SERVICE_URL: ${{ secrets.ML_SERVICE_URL }}
+        run: |
+          if [ -z "${ML_SERVICE_URL}" ]; then
+            echo "::error::ML_SERVICE_URL repository secret is not set"; exit 1
+          fi
+          base="${ML_SERVICE_URL%/}"
+          ok=0
+          for i in $(seq 1 6); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 70 "${base}/health" || echo "000")
+            echo "health attempt ${i} -> HTTP ${code}"
+            if [ "${code}" = "200" ]; then ok=1; break; fi
+            sleep 20
+          done
+          if [ "${ok}" != "1" ]; then
+            echo "::error::ML service did not pass health check after cold-start retries"; exit 1
+          fi
+
+      - name: Authorized monitoring sweep (eligibility-gated)
+        if: ${{ github.event_name == 'schedule' || inputs.run_monitor }}
+        env:
+          ML_SERVICE_URL: ${{ secrets.ML_SERVICE_URL }}
+          ML_INTERNAL_TOKEN: ${{ secrets.ML_INTERNAL_TOKEN }}
+        run: |
+          if [ -z "${ML_INTERNAL_TOKEN}" ]; then
+            echo "::error::ML_INTERNAL_TOKEN repository secret is not set"; exit 1
+          fi
+          base="${ML_SERVICE_URL%/}"
+          # Token is sent only as a header; it is never echoed. GitHub also masks
+          # secret values that appear in logs.
+          http=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 \
+            -X POST "${base}/models/monitor" \
+            -H "Authorization: Bearer ${ML_INTERNAL_TOKEN}" \
+            -H "Content-Type: application/json" || echo "000")
+          echo "monitor trigger -> HTTP ${http}"
+          if [ "${http}" -ge 400 ] || [ "${http}" = "000" ]; then
+            echo "::error::Monitoring trigger failed (HTTP ${http})"; exit 1
+          fi
+          echo "Accepted: the service will train only models that meet eligibility thresholds."

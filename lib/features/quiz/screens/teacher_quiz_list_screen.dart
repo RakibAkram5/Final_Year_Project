@@ -14,7 +14,7 @@ import '../../../widgets/web/web_nav_items.dart';
 import '../../../widgets/web/web_shell.dart';
 import '../../../data/models/quiz_model.dart';
 import '../../../data/remote/pdf_generator_service.dart';
-import 'create_quiz_screen.dart';
+import 'exam_paper_generator_screen.dart';
 import 'mark_entry_screen.dart';
 import 'ai_paper_grader_screen.dart';
 
@@ -70,9 +70,8 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CreateQuizScreen(
+                  builder: (_) => ExamPaperGeneratorScreen(
                     classId: _selectedClassId!,
-                    isAiGen: true,
                   ),
                 ),
               ),
@@ -116,9 +115,8 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => CreateQuizScreen(
+                      builder: (_) => ExamPaperGeneratorScreen(
                         classId: _selectedClassId!,
-                        isAiGen: true,
                       ),
                     ),
                   ),

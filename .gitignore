@@ -65,3 +65,10 @@ ml_service/artifacts/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Demo academy credentials (fictional, do not commit)
+DEMO_LOGIN_CREDENTIALS.md
+**/DEMO_LOGIN_CREDENTIALS.md
+
+# Generated release bundle (build artifacts)
+/release/

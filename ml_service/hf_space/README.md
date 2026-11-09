@@ -22,7 +22,8 @@ Configure these **Space secrets** (Settings → Variables and secrets):
 |---|---|
 | `ML_INTERNAL_TOKEN` | ≥ 32 random characters; the same value as the backend's `ML_INTERNAL_TOKEN` |
 | `DATABASE_URL` | **read-only** PostgreSQL connection string (Neon role with SELECT only) |
-| `HF_TOKEN` | Hugging Face write token used to persist trained models |
-| `HF_ARTIFACT_REPO` | private model repo for artifacts, e.g. `your-name/taleemplus-ml-artifacts` |
+| `HF_TOKEN` | Hugging Face **write** token used to persist trained models |
+| `HF_REPO_ID` | private repo for artifacts, e.g. `your-name/taleemplus-ml-artifacts` (legacy name `HF_ARTIFACT_REPO` still works) |
+| `HF_REPO_TYPE` | optional; `model` (default), `dataset`, or `space` |
 
 See `HUGGINGFACE_DEPLOYMENT_GUIDE.md` in the TaleemPlus repository.

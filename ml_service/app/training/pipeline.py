@@ -39,6 +39,22 @@ def _time_split(frame: pd.DataFrame, date_column: str):
     return frame[frame[date_column] < cutoff], frame[frame[date_column] >= cutoff]
 
 
+def _feature_stats(frame: pd.DataFrame, features: list[str]) -> dict:
+    """mean/std/missing per feature, stored in metadata for drift comparison."""
+    stats = {}
+    total = len(frame)
+    for name in features:
+        column = pd.to_numeric(frame[name], errors="coerce") if name in frame else pd.Series(dtype=float)
+        present = column.dropna()
+        stats[name] = {
+            "mean": float(present.mean()) if not present.empty else None,
+            "std": float(present.std(ddof=0)) if len(present) > 1 else 0.0,
+            "missing_fraction": round((total - len(present)) / total, 4) if total else 0.0,
+            "count": int(len(present)),
+        }
+    return stats
+
+
 def _atomic_json(path: Path, data: dict):
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, name = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
@@ -123,7 +139,7 @@ def train(model_name: str, rows: list[dict], artifact_root: Path, academy_key: s
     meta = {"version": version, "model": model_name, "algorithm": selected, "status": "VALIDATED",
             "trained_at": datetime.now(timezone.utc).isoformat(), "records": len(df), "features": features,
             "metrics": metric_payload, "schema_version": 1, "data_fingerprint": fingerprint,
-            "retrained": True}
+            "feature_stats": _feature_stats(df, features), "retrained": True}
     _atomic_json(directory / "metadata.json", meta)
     # Conservative production gate: require useful validation over a constant baseline.
     if model_name == "fee-risk":

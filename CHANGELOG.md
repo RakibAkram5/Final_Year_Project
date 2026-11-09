@@ -1,5 +1,58 @@
 # Changelog — TaleemPlus
 
+## [1.1.0] — 2026-11-09
+
+> Production release. Android (APK/AAB) and Web are built from this same source
+> by the tag-driven CI pipeline (`.github/workflows/main.yml`). Package ID
+> `com.taleemplus.app`; production API `https://taleemplus.vercel.app/api/v2`.
+
+### Added
+* **Professional exam-paper generator (AI Test Generator)**: produces genuine
+  Pakistani-academy examination papers — full header (academy, subject, class, exam
+  type, student/roll/section lines, time allowed, chapters, total marks, date,
+  signature), a **Section A MCQ table** (`No. | Question | A | B | C | D`),
+  roman-numbered short-question groups with "attempt any N (m×N=T)" rules, and a
+  **Part II** of long questions, rendered to A4 with page numbers, running headers and
+  a "Generated with TaleemPlus" footer. Generates a **separate teacher answer key**
+  (MCQ answers + short/long model answers / marking guidelines) that the student paper
+  never exposes. Dynamic configuration (exam type, time, chapters, counts, marks,
+  attempt-any, difficulty, language) with **live marks validation** that always prints
+  the computed total (fixes the reference paper's 20-vs-42 class of error). Hybrid
+  engine: offline curriculum bank (Computer Science / Mathematics / English) + scanned
+  or pasted source material, with an **optional** server LLM path that degrades
+  gracefully to offline when no key is configured. Preview, print, download paper,
+  download answer key, and save to examination history. Shared Flutter code serves both
+  the web and Android apps. New: `lib/logic/exam_paper_generator.dart`,
+  `lib/data/exam/curriculum_bank.dart`,
+  `lib/features/quiz/screens/exam_paper_generator_screen.dart`; bundled Noto Sans font
+  for full-Unicode PDFs; new `Quiz.paperMeta` JSON column (+ migration) persisting the
+  paper layout and answer key; optional `POST /quizzes/ai-generate` endpoint
+  (`AI_API_KEY`).
+* **Automated ML training lifecycle**: eligibility monitoring, configurable thresholds
+  (min samples, new-record retrain, class-imbalance guard), a 6h/daily scheduler with
+  startup catch-up, a shared lock preventing duplicate/concurrent training, and basic
+  feature-drift detection. New protected `POST /models/monitor` endpoint and
+  `GET /models/dashboard`.
+* **Hugging Face persistence hardening**: `HF_REPO_ID`/`HF_REPO_TYPE` env support,
+  upload/download retries with backoff, startup artifact **integrity verification**, and
+  "activate-only-after-successful-upload" (promotion reverts if the upload fails).
+* **Free deployment for the ML service**: Render Blueprint (`render.yaml`, native Python,
+  no Docker) + `.github/workflows/ml-monitor.yml` (eligibility-gated cron) + guides.
+  (HF Spaces compute became paid; HF Hub remains the free artifact store.)
+* **Node ML client**: cold-start-aware timeout (default 60s) + retry on 502/503/504/timeout.
+* **Demo academy seeder** (`prisma/seed-demo-academy.js` + cleanup): one isolated
+  "Bright Future Science Academy" with 100 students, 12 teachers, parents, classes,
+  timetable, fees, attendance and quizzes/marks — to exercise both ML models.
+* **Proprietary licensing docs**: `LICENSE`, `COPYRIGHT.md`, `OWNERSHIP.md`, `CONTRIBUTING.md`.
+
+### Security
+* **Discovered:** `taleemplus_backend/.env` (real DB URL + JWT/refresh secrets) was
+  committed in earlier history reachable from pushed branches. Rotation + optional history
+  purge required — see FINAL_SUBMISSION_REPORT.md. (No history was rewritten automatically.)
+
+### Tests
+* ML service: 53 passing (monitoring, scheduler, HF persistence with mocked hub, API).
+
 ## [1.0.1] — 2026-11-09
 
 ### Added

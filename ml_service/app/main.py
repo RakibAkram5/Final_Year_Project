@@ -15,16 +15,23 @@ from pydantic import BaseModel, Field
 
 from app import config
 from app.data.extractor import database_is_healthy, extract_fee_rows, extract_performance_rows
-from app.models import load_production
+from app.models import load_production, read_pointer
 from app.training.pipeline import InsufficientData, _atomic_json, train
-from app.training.scheduler import start_scheduler, stop_scheduler
+from app.training.scheduler import run_eligibility_check, start_scheduler, stop_scheduler
 from app import artifact_store
+from app import monitoring, state
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # Restore trained models persisted on the Hugging Face Hub (no-op when
-    # HF_ARTIFACT_REPO is not configured, e.g. locally).
+    # Restore trained models persisted on the Hugging Face Hub (no-op when the
+    # Hub repo/token are not configured, e.g. locally), then verify the restored
+    # production models are intact before serving.
     artifact_store.pull(config.ARTIFACT_DIR)
+    problems = artifact_store.verify_integrity(config.ARTIFACT_DIR)
+    if problems:
+        import logging
+        logging.getLogger("taleemplus.ml").warning(
+            "Artifact integrity issues after restore: %d affected model(s)", len(problems))
     start_scheduler()
     try:
         yield
@@ -33,9 +40,11 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="TaleemPlus ML Service", version="1.0.0", lifespan=lifespan)
-_training: set[str] = set()
-_training_errors: dict[str, str] = {}
-_training_lock = threading.Lock()
+# Shared with the scheduler so a manual train and a scheduled train never run the
+# same academy:model job at once (see app/state.py).
+_training = state.TRAINING_JOBS
+_training_errors = state.TRAINING_ERRORS
+_training_lock = state.TRAINING_LOCK
 
 
 class PredictRequest(BaseModel):
@@ -125,6 +134,46 @@ def models_history(academy_id: str):
     return {"history": [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]}
 
 
+_LIFECYCLE = {"PRODUCTION": "ACTIVE", "TRAINING": "TRAINING", "VALIDATED": "EVALUATING",
+              "READY_TO_TRAIN": "READY_TO_TRAIN", "INSUFFICIENT_DATA": "INSUFFICIENT_DATA",
+              "TRAINING_FAILED": "FAILED", "NOT_READY": "WAITING_FOR_DATA"}
+
+
+def _dashboard_model(label: str, model_name: str, extractor, min_attr: str, academy_id: str):
+    base = _status(model_name, academy_id)
+    base["lifecycle"] = _LIFECYCLE.get(base.get("status"), base.get("status"))
+    if config.DATABASE_URL:
+        try:
+            rows = extractor(config.DATABASE_URL, academy_id)
+            key = _academy_key(academy_id)
+            loaded = load_production(config.ARTIFACT_DIR, key, model_name)
+            last_records = loaded[1].get("records") if loaded else None
+            base["eligibility"] = monitoring.summarize(
+                model_name, rows, getattr(config, min_attr), last_records,
+                config.RETRAIN_NEW_RECORDS, config.MIN_MINORITY_CLASS_FRACTION)
+        except Exception:
+            base["eligibility"] = {"reason": "The academy data source is unavailable"}
+    return base
+
+
+@app.get("/models/dashboard", dependencies=[Depends(internal_auth)])
+def models_dashboard(academy_id: str):
+    """Rich, admin-only training dashboard: status + eligibility + scheduler."""
+    return {
+        "scheduler": {
+            "running": state.SCHEDULER.get("running"),
+            "last_check": state.SCHEDULER.get("last_check"),
+            "next_check": state.SCHEDULER.get("next_check"),
+            "check_interval_hours": config.CHECK_INTERVAL_HOURS,
+            "retrain_new_records_threshold": config.RETRAIN_NEW_RECORDS,
+        },
+        "fee_risk": _dashboard_model("fee_risk", "fee-risk", extract_fee_rows,
+                                     "MIN_FEE_SAMPLES", academy_id),
+        "performance": _dashboard_model("performance", "performance", extract_performance_rows,
+                                        "MIN_PERFORMANCE_SAMPLES", academy_id),
+    }
+
+
 def _run_training(model_name: str, academy_id: str, state_key: str):
     """Runs extraction + training. Called in a worker thread, never inside an
     HTTP request: training time grows with data and must not hit the API's
@@ -138,10 +187,19 @@ def _run_training(model_name: str, academy_id: str, state_key: str):
             _append_training_event(academy_key, model_name, "NOT_READY", None)
             return
         minimum = config.MIN_FEE_SAMPLES if model_name == "fee-risk" else config.MIN_PERFORMANCE_SAMPLES
+        previous_version = read_pointer(config.ARTIFACT_DIR, academy_key, model_name)
         try:
-            train(model_name, rows, config.ARTIFACT_DIR, academy_key, minimum,
-                  config.ARTIFACT_DIR / academy_key / "history.jsonl")
-            artifact_store.push(config.ARTIFACT_DIR, f"trained {model_name}")
+            meta = train(model_name, rows, config.ARTIFACT_DIR, academy_key, minimum,
+                         config.ARTIFACT_DIR / academy_key / "history.jsonl")
+            promoted = meta.get("status") == "PRODUCTION" and meta.get("retrained")
+            outcome = artifact_store.persist_training(
+                config.ARTIFACT_DIR, academy_key, model_name, promoted,
+                previous_version, f"trained {model_name}")
+            # Enforce "activate only after successful upload": if the Hub is
+            # configured and the upload failed, the promotion was reverted.
+            if promoted and outcome["enabled"] and not outcome["persisted"]:
+                _training_errors[state_key] = "Model trained but could not be persisted; previous model kept active."
+                _append_training_event(academy_key, model_name, "PERSIST_FAILED", len(rows))
         except InsufficientData:
             _append_training_event(academy_key, model_name, "INSUFFICIENT_DATA", len(rows))
     except Exception:
@@ -199,6 +257,21 @@ def retrain(request: TrainRequest):
             detail = exc.detail if isinstance(exc.detail, dict) else {"message": str(exc.detail)}
             outcomes[name] = {"status": detail.get("status", "NOT_READY"), "message": detail.get("message")}
     return outcomes
+
+
+@app.post("/models/monitor", status_code=202, dependencies=[Depends(internal_auth)])
+def monitor():
+    """Authorized, eligibility-based monitoring sweep across all academies.
+
+    Intended for the scheduled GitHub Actions trigger. Runs the SAME eligibility
+    logic as the internal scheduler (respects minimum-sample and new-record
+    thresholds, class balance, per-academy isolation, and the promotion gate) in
+    a background thread, so it trains only models that are genuinely ready and
+    never forces or duplicates training. Returns immediately (202)."""
+    threading.Thread(target=run_eligibility_check, kwargs={"train_if_ready": True},
+                     name="monitor-sweep", daemon=True).start()
+    return {"status": "MONITORING",
+            "message": "Eligibility sweep started; trains only models that meet thresholds."}
 
 
 @app.post("/models/rollback", dependencies=[Depends(internal_auth)])
