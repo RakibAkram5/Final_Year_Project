@@ -10,7 +10,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import Literal
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from app import config
@@ -32,11 +32,15 @@ async def lifespan(_app: FastAPI):
         import logging
         logging.getLogger("taleemplus.ml").warning(
             "Artifact integrity issues after restore: %d affected model(s)", len(problems))
-    start_scheduler()
+    # Serverless instances freeze between requests, so an in-process scheduler
+    # never fires reliably; the GitHub Actions cron hits /models/monitor instead.
+    if not config.SERVERLESS:
+        start_scheduler()
     try:
         yield
     finally:
-        stop_scheduler()
+        if not config.SERVERLESS:
+            stop_scheduler()
 
 
 app = FastAPI(title="TaleemPlus ML Service", version="1.0.0", lifespan=lifespan)
@@ -210,7 +214,11 @@ def _run_training(model_name: str, academy_id: str, state_key: str):
             _training.discard(state_key)
 
 
-def _start_training(model_name: str, request: TrainRequest, background: bool = True):
+def _start_training(model_name: str, request: TrainRequest, background: bool | None = None):
+    # On serverless a background thread is killed when the function returns, so
+    # training must run inline (within the function's max duration) to complete.
+    if background is None:
+        background = not config.SERVERLESS
     if not config.DATABASE_URL:
         raise HTTPException(503, {"status": "NOT_READY", "message": "ML database is not configured"})
     state_key = f"{_academy_key(request.academy_id)}:{model_name}"
@@ -260,14 +268,22 @@ def retrain(request: TrainRequest):
 
 
 @app.post("/models/monitor", status_code=202, dependencies=[Depends(internal_auth)])
-def monitor():
+def monitor(response: Response):
     """Authorized, eligibility-based monitoring sweep across all academies.
 
     Intended for the scheduled GitHub Actions trigger. Runs the SAME eligibility
     logic as the internal scheduler (respects minimum-sample and new-record
-    thresholds, class balance, per-academy isolation, and the promotion gate) in
-    a background thread, so it trains only models that are genuinely ready and
-    never forces or duplicates training. Returns immediately (202)."""
+    thresholds, class balance, per-academy isolation, and the promotion gate),
+    so it trains only models that are genuinely ready and never forces or
+    duplicates training.
+
+    On serverless the sweep runs inline and returns its summary (200), because a
+    background thread would be killed when the function returns. Elsewhere it runs
+    in a background thread and returns immediately (202)."""
+    if config.SERVERLESS:
+        summary = run_eligibility_check(train_if_ready=True)
+        response.status_code = 200
+        return {"status": "COMPLETED", **summary}
     threading.Thread(target=run_eligibility_check, kwargs={"train_if_ready": True},
                      name="monitor-sweep", daemon=True).start()
     return {"status": "MONITORING",

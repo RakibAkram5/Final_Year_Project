@@ -1,0 +1,15 @@
+# Keep the serverless function slim and never upload local secrets.
+# The deployment needs only: api/, app/, requirements.txt, vercel.json.
+.env
+.env.*
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+tests/
+hf_space/
+scripts/
+*.md
+build/
+artifacts/
+requirements-dev.txt
+Dockerfile

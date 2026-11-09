@@ -2,6 +2,12 @@ import os
 from pathlib import Path
 
 
+# True on serverless platforms (Vercel sets VERCEL=1). Disables the in-process
+# APScheduler (useless when the instance freezes between requests) and makes
+# training run synchronously, since a background thread is killed the moment the
+# function returns. On serverless, the GitHub Actions cron drives /models/monitor.
+SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("ML_SERVERLESS"))
+
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 INTERNAL_TOKEN = os.getenv("ML_INTERNAL_TOKEN", "")
 ARTIFACT_DIR = Path(os.getenv("ML_ARTIFACT_DIR", "./artifacts"))
