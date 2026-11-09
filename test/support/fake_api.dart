@@ -23,20 +23,42 @@ import 'package:taleemplus_app/logic/session_provider.dart';
 import 'package:taleemplus_app/logic/theme_provider.dart';
 import 'package:taleemplus_app/logic/timetable_provider.dart';
 
+/// Font files from the Flutter SDK, found case-insensitively (file names
+/// differ in case between platforms). Null when they are not available.
+Map<String, String>? _sdkFontFiles() {
+  // Lets CI-like runs without SDK fonts be reproduced locally.
+  if (Platform.environment['TEST_WITHOUT_REAL_FONTS'] == '1') return null;
+  final flutterRoot = Platform.environment['FLUTTER_ROOT'] ??
+      File(Platform.resolvedExecutable).parent.parent.parent.parent.parent.path;
+  final dir = Directory('$flutterRoot/bin/cache/artifacts/material_fonts');
+  if (!dir.existsSync()) return null;
+  final files = <String, String>{
+    for (final e in dir.listSync().whereType<File>())
+      e.uri.pathSegments.last.toLowerCase(): e.path,
+  };
+  final required = ['roboto-regular.ttf', 'materialicons-regular.otf'];
+  return required.every(files.containsKey) ? files : null;
+}
+
+/// Whether [loadRealFonts] can load the real fonts. Layout tests are skipped
+/// without them: the default test font renders every glyph as a full-em
+/// square, so measurements would report false overflows.
+bool get realFontsAvailable => _sdkFontFiles() != null;
+
 /// Loads the real Roboto and Material Icons fonts from the Flutter SDK.
 ///
 /// flutter_test otherwise renders every glyph as a full-em square, which
 /// makes text roughly twice as wide as on a phone and produces false
 /// overflow reports. Returns false if the SDK fonts cannot be found.
 Future<bool> loadRealFonts() async {
-  final flutterRoot = Platform.environment['FLUTTER_ROOT'] ??
-      File(Platform.resolvedExecutable).parent.parent.parent.parent.parent.path;
-  final dir = Directory('$flutterRoot/bin/cache/artifacts/material_fonts');
-  if (!dir.existsSync()) return false;
-  Future<void> load(String family, List<String> files) async {
+  final files = _sdkFontFiles();
+  if (files == null) return false;
+  Future<void> load(String family, List<String> names) async {
     final loader = FontLoader(family);
-    for (final f in files) {
-      final bytes = File('${dir.path}/$f').readAsBytesSync();
+    for (final name in names) {
+      final path = files[name];
+      if (path == null) continue;
+      final bytes = File(path).readAsBytesSync();
       loader.addFont(Future.value(ByteData.view(bytes.buffer)));
     }
     await loader.load();

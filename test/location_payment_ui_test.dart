@@ -52,5 +52,6 @@ void main() {
       expect(find.textContaining('only after academy verification'),
           findsOneWidget);
     });
-  });
+    // The full payment sheet only fits with real font metrics.
+  }, skip: !realFontsAvailable);
 }

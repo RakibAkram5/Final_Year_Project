@@ -421,7 +421,9 @@ void main() {
               .map((e) => '- ${e.key}\n    at: ${e.value.join(', ')}')
               .join('\n');
           expect(problems, isEmpty, reason: '\n$report');
-        });
+          // Measurements need the real fonts; the default test font is ~2x
+          // wider and would report false overflows.
+        }, skip: !realFontsAvailable);
       }
     });
   }
