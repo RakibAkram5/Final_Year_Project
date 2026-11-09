@@ -4,6 +4,11 @@ BSCS Final Year Project. Flutter app (Android + web) for running an academy,
 with four portals — **Admin, Teacher, Student, Parent** — a Node.js/Express
 REST API on PostgreSQL, and a Python machine-learning service.
 
+## Live
+
+- **Web app:** https://taleemplus-111.netlify.app
+- **Downloads (v1.1.1):** [GitHub Release](https://github.com/RakibAkram5/Final_Year_Project/releases/tag/v1.1.1) — Android APK (universal + per-ABI), AAB, and the Web build ZIP, with SHA-256 checksums.
+
 ## Architecture
 
 ```
@@ -14,14 +19,14 @@ Express API (Vercel, /api/v2) ── Prisma ──▶ PostgreSQL (Neon)
         │                         └──────▶ Vercel Blob (private files)
         │  internal token
         ▼
-FastAPI ML service (Hugging Face Space, prepared) ── read-only SQL ──▶ PostgreSQL
+FastAPI ML service (Vercel serverless) ── read-only SQL ──▶ PostgreSQL
 ```
 
 | Part | Folder | Tech |
 |---|---|---|
 | App | `lib/` | Flutter 3.47, provider, http, pdf/printing, flutter_map (OpenStreetMap), file_picker, share_plus |
 | API | `taleemplus_backend/` (served by `api/*.js` on Vercel) | Express 4, Prisma 5, zod, JWT + rotating refresh tokens, bcrypt, @vercel/blob, exceljs |
-| ML | `ml_service/` | FastAPI, scikit-learn, pandas, psycopg, joblib, huggingface_hub |
+| ML | `ml_service/` (deployed on Vercel) | FastAPI, scikit-learn, pandas, psycopg, joblib, huggingface_hub |
 | Web hosting | `netlify.toml` | Netlify, proxies `/api/*` to Vercel |
 
 ## Features
@@ -29,9 +34,9 @@ FastAPI ML service (Hugging Face Space, prepared) ── read-only SQL ──▶
 | Area | Highlights |
 |---|---|
 | Academy | registration with approval, academy profile, **map location (OpenStreetMap) with directions**, payment QR and **bank details (IBAN-validated)** |
-| People | admin creates/approves teachers, students, parents; **parent ↔ child linking (admin only)**; per-person **documents** (admission papers, CVs) |
+| People | admin creates/approves teachers, students, parents; **parent → child linking (a parent requests, an academy admin approves)**; per-person **documents** (admission papers, CVs) |
 | Classes | sections, subject classes, enrolment, timetable with clash detection |
-| Teaching | attendance (one record per student/day, corrections, no future dates), **course materials with PDF/Word/image files**, **assignments with submissions, deadlines and grading**, tests and marks (validated against max marks), OCR scanning, student questions |
+| Teaching | attendance (one record per student/day, corrections, no future dates), **course materials with PDF/Word/image files**, **assignments with submissions, deadlines and grading**, tests and marks (validated against max marks), **cross-platform OCR (PDF + multi-page images, web via Tesseract.js with Urdu, Android via ML Kit)**, student questions |
 | Fees | monthly challans, PDF vouchers, payment-proof upload → admin verification (upload never marks a fee paid), ledger |
 | Reports | per-student PDFs; **class attendance and results PDFs**; **Excel exports** of attendance, results and fee records |
 | Parents | all linked children, attendance, results, timetable, fees, assignments, documents, academy contact and map |
@@ -51,8 +56,8 @@ Full instructions: `ENVIRONMENT_SETUP.md`.
 
 | Suite | Result |
 |---|---|
-| Backend contract/unit (Jest, isolated PostgreSQL) | 115 / 115 |
-| Flutter unit + widget + responsive layout (60 screens × 12 viewport/theme configs) | 114 / 114, `flutter analyze` clean |
+| Backend contract/unit (Jest, isolated PostgreSQL) | 133 / 133 |
+| Flutter unit + widget + responsive layout (60 screens × 12 viewport/theme configs) | 123 / 123, `flutter analyze` clean |
 | ML service (pytest) | 18 / 18 |
 
 Details: `FINAL_TEST_REPORT.md`, `RESPONSIVE_UI_TEST_REPORT.md`.
@@ -74,6 +79,14 @@ Older reports in the repository root (`TALEEMPLUS_*`, `FINAL_TALEEMPLUS_VERIFICA
 
 ## Deployment status
 
-The changes in this release are **not deployed yet**. Before deploying: back up
-and migrate the production database, connect a private Vercel Blob store, and
-(optionally) deploy the ML Space — see `VERCEL_DEPLOYMENT_GUIDE.md`.
+v1.1.1 is **live**:
+
+| Component | Where |
+|---|---|
+| Web app | https://taleemplus-111.netlify.app (Netlify, proxies `/api/*` to the Vercel backend) |
+| Backend API | `https://taleemplus.vercel.app/api/v2` (Vercel, Neon PostgreSQL) |
+| ML service | FastAPI on Vercel serverless (`/health` public, all other endpoints require the internal token) |
+| Android / Web builds | [GitHub Release v1.1.1](https://github.com/RakibAkram5/Final_Year_Project/releases/tag/v1.1.1) |
+
+To finish ML in the admin UI, set `ML_SERVICE_URL` + `ML_INTERNAL_TOKEN` on the
+backend project and redeploy. See `VERCEL_DEPLOYMENT_GUIDE.md`.
