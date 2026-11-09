@@ -53,3 +53,15 @@ android/.kotlin/
 # Netlify CLI local state and build cache
 .netlify/
 /.cache/
+
+# Local file storage driver (development uploads)
+taleemplus_backend/uploads/
+
+# Hugging Face Space staging folder
+ml_service/hf_space/build/
+ml_service/artifacts/
+
+# Python bytecode and test caches
+__pycache__/
+*.pyc
+.pytest_cache/
