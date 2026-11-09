@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--
+      geolocator_android ships a foreground-service notification
+      (BackgroundNotification) used only for *background* location tracking.
+      TaleemPlus reads the device position once, in the foreground, when an
+      admin taps "Use my current position", and never posts system
+      notifications, so POST_NOTIFICATIONS is not needed. Scope the
+      exception to that plugin so the check still applies to our own code.
+    -->
+    <issue id="NotificationPermission">
+        <ignore regexp="com\.baseflow\.geolocator" />
+    </issue>
+</lint>
