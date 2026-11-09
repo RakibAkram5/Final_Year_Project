@@ -31,7 +31,10 @@ class _TeacherStatsRowState extends State<TeacherStatsRow> {
   @override
   void initState() {
     super.initState();
-    context.read<ClassProvider>().listenAll(widget.academyId);
+    // Never notify a provider while the widget tree is still building.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<ClassProvider>().listenAll(widget.academyId);
+    });
     _markedTodayFuture = _countMarkedToday();
   }
 

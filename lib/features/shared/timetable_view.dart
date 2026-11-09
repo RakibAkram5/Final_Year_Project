@@ -99,8 +99,8 @@ class TimetableView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(TimetableSlot.weekdayNames[day - 1].toUpperCase(),
-                      style: const TextStyle(
-                          color: AppColors.accent,
+                      style: TextStyle(
+                          color: context.appColors.accentText,
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1)),
@@ -168,8 +168,8 @@ class TimetableView extends StatelessWidget {
                 if (!s.isBreak && s.teacherName.isNotEmpty)
                   Text(
                       '${s.teacherName}${s.room.isNotEmpty ? ' • ${s.room}' : ''}',
-                      style: const TextStyle(
-                          color: AppColors.textMuted, fontSize: 11)),
+                      style: TextStyle(
+                          color: context.appColors.textMuted, fontSize: 11)),
               ],
             ),
           ),

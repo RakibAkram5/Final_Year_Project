@@ -51,6 +51,10 @@ const formatUser = (user, academy) => ({
   academyAddress: academy?.address,
   academyPhone: academy?.phone,
   academyLogo: academy?.logo,
+  // Phase 6: saved academy location (null until an admin sets it).
+  academyLatitude: academy?.latitude == null ? null : Number(academy.latitude),
+  academyLongitude: academy?.longitude == null ? null : Number(academy.longitude),
+  academyLocationLabel: academy?.locationLabel ?? null,
   assignedSections: user.assignedSections,
   studentCode: user.studentCode,
   rollNumber: user.rollNumber,
@@ -118,11 +122,38 @@ const updateAcademyProfile = async (req, res, next) => {
       }
       data[column] = typeof value === 'string' ? value.trim() || null : null;
     }
+    // Location: latitude and longitude are set (or cleared) together.
+    const { latitude, longitude, locationLabel } = req.body;
+    if (latitude !== undefined || longitude !== undefined) {
+      if (latitude === null && longitude === null) {
+        data.latitude = null;
+        data.longitude = null;
+        data.locationLabel = null;
+      } else {
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+            lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          return res.status(400).json({ success: false, message: 'Latitude must be between -90 and 90 and longitude between -180 and 180.' });
+        }
+        data.latitude = Math.round(lat * 1e6) / 1e6;
+        data.longitude = Math.round(lng * 1e6) / 1e6;
+      }
+    }
+    if (locationLabel !== undefined && data.locationLabel === undefined) {
+      if (locationLabel !== null && (typeof locationLabel !== 'string' || locationLabel.length > 300)) {
+        return res.status(400).json({ success: false, message: 'Invalid location label.' });
+      }
+      data.locationLabel = typeof locationLabel === 'string' ? locationLabel.trim() || null : null;
+    }
     if (!Object.keys(data).length) return res.status(400).json({ success: false, message: 'No academy profile fields provided.' });
     const academy = await prisma.academy.update({ where: { id: req.academyId }, data });
     res.json({ success: true, data: {
       academyName: academy.name, academyAddress: academy.address,
       academyPhone: academy.phone, academyLogo: academy.logo,
+      academyLatitude: academy.latitude == null ? null : Number(academy.latitude),
+      academyLongitude: academy.longitude == null ? null : Number(academy.longitude),
+      academyLocationLabel: academy.locationLabel,
     } });
   } catch (err) { next(err); }
 };

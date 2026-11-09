@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../shared/documents_screen.dart';
+import '../../data/remote/file_service.dart';
+import '../../widgets/responsive/responsive_action_tile.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -20,6 +23,7 @@ import '../../widgets/gradient_background.dart';
 import '../../widgets/student_picker_field.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
+import '../../widgets/responsive/responsive_row.dart';
 import '../../core/theme/theme_extensions.dart';
 
 /// "className|program|section" key format used to store a teacher's real
@@ -33,15 +37,15 @@ Widget _teacherSectionPicker(
   return Consumer<ClassSectionProvider>(
     builder: (context, sp, _) {
       if (sp.sections.isEmpty) {
-        return const Text('No class sections created yet.',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 12));
+        return Text('No class sections created yet.',
+            style: TextStyle(color: context.appColors.textMuted, fontSize: 12));
       }
       return Container(
         constraints: const BoxConstraints(maxHeight: 220),
         decoration: BoxDecoration(
-          color: AppColors.inputFill,
+          color: context.appColors.inputFill,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.appColors.border),
         ),
         child: ListView(
           shrinkWrap: true,
@@ -206,7 +210,7 @@ class _UserManagementScreenState extends State<UserManagementScreen>
           controller: _tabController,
           indicatorColor: AppColors.accent,
           labelColor: AppColors.accent,
-          unselectedLabelColor: AppColors.textSecondary,
+          unselectedLabelColor: context.appColors.textSecondary,
           tabs: const [
             Tab(text: 'Teachers'),
             Tab(text: 'Students'),
@@ -369,8 +373,8 @@ class _RoleListTabState extends State<_RoleListTab>
         style: TextStyle(color: context.appColors.textPrimary, fontSize: 14),
         decoration: InputDecoration(
           hintText: "Search by name or ${_labelForSearch(widget.role)}...",
-          prefixIcon: const Icon(Icons.search_rounded,
-              color: AppColors.accent, size: 20),
+          prefixIcon: Icon(Icons.search_rounded,
+              color: context.appColors.accentText, size: 20),
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           fillColor: context.appColors.surface.withValues(alpha: 0.5),
         ),
@@ -396,17 +400,17 @@ class _RoleListTabState extends State<_RoleListTab>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.group_off_rounded,
-              size: 56, color: AppColors.textMuted),
+          Icon(Icons.group_off_rounded,
+              size: 56, color: context.appColors.textMuted),
           const SizedBox(height: 12),
           Text(
             'No ${role}s added yet',
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: context.appColors.textSecondary),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Tap "Add" to create one',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            style: TextStyle(color: context.appColors.textMuted, fontSize: 12),
           ),
         ],
       ),
@@ -414,102 +418,87 @@ class _RoleListTabState extends State<_RoleListTab>
   }
 
   Widget _memberTile(BuildContext context, AcademyMember m) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.appColors.surface.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(14),
-        border:
-            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
+    final colors = context.appColors;
+    TextStyle line(Color c, {FontStyle? style}) =>
+        TextStyle(color: c, fontSize: 12, fontStyle: style);
+    return ResponsiveActionTile(
+      key: ValueKey('member-${m.id}'),
+      leading: CircleAvatar(
+        backgroundColor: AppColors.accent.withValues(alpha: 0.15),
+        child: Text(
+          m.fullName.isNotEmpty ? m.fullName[0].toUpperCase() : '?',
+          style: TextStyle(
+              color: context.appColors.accentText, fontWeight: FontWeight.w700),
+        ),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: AppColors.accent.withValues(alpha: 0.15),
-            child: Text(
-              m.fullName.isNotEmpty ? m.fullName[0].toUpperCase() : '?',
-              style: const TextStyle(
-                  color: AppColors.accent, fontWeight: FontWeight.w700),
+      title: m.fullName,
+      titleStyle: TextStyle(
+          color: colors.textPrimary, fontWeight: FontWeight.w600, fontSize: 15),
+      subtitles: [
+        if (m.role == 'teacher' && (m.extra.isNotEmpty || m.subject.isNotEmpty))
+          Text(
+              [
+                if (m.extra.isNotEmpty) m.extra,
+                if (m.subject.isNotEmpty) m.subject,
+              ].join(' • '),
+              style: line(AppColors.accent))
+        else if (m.role == 'student' && m.rollNumber.isNotEmpty)
+          Text('Roll: ${m.rollNumber}', style: line(AppColors.accent))
+        else if (m.extra.isNotEmpty)
+          Text(m.extra, style: line(AppColors.accent)),
+        if (m.role == 'student' && _parentNameByStudentUid.containsKey(m.id))
+          Text('Parent: ${_parentNameByStudentUid[m.id]}',
+              style: line(colors.textSecondary, style: FontStyle.italic)),
+        // Emails are single tokens: ellipsize instead of breaking mid-word.
+        if (m.email.isNotEmpty)
+          Text(m.email,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: line(colors.textSecondary)),
+        if (m.phone.isNotEmpty) Text(m.phone, style: line(colors.textMuted)),
+      ],
+      actions: [
+        if (m.role == 'teacher')
+          TileAction(
+            icon: Icons.add_chart_rounded,
+            label: 'Assign class',
+            onPressed: () => _openAssignClassSheet(context, m),
+          ),
+        TileAction(
+          icon: Icons.edit_outlined,
+          label: 'Edit',
+          onPressed: () => _openEditSheet(context, m),
+        ),
+        if (m.role == 'student' || m.role == 'teacher')
+          TileAction(
+            icon: Icons.folder_rounded,
+            label: 'Documents',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DocumentsScreen(
+                  title: '${m.fullName} · Documents',
+                  subtitle: m.role == 'student'
+                      ? 'Admission documents, certificates and records. '
+                          'Visible to the student and linked parents.'
+                      : 'CV, qualifications and certificates. '
+                          'Visible to this teacher and academy admins.',
+                  category: m.role == 'student'
+                      ? FileCategory.studentDocument
+                      : FileCategory.teacherDocument,
+                  ownerId: m.id,
+                  canEdit: true,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(m.fullName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: context.appColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15)),
-                const SizedBox(height: 2),
-                if (m.role == 'teacher' &&
-                    (m.extra.isNotEmpty || m.subject.isNotEmpty))
-                  Text(
-                      [
-                        if (m.extra.isNotEmpty) m.extra,
-                        if (m.subject.isNotEmpty) m.subject,
-                      ].join(' • '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: AppColors.accent, fontSize: 12))
-                else if (m.role == 'student' && m.rollNumber.isNotEmpty)
-                  Text('Roll: ${m.rollNumber}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: AppColors.accent, fontSize: 12))
-                else if (m.extra.isNotEmpty)
-                  Text(m.extra,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: AppColors.accent, fontSize: 12)),
-                if (m.role == 'student' &&
-                    _parentNameByStudentUid.containsKey(m.id))
-                  Text('Parent: ${_parentNameByStudentUid[m.id]}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: context.appColors.textSecondary,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic)),
-                if (m.email.isNotEmpty)
-                  Text(m.email,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: context.appColors.textSecondary,
-                          fontSize: 12)),
-                if (m.phone.isNotEmpty)
-                  Text(m.phone,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: context.appColors.textMuted, fontSize: 12)),
-              ],
-            ),
-          ),
-          if (m.role == 'teacher')
-            IconButton(
-              icon:
-                  const Icon(Icons.add_chart_rounded, color: AppColors.accent),
-              tooltip: 'Assign Class',
-              onPressed: () => _openAssignClassSheet(context, m),
-            ),
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.accent),
-            onPressed: () => _openEditSheet(context, m),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-            onPressed: () => _confirmDelete(context, m),
-          ),
-        ],
-      ),
+        TileAction(
+          icon: Icons.delete_outline,
+          label: 'Remove',
+          destructive: true,
+          onPressed: () => _confirmDelete(context, m),
+        ),
+      ],
     );
   }
 
@@ -541,18 +530,18 @@ class _RoleListTabState extends State<_RoleListTab>
     final ok = await showDialog<bool>(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
-        title: const Text('Deactivate member?',
-            style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: context.appColors.surfaceAlt,
+        title: Text('Deactivate member?',
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: Text(
             '${m.fullName} will no longer be able to sign in. Their '
             'attendance, fee and marks history is kept.',
-            style: const TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: context.appColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('Cancel',
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx, true),
@@ -669,8 +658,9 @@ class _QuickAssignClassSheetState extends State<_QuickAssignClassSheet> {
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            const Text('Create a new class assignment for this teacher.',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            Text('Create a new class assignment for this teacher.',
+                style: TextStyle(
+                    fontSize: 13, color: context.appColors.textSecondary)),
             const SizedBox(height: 24),
             LabeledField(
                 label: 'Class Name',
@@ -930,11 +920,11 @@ class _EditMemberSheetState extends State<_EditMemberSheet> {
                       : null),
             const SizedBox(height: 12),
             if (widget.member.role == 'teacher') ...[
-              const Text('Joining Date',
+              Text('Joining Date',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      color: AppColors.textSecondary)),
+                      color: context.appColors.textSecondary)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () async {
@@ -951,12 +941,12 @@ class _EditMemberSheetState extends State<_EditMemberSheet> {
                   decoration: BoxDecoration(
                     color: context.appColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.appColors.border),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_month_rounded,
-                          size: 18, color: AppColors.accent),
+                      Icon(Icons.calendar_month_rounded,
+                          size: 18, color: context.appColors.accentText),
                       const SizedBox(width: 10),
                       Text(_joiningDate == null
                           ? 'Select Date'
@@ -966,11 +956,11 @@ class _EditMemberSheetState extends State<_EditMemberSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Assigned Classes & Sections',
+              Text('Assigned Classes & Sections',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      color: AppColors.textSecondary)),
+                      color: context.appColors.textSecondary)),
               const SizedBox(height: 8),
               _teacherSectionPicker(context, _selectedSectionKeys, (key, sel) {
                 setState(() {
@@ -991,10 +981,10 @@ class _EditMemberSheetState extends State<_EditMemberSheet> {
             const SizedBox(height: 8),
             TextButton.icon(
               onPressed: _saving ? null : _resetPassword,
-              icon: const Icon(Icons.lock_reset_rounded,
-                  color: AppColors.textSecondary),
-              label: const Text('Reset password',
-                  style: TextStyle(color: AppColors.textSecondary)),
+              icon: Icon(Icons.lock_reset_rounded,
+                  color: context.appColors.textSecondary),
+              label: Text('Reset password',
+                  style: TextStyle(color: context.appColors.textSecondary)),
             ),
           ],
         ),
@@ -1013,9 +1003,9 @@ extension on _EditMemberSheetState {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surfaceAlt,
+          backgroundColor: context.appColors.surfaceAlt,
           title: Text('Reset password for ${widget.member.fullName}?',
-              style: const TextStyle(color: AppColors.textPrimary)),
+              style: TextStyle(color: context.appColors.textPrimary)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1036,8 +1026,8 @@ extension on _EditMemberSheetState {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel',
-                  style: TextStyle(color: AppColors.textSecondary)),
+              child: Text('Cancel',
+                  style: TextStyle(color: context.appColors.textSecondary)),
             ),
             TextButton(
               onPressed: () {
@@ -1048,9 +1038,10 @@ extension on _EditMemberSheetState {
                 }
                 Navigator.pop(ctx, ctrl.text);
               },
-              child: const Text('RESET',
+              child: Text('RESET',
                   style: TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.accent)),
+                      fontWeight: FontWeight.bold,
+                      color: context.appColors.accentText)),
             ),
           ],
         ),
@@ -1290,7 +1281,7 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: context.appColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1365,11 +1356,11 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
                       : null,
                 ),
                 const SizedBox(height: 16),
-                const Text('Enroll In Class (optional)',
+                Text('Enroll In Class (optional)',
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
-                        color: AppColors.textSecondary)),
+                        color: context.appColors.textSecondary)),
                 const SizedBox(height: 8),
                 DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -1379,7 +1370,8 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
                     items: context
                         .watch<AcademicStructureProvider>()
                         .flatClassNames
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .map((c) =>
+                            DropdownMenuItem(value: c, child: DropdownLabel(c)))
                         .toList(),
                     onChanged: (v) => setState(() {
                       _selectedClassName = v;
@@ -1401,7 +1393,7 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
                           items: sections
                               .map((s) => DropdownMenuItem(
                                   value: s,
-                                  child: Text('Section ${s.section}')))
+                                  child: DropdownLabel('Section ${s.section}')))
                               .toList(),
                           onChanged: (v) =>
                               setState(() => _selectedSection = v),
@@ -1413,11 +1405,11 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
               ],
               if (widget.role == 'teacher') ...[
                 const SizedBox(height: 16),
-                const Text('Joining Date',
+                Text('Joining Date',
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
-                        color: AppColors.textSecondary)),
+                        color: context.appColors.textSecondary)),
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: () async {
@@ -1434,12 +1426,12 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
                     decoration: BoxDecoration(
                       color: context.appColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: context.appColors.border),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_month_rounded,
-                            size: 18, color: AppColors.accent),
+                        Icon(Icons.calendar_month_rounded,
+                            size: 18, color: context.appColors.accentText),
                         const SizedBox(width: 10),
                         Text(_joiningDate == null
                             ? 'Select Date'
@@ -1449,11 +1441,11 @@ class _AddMemberSheetState extends State<_AddMemberSheet> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Assigned Classes & Sections',
+                Text('Assigned Classes & Sections',
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
-                        color: AppColors.textSecondary)),
+                        color: context.appColors.textSecondary)),
                 const SizedBox(height: 8),
                 _teacherSectionPicker(context, _selectedSectionKeys,
                     (key, sel) {

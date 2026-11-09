@@ -62,9 +62,9 @@ class _AdminQuizListScreenState extends State<AdminQuizListScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('FILTER BY CLASS',
+                    Text('FILTER BY CLASS',
                         style: TextStyle(
-                            color: AppColors.textMuted,
+                            color: context.appColors.textMuted,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1)),
@@ -72,25 +72,26 @@ class _AdminQuizListScreenState extends State<AdminQuizListScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.appColors.surface,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.appColors.border),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _selectedClassId,
-                          hint: const Text('All Classes',
-                              style: TextStyle(color: AppColors.textSecondary)),
-                          dropdownColor: AppColors.surface,
+                          hint: Text('All Classes',
+                              style: TextStyle(
+                                  color: context.appColors.textSecondary)),
+                          dropdownColor: context.appColors.surface,
                           isExpanded: true,
-                          icon: const Icon(Icons.keyboard_arrow_down,
-                              color: AppColors.accent),
+                          icon: Icon(Icons.keyboard_arrow_down,
+                              color: context.appColors.accentText),
                           items: classes.map((c) {
                             return DropdownMenuItem(
                               value: c.id,
                               child: Text("${c.className} (${c.section})",
-                                  style: const TextStyle(
-                                      color: AppColors.textPrimary)),
+                                  style: TextStyle(
+                                      color: context.appColors.textPrimary)),
                             );
                           }).toList(),
                           onChanged: (val) =>
@@ -152,8 +153,8 @@ class _AdminQuizListScreenState extends State<AdminQuizListScreen> {
                   hint: Text('All Classes',
                       style: TextStyle(color: context.appColors.textSecondary)),
                   isExpanded: true,
-                  icon: const Icon(Icons.keyboard_arrow_down,
-                      color: AppColors.accent),
+                  icon: Icon(Icons.keyboard_arrow_down,
+                      color: context.appColors.accentText),
                   items: classes.map((c) {
                     return DropdownMenuItem(
                       value: c.id,
@@ -179,9 +180,9 @@ class _AdminQuizListScreenState extends State<AdminQuizListScreen> {
   }
 
   Widget _buildAllQuizzes() {
-    return const Center(
+    return Center(
       child: Text('Select a class to view test reports',
-          style: TextStyle(color: AppColors.textSecondary)),
+          style: TextStyle(color: context.appColors.textSecondary)),
     );
   }
 
@@ -204,9 +205,9 @@ class _AdminQuizListScreenState extends State<AdminQuizListScreen> {
         }
         final list = snap.data ?? [];
         if (list.isEmpty) {
-          return const Center(
+          return Center(
               child: Text('No tests found for this class',
-                  style: TextStyle(color: AppColors.textSecondary)));
+                  style: TextStyle(color: context.appColors.textSecondary)));
         }
         return ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -230,9 +231,10 @@ class _AdminQuizListScreenState extends State<AdminQuizListScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.55),
+            color: context.appColors.surface.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            border: Border.all(
+                color: context.appColors.border.withValues(alpha: 0.5)),
           ),
           child: Row(
             children: [
@@ -242,8 +244,8 @@ class _AdminQuizListScreenState extends State<AdminQuizListScreen> {
                   color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.analytics_rounded,
-                    color: AppColors.accent),
+                child: Icon(Icons.analytics_rounded,
+                    color: context.appColors.accentText),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -251,17 +253,17 @@ class _AdminQuizListScreenState extends State<AdminQuizListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(quiz.title,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
+                        style: TextStyle(
+                            color: context.appColors.textPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: 16)),
                     Text("${quiz.subject} • ${quiz.totalMarks} Marks",
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 12)),
+                        style: TextStyle(
+                            color: context.appColors.textMuted, fontSize: 12)),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(Icons.chevron_right, color: context.appColors.textMuted),
             ],
           ),
         ),

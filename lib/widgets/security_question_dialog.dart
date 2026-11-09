@@ -29,24 +29,24 @@ void showSecurityQuestionDialog(BuildContext context, AppUser? user) {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                   "Used to verify it's really you before we re-send a "
                   "password reset link.",
-                  style:
-                      TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                  style: TextStyle(
+                      fontSize: 13, color: context.appColors.textSecondary)),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.inputFill,
+                  color: context.appColors.inputFill,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.appColors.border),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: selectedQuestion,
                     isExpanded: true,
-                    dropdownColor: AppColors.surfaceAlt,
+                    dropdownColor: context.appColors.surfaceAlt,
                     items: SecurityQuestions.all
                         .map((q) => DropdownMenuItem(value: q, child: Text(q)))
                         .toList(),
@@ -108,8 +108,9 @@ void showSecurityQuestionDialog(BuildContext context, AppUser? user) {
                     }
                   },
             child: Text(saving ? "SAVING..." : "SAVE",
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: AppColors.accent)),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: context.appColors.accentText)),
           ),
         ],
       ),

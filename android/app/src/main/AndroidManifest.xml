@@ -9,6 +9,12 @@
     <!-- Required for REST API access in release builds. -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <!-- Optional: admins can place the academy pin at their current position.
+         Requested only when that button is tapped; denial is handled. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
+
     <application
         android:label="Taleem Plus"
         android:name="${applicationName}"

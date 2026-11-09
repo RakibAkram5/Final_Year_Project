@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -159,7 +160,7 @@ class _OcrDocumentViewScreenState extends State<OcrDocumentViewScreen> {
 
   Widget _publishButton() {
     return IconButton(
-      icon: const Icon(Icons.publish_rounded, color: AppColors.accent),
+      icon: Icon(Icons.publish_rounded, color: context.appColors.accentText),
       tooltip: 'Publish to Resources',
       onPressed: () => publishOcrDocumentsToClass(context, [widget.document]),
     );
@@ -168,7 +169,7 @@ class _OcrDocumentViewScreenState extends State<OcrDocumentViewScreen> {
   Widget _editToggleButton() {
     return !_isEditing
         ? IconButton(
-            icon: const Icon(Icons.edit_rounded, color: AppColors.accent),
+            icon: Icon(Icons.edit_rounded, color: context.appColors.accentText),
             onPressed: () => setState(() => _isEditing = true),
           )
         : IconButton(
@@ -199,8 +200,8 @@ class _OcrDocumentViewScreenState extends State<OcrDocumentViewScreen> {
                 if (!_isEditing) ...[
                   Text(
                     widget.document.title,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                     ),
@@ -208,22 +209,22 @@ class _OcrDocumentViewScreenState extends State<OcrDocumentViewScreen> {
                   const SizedBox(height: 4),
                   Text(
                     "Scanned on $dateStr",
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 13),
+                    style: TextStyle(
+                        color: context.appColors.textMuted, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     "By ${widget.document.createdByName}",
-                    style: const TextStyle(
-                        color: AppColors.accent,
+                    style: TextStyle(
+                        color: context.appColors.accentText,
                         fontSize: 13,
                         fontWeight: FontWeight.w600),
                   ),
                 ] else ...[
-                  const Text(
+                  Text(
                     "DOCUMENT TITLE",
                     style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1,
@@ -232,14 +233,14 @@ class _OcrDocumentViewScreenState extends State<OcrDocumentViewScreen> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: _titleController,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: context.appColors.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w700),
                     decoration: InputDecoration(
                       hintText: "Enter title...",
                       filled: true,
-                      fillColor: AppColors.inputFill,
+                      fillColor: context.appColors.inputFill,
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none),
@@ -248,14 +249,14 @@ class _OcrDocumentViewScreenState extends State<OcrDocumentViewScreen> {
                 ],
 
                 const SizedBox(height: 24),
-                const Divider(color: AppColors.border, thickness: 1),
+                Divider(color: context.appColors.border, thickness: 1),
                 const SizedBox(height: 24),
 
                 // Extracted Text
-                const Text(
+                Text(
                   "EXTRACTED CONTENT",
                   style: TextStyle(
-                    color: AppColors.textMuted,
+                    color: context.appColors.textMuted,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1,
@@ -267,17 +268,17 @@ class _OcrDocumentViewScreenState extends State<OcrDocumentViewScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface.withValues(alpha: 0.3),
+                    color: context.appColors.surface.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                        color: AppColors.border.withValues(alpha: 0.5)),
+                        color: context.appColors.border.withValues(alpha: 0.5)),
                   ),
                   child: TextField(
                     controller: _textController,
                     enabled: _isEditing,
                     maxLines: null,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontSize: 15,
                       height: 1.6,
                     ),
@@ -311,8 +312,8 @@ class _OcrDocumentViewScreenState extends State<OcrDocumentViewScreen> {
                         icon: const Icon(Icons.copy_rounded, size: 18),
                         label: const Text("COPY ALL"),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textSecondary,
-                          side: const BorderSide(color: AppColors.border),
+                          foregroundColor: context.appColors.textSecondary,
+                          side: BorderSide(color: context.appColors.border),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14)),

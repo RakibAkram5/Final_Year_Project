@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/theme_extensions.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/app_colors.dart';
@@ -25,12 +26,13 @@ Future<void> showAcademyRelinkDialog(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               "If your announcements, classes, or other data aren't showing "
               "up correctly, your account may be linked to the wrong "
               "academy. Enter the correct Academy Code (given by your "
               "school admin) to relink it.",
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              style: TextStyle(
+                  color: context.appColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -81,8 +83,9 @@ Future<void> showAcademyRelinkDialog(BuildContext context) {
                     }
                   },
             child: Text(submitting ? "LINKING..." : "LINK",
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: AppColors.accent)),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: context.appColors.accentText)),
           ),
         ],
       ),

@@ -18,9 +18,13 @@ from app.data.extractor import database_is_healthy, extract_fee_rows, extract_pe
 from app.models import load_production
 from app.training.pipeline import InsufficientData, _atomic_json, train
 from app.training.scheduler import start_scheduler, stop_scheduler
+from app import artifact_store
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # Restore trained models persisted on the Hugging Face Hub (no-op when
+    # HF_ARTIFACT_REPO is not configured, e.g. locally).
+    artifact_store.pull(config.ARTIFACT_DIR)
     start_scheduler()
     try:
         yield
@@ -92,7 +96,9 @@ def _status(model_name: str, academy_id: str):
     except Exception:
         return {"status": "NOT_READY", "reason": "The academy data source is unavailable", "version": None}
     minimum = config.MIN_FEE_SAMPLES if model_name == "fee-risk" else config.MIN_PERFORMANCE_SAMPLES
-    return {"status": "INSUFFICIENT_DATA", "usable_records": len(rows), "minimum_records": minimum, "version": None}
+    # Enough rows but nothing trained yet is not "insufficient data".
+    state = "READY_TO_TRAIN" if len(rows) >= minimum else "INSUFFICIENT_DATA"
+    return {"status": state, "usable_records": len(rows), "minimum_records": minimum, "version": None}
 
 
 @app.get("/health")
@@ -119,37 +125,49 @@ def models_history(academy_id: str):
     return {"history": [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]}
 
 
-def _train(model_name: str, request: TrainRequest):
+def _run_training(model_name: str, academy_id: str, state_key: str):
+    """Runs extraction + training. Called in a worker thread, never inside an
+    HTTP request: training time grows with data and must not hit the API's
+    request timeout (Vercel functions are capped at 30 s)."""
+    academy_key = _academy_key(academy_id)
+    try:
+        try:
+            rows = extract_fee_rows(config.DATABASE_URL, academy_id) if model_name == "fee-risk" else extract_performance_rows(config.DATABASE_URL, academy_id)
+        except Exception:
+            _training_errors[state_key] = "The academy data source is unavailable."
+            _append_training_event(academy_key, model_name, "NOT_READY", None)
+            return
+        minimum = config.MIN_FEE_SAMPLES if model_name == "fee-risk" else config.MIN_PERFORMANCE_SAMPLES
+        try:
+            train(model_name, rows, config.ARTIFACT_DIR, academy_key, minimum,
+                  config.ARTIFACT_DIR / academy_key / "history.jsonl")
+            artifact_store.push(config.ARTIFACT_DIR, f"trained {model_name}")
+        except InsufficientData:
+            _append_training_event(academy_key, model_name, "INSUFFICIENT_DATA", len(rows))
+    except Exception:
+        _training_errors[state_key] = "Training failed; check service diagnostics."
+        _append_training_event(academy_key, model_name, "TRAINING_FAILED", None)
+    finally:
+        with _training_lock:
+            _training.discard(state_key)
+
+
+def _start_training(model_name: str, request: TrainRequest, background: bool = True):
     if not config.DATABASE_URL:
-        raise HTTPException(503, "ML database is not configured")
-    academy_key = _academy_key(request.academy_id)
-    state_key = f"{academy_key}:{model_name}"
+        raise HTTPException(503, {"status": "NOT_READY", "message": "ML database is not configured"})
+    state_key = f"{_academy_key(request.academy_id)}:{model_name}"
     with _training_lock:
         if state_key in _training:
             raise HTTPException(409, {"status": "TRAINING", "message": "Training is already in progress"})
         _training.add(state_key)
     _training_errors.pop(state_key, None)
-    try:
-        try:
-            rows = extract_fee_rows(config.DATABASE_URL, request.academy_id) if model_name == "fee-risk" else extract_performance_rows(config.DATABASE_URL, request.academy_id)
-        except Exception:
-            raise HTTPException(503, {"status": "NOT_READY", "message": "The academy data source is unavailable"}) from None
-        minimum = config.MIN_FEE_SAMPLES if model_name == "fee-risk" else config.MIN_PERFORMANCE_SAMPLES
-        try:
-            return train(model_name, rows, config.ARTIFACT_DIR, academy_key, minimum,
-                         config.ARTIFACT_DIR / academy_key / "history.jsonl")
-        except InsufficientData as exc:
-            _append_training_event(academy_key, model_name, "INSUFFICIENT_DATA", len(rows))
-            raise HTTPException(409, {"status": "INSUFFICIENT_DATA", "message": str(exc), "usable_records": len(rows)}) from exc
-    except HTTPException:
-        raise
-    except Exception as exc:
-        _training_errors[state_key] = "Training failed; check service diagnostics."
-        _append_training_event(academy_key, model_name, "TRAINING_FAILED", None)
-        raise HTTPException(500, "Model training failed; production model was left unchanged") from None
-    finally:
-        with _training_lock:
-            _training.discard(state_key)
+    if background:
+        threading.Thread(target=_run_training, args=(model_name, request.academy_id, state_key),
+                         name=f"train-{model_name}", daemon=True).start()
+    else:
+        _run_training(model_name, request.academy_id, state_key)
+    return {"status": "TRAINING", "model": model_name,
+            "message": "Training started. Poll /models/status for the result."}
 
 
 def _append_training_event(academy_key: str, model_name: str, status: str, record_count: int | None):
@@ -161,25 +179,25 @@ def _append_training_event(academy_key: str, model_name: str, status: str, recor
         stream.write(json.dumps(event) + "\n")
 
 
-@app.post("/models/train/fee-risk", dependencies=[Depends(internal_auth)])
+@app.post("/models/train/fee-risk", status_code=202, dependencies=[Depends(internal_auth)])
 def train_fee(request: TrainRequest):
-    return _train("fee-risk", request)
+    return _start_training("fee-risk", request)
 
 
-@app.post("/models/train/performance", dependencies=[Depends(internal_auth)])
+@app.post("/models/train/performance", status_code=202, dependencies=[Depends(internal_auth)])
 def train_performance(request: TrainRequest):
-    return _train("performance", request)
+    return _start_training("performance", request)
 
 
-@app.post("/models/retrain", dependencies=[Depends(internal_auth)])
+@app.post("/models/retrain", status_code=202, dependencies=[Depends(internal_auth)])
 def retrain(request: TrainRequest):
     outcomes = {}
-    for name, operation in (("fee_risk", train_fee), ("performance", train_performance)):
+    for name, model_name in (("fee_risk", "fee-risk"), ("performance", "performance")):
         try:
-            outcomes[name] = operation(request)
+            outcomes[name] = _start_training(model_name, request)
         except HTTPException as exc:
-            outcomes[name] = {"status": exc.detail.get("status", "TRAINING_FAILED") if isinstance(exc.detail, dict) else "TRAINING_FAILED",
-                              "message": exc.detail.get("message", "Training did not complete") if isinstance(exc.detail, dict) else str(exc.detail)}
+            detail = exc.detail if isinstance(exc.detail, dict) else {"message": str(exc.detail)}
+            outcomes[name] = {"status": detail.get("status", "NOT_READY"), "message": detail.get("message")}
     return outcomes
 
 
@@ -197,6 +215,7 @@ def rollback(request: RollbackRequest):
     if metadata.get("status") != "PRODUCTION" or metadata.get("model") != request.model:
         raise HTTPException(409, "Only a previously promoted model version can be restored")
     _atomic_json(folder / "production.json", {"version": request.version})
+    artifact_store.push(config.ARTIFACT_DIR, f"rollback {request.model} to {request.version}")
     return {"status": "PRODUCTION", "version": request.version, "model": request.model}
 
 

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -140,21 +141,22 @@ class _AdminAiPredictionScreenState extends State<AdminAiPredictionScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.auto_awesome, color: AppColors.accent, size: 20),
-          SizedBox(width: 12),
+          Icon(Icons.auto_awesome,
+              color: context.appColors.accentText, size: 20),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               "ACADEMY INSIGHTS",
               style: TextStyle(
-                  color: AppColors.accent,
+                  color: context.appColors.accentText,
                   fontWeight: FontWeight.w800,
                   fontSize: 11,
                   letterSpacing: 1),
             ),
           ),
-          Icon(Icons.bolt_rounded, color: AppColors.success, size: 16),
+          const Icon(Icons.bolt_rounded, color: AppColors.success, size: 16),
         ],
       ),
     );
@@ -181,9 +183,9 @@ class _AdminAiPredictionScreenState extends State<AdminAiPredictionScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text("At-Risk Students",
-            style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: context.appColors.surface,
+        title: Text("At-Risk Students",
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: ai.atRiskCount > 0
             ? Column(
                 mainAxisSize: MainAxisSize.min,
@@ -192,13 +194,13 @@ class _AdminAiPredictionScreenState extends State<AdminAiPredictionScreen> {
                           leading: const Icon(Icons.person,
                               color: AppColors.warning),
                           title: Text(name,
-                              style: const TextStyle(
-                                  color: AppColors.textPrimary)),
+                              style: TextStyle(
+                                  color: context.appColors.textPrimary)),
                         ))
                     .toList(),
               )
-            : const Text("All students are performing above the 50% threshold.",
-                style: TextStyle(color: AppColors.textSecondary)),
+            : Text("All students are performing above the 50% threshold.",
+                style: TextStyle(color: context.appColors.textSecondary)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx), child: const Text("CLOSE")),
@@ -207,6 +209,17 @@ class _AdminAiPredictionScreenState extends State<AdminAiPredictionScreen> {
     );
   }
 
+  /// Human-readable model state (the API returns machine codes).
+  static String mlStatusLabel(String status) => switch (status) {
+        'PRODUCTION' => 'Validated model active',
+        'READY_TO_TRAIN' => 'Enough data – ready to train',
+        'INSUFFICIENT_DATA' => 'Not enough data yet',
+        'TRAINING' => 'Training in progress…',
+        'TRAINING_FAILED' => 'Training failed',
+        'VALIDATED' => 'Trained, not promoted',
+        _ => 'ML service not available',
+      };
+
   Widget _buildFeeDelayRiskPrediction(AdminAiProvider ai) {
     final status = ai.feeModel['status']?.toString() ?? 'NOT_READY';
     final records = ai.feeModel['usable_records'];
@@ -214,7 +227,7 @@ class _AdminAiPredictionScreenState extends State<AdminAiPredictionScreen> {
     final validation = metadata?['metrics']?['metrics'];
     return _predictionCard(
       title: "Fee Payment Risk Model",
-      prediction: status,
+      prediction: mlStatusLabel(status),
       insight: status == 'PRODUCTION'
           ? "${ai.feePrediction == null ? 'Live scoring is unavailable.' : 'Scored ${ai.feePrediction?['scored'] ?? 0} students; risk counts: ${ai.feePrediction?['risk_counts'] ?? {}}; average risk ${ai.feePrediction?['average_probability'] ?? 'n/a'}. Probabilities are not calibrated.'} Version ${ai.feeModel['version'] ?? ''}; records: ${metadata?['records'] ?? 'unknown'}; validation ROC-AUC ${validation?['roc_auc'] ?? 'n/a'}, precision ${validation?['precision'] ?? 'n/a'}, recall ${validation?['recall'] ?? 'n/a'}, F1 ${validation?['f1'] ?? 'n/a'}; trained ${metadata?['trained_at'] ?? 'date unavailable'}.${ai.feeModel['last_training_error'] == null ? '' : ' Last training error: ${ai.feeModel['last_training_error']}'}"
           : "${records == null ? ai.feeModel['reason'] ?? 'ML service unavailable or not configured.' : '$records usable labelled records are available.'} Predictions stay disabled until a validated model is promoted.",
@@ -250,7 +263,7 @@ class _AdminAiPredictionScreenState extends State<AdminAiPredictionScreen> {
     final validation = metadata?['metrics']?['metrics'];
     return _predictionCard(
       title: "Academic Performance Model",
-      prediction: status,
+      prediction: mlStatusLabel(status),
       insight: status == 'PRODUCTION'
           ? "${ai.performancePrediction == null ? 'Live scoring is unavailable.' : 'Scored ${ai.performancePrediction?['scored'] ?? 0} subject groups; predicted average marks ${ai.performancePrediction?['average_predicted_marks'] ?? 'n/a'}. '}Version ${ai.performanceModel['version'] ?? ''}; records: ${metadata?['records'] ?? 'unknown'}; validation MAE ${validation?['mae'] ?? 'n/a'}, RMSE ${validation?['rmse'] ?? 'n/a'}, R² ${validation?['r2'] ?? 'n/a'}; trained ${metadata?['trained_at'] ?? 'date unavailable'}.${ai.performanceModel['last_training_error'] == null ? '' : ' Last training error: ${ai.performanceModel['last_training_error']}'}"
           : "${records == null ? ai.performanceModel['reason'] ?? 'ML service unavailable or not configured.' : '$records dated assessment records are usable.'} No forecast is shown until a validated model is promoted.",
@@ -287,9 +300,10 @@ class _AdminAiPredictionScreenState extends State<AdminAiPredictionScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,8 +316,8 @@ class _AdminAiPredictionScreenState extends State<AdminAiPredictionScreen> {
                 child: Text(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: AppColors.textSecondary,
+                    style: TextStyle(
+                        color: context.appColors.textSecondary,
                         fontSize: 13,
                         fontWeight: FontWeight.bold)),
               ),
@@ -315,8 +329,10 @@ class _AdminAiPredictionScreenState extends State<AdminAiPredictionScreen> {
                   color: color, fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
           Text(insight,
-              style: const TextStyle(
-                  color: AppColors.textMuted, fontSize: 13, height: 1.4)),
+              style: TextStyle(
+                  color: context.appColors.textMuted,
+                  fontSize: 13,
+                  height: 1.4)),
           const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerRight,

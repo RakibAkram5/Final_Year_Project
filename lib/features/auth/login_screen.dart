@@ -132,17 +132,17 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surfaceAlt,
-          title: const Text('Verify Your Identity',
-              style: TextStyle(color: AppColors.textPrimary)),
+          backgroundColor: context.appColors.surfaceAlt,
+          title: Text('Verify Your Identity',
+              style: TextStyle(color: context.appColors.textPrimary)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(question,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: context.appColors.textPrimary,
                         fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 LabeledField(
@@ -172,8 +172,8 @@ class _LoginScreenState extends State<LoginScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel',
-                  style: TextStyle(color: AppColors.textSecondary)),
+              child: Text('Cancel',
+                  style: TextStyle(color: context.appColors.textSecondary)),
             ),
             TextButton(
               onPressed: verifying
@@ -221,8 +221,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                     },
               child: Text(verifying ? 'RESETTING...' : 'RESET PASSWORD',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.accent)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: context.appColors.accentText)),
             ),
           ],
         ),
@@ -376,42 +377,49 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: () => setState(() => _obscure = !_obscure),
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
+          // Wraps onto two lines with large system fonts instead of
+          // overflowing.
+          SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                runSpacing: 8,
                 children: [
-                  SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: Checkbox(
-                      value: _rememberMe,
-                      activeColor: AppColors.accent,
-                      checkColor: AppColors.textOnAccent,
-                      onChanged: (v) =>
-                          setState(() => _rememberMe = v ?? false),
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: Checkbox(
+                          value: _rememberMe,
+                          activeColor: AppColors.accent,
+                          checkColor: AppColors.textOnAccent,
+                          onChanged: (v) =>
+                              setState(() => _rememberMe = v ?? false),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('Remember Me',
+                          style: TextStyle(
+                              color: context.appColors.textSecondary,
+                              fontSize: 13)),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text('Remember Me',
-                      style: TextStyle(
-                          color: context.appColors.textSecondary,
-                          fontSize: 13)),
+                  TextButton(
+                    onPressed: _forgotPassword,
+                    style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                    child: Text('Forgot Password?',
+                        style: TextStyle(
+                            color: context.appColors.textSecondary,
+                            fontSize: 13)),
+                  ),
                 ],
-              ),
-              TextButton(
-                onPressed: _forgotPassword,
-                style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                child: Text('Forgot Password?',
-                    style: TextStyle(
-                        color: context.appColors.textSecondary, fontSize: 13)),
-              ),
-            ],
-          ),
+              )),
         ],
       ),
     );
@@ -425,10 +433,11 @@ class _LoginScreenState extends State<LoginScreen> {
             style: TextStyle(color: context.appColors.textSecondary)),
         GestureDetector(
           onTap: () => Navigator.pushNamed(context, AppRoutes.signup),
-          child: const Text(
+          child: Text(
             'Sign Up',
-            style:
-                TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700),
+            style: TextStyle(
+                color: context.appColors.accentText,
+                fontWeight: FontWeight.w700),
           ),
         ),
       ],

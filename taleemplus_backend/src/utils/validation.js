@@ -103,10 +103,12 @@ const createResourceBody = z
     fileUrl: z.string().trim().max(2000).optional(),
     contentText: z.string().trim().max(50000).optional(),
     fileName: z.string().trim().max(300).optional(),
-    mimeType: z.string().trim().max(120).optional()
+    mimeType: z.string().trim().max(120).optional(),
+    // The client uploads the file to /files right after creating the record.
+    withAttachment: z.boolean().optional()
   })
-  .refine((value) => Boolean(value.fileUrl || value.contentText), {
-    message: 'A file URL or text content is required.',
+  .refine((value) => Boolean(value.fileUrl || value.contentText || value.withAttachment), {
+    message: 'Add a file, a link or text content.',
     path: ['fileUrl']
   });
 

@@ -1,6 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taleemplus_app/logic/fee_risk_model.dart';
-import 'package:taleemplus_app/logic/performance_index_model.dart';
 import 'package:taleemplus_app/logic/text_rank_summarizer.dart';
 import 'package:taleemplus_app/logic/tfidf_grader.dart';
 import 'package:taleemplus_app/core/utils/validators.dart';
@@ -20,51 +18,6 @@ void main() {
         () {
       expect(Validators.passwordForLogin('old'), isNull);
       expect(Validators.passwordForLogin(''), isNotNull);
-    });
-  });
-
-  group('FeeRiskModel', () {
-    test('returns a probability in the unit interval', () {
-      final probability = FeeRiskModel.predictRiskProbability(
-        attendanceRate: 0.75,
-        daysLateAvg: 3,
-        latePaymentCount: 1,
-      );
-
-      expect(probability, inInclusiveRange(0, 1));
-    });
-
-    test('risk increases as attendance falls and late payments increase', () {
-      final lowerRisk = FeeRiskModel.predictRiskProbability(
-        attendanceRate: 0.95,
-        daysLateAvg: 0,
-        latePaymentCount: 0,
-      );
-      final higherRisk = FeeRiskModel.predictRiskProbability(
-        attendanceRate: 0.5,
-        daysLateAvg: 10,
-        latePaymentCount: 3,
-      );
-
-      expect(higherRisk, greaterThan(lowerRisk));
-    });
-  });
-
-  group('PerformanceIndexModel', () {
-    test('keeps predictions within the displayed 0–100 range', () {
-      final high = PerformanceIndexModel.predict(
-        quizAvg: 200,
-        attendanceRate: 1,
-        latePaymentCount: 0,
-      );
-      final low = PerformanceIndexModel.predict(
-        quizAvg: 0,
-        attendanceRate: 0,
-        latePaymentCount: 100,
-      );
-
-      expect(high, 100);
-      expect(low, 0);
     });
   });
 

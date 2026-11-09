@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -88,9 +89,9 @@ class _OcrHistoryScreenState extends State<OcrHistoryScreen> {
 
   Widget _body(BuildContext context, dynamic user) {
     if (user == null) {
-      return const Center(
+      return Center(
           child: Text("Please login to view history",
-              style: TextStyle(color: AppColors.textSecondary)));
+              style: TextStyle(color: context.appColors.textSecondary)));
     }
     return StreamBuilder<List<OcrDocumentModel>>(
       stream: _firestoreService.getDocuments(user.uid),
@@ -122,12 +123,12 @@ class _OcrHistoryScreenState extends State<OcrHistoryScreen> {
               children: [
                 Icon(Icons.history_rounded,
                     size: 64,
-                    color: AppColors.textMuted.withValues(alpha: 0.3)),
+                    color: context.appColors.textMuted.withValues(alpha: 0.3)),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   "No scanned documents yet.",
-                  style:
-                      TextStyle(color: AppColors.textSecondary, fontSize: 16),
+                  style: TextStyle(
+                      color: context.appColors.textSecondary, fontSize: 16),
                 ),
               ],
             ),
@@ -207,12 +208,12 @@ class _OcrHistoryScreenState extends State<OcrHistoryScreen> {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.accent.withValues(alpha: 0.1)
-                : AppColors.surface.withValues(alpha: 0.55),
+                : context.appColors.surface.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
                 color: selected
                     ? AppColors.accent
-                    : AppColors.border.withValues(alpha: 0.5)),
+                    : context.appColors.border.withValues(alpha: 0.5)),
           ),
           child: Row(
             children: [
@@ -223,7 +224,9 @@ class _OcrHistoryScreenState extends State<OcrHistoryScreen> {
                       selected
                           ? Icons.check_circle_rounded
                           : Icons.radio_button_unchecked_rounded,
-                      color: selected ? AppColors.accent : AppColors.textMuted),
+                      color: selected
+                          ? context.appColors.accentText
+                          : context.appColors.textMuted),
                 )
               else
                 Container(
@@ -232,8 +235,8 @@ class _OcrHistoryScreenState extends State<OcrHistoryScreen> {
                     color: AppColors.accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.description_rounded,
-                      color: AppColors.accent, size: 24),
+                  child: Icon(Icons.description_rounded,
+                      color: context.appColors.accentText, size: 24),
                 ),
               const SizedBox(width: 14),
               Expanded(
@@ -242,8 +245,8 @@ class _OcrHistoryScreenState extends State<OcrHistoryScreen> {
                   children: [
                     Text(
                       doc.title,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: context.appColors.textPrimary,
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
@@ -253,14 +256,14 @@ class _OcrHistoryScreenState extends State<OcrHistoryScreen> {
                     const SizedBox(height: 4),
                     Text(
                       dateStr,
-                      style: const TextStyle(
-                          color: AppColors.textMuted, fontSize: 12),
+                      style: TextStyle(
+                          color: context.appColors.textMuted, fontSize: 12),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       doc.extractedText,
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 13),
+                      style: TextStyle(
+                          color: context.appColors.textSecondary, fontSize: 13),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -285,16 +288,16 @@ class _OcrHistoryScreenState extends State<OcrHistoryScreen> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text("Delete Document?",
-            style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: context.appColors.surface,
+        title: Text("Delete Document?",
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: Text("Are you sure you want to delete '${doc.title}'?",
-            style: const TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: context.appColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("CANCEL",
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text("CANCEL",
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),

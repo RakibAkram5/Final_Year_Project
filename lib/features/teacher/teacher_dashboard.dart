@@ -1,6 +1,11 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../shared/assignments_screen.dart';
+import '../shared/reports_screen.dart';
+import '../shared/academy_location.dart';
+import '../shared/documents_screen.dart';
+import '../../data/remote/file_service.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
@@ -11,13 +16,14 @@ import '../../logic/session_provider.dart';
 import '../../data/remote/auth_service.dart';
 import '../../data/remote/notification_service.dart'; // NEW
 import '../../widgets/app_widgets.dart';
+import '../../widgets/dashboard_app_bar_actions.dart';
 import '../../widgets/teacher_stats_row.dart';
 import '../../widgets/web/web_cards.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
 import '../shared/notifications_screen.dart'; // NEW
 import '../../widgets/gradient_background.dart';
-import '../../widgets/theme_toggle_widget.dart'; // NEW
+import '../../widgets/responsive/responsive_grid.dart';
 import '../../core/theme/theme_extensions.dart'; // NEW
 import '../ocr/screens/ocr_history_screen.dart';
 import '../ocr/screens/ocr_scanner_screen.dart';
@@ -54,11 +60,12 @@ class TeacherDashboard extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.co_present_rounded, color: AppColors.accent, size: 22),
-            SizedBox(width: 8),
-            Expanded(
+            Icon(Icons.co_present_rounded,
+                color: context.appColors.accentText, size: 22),
+            const SizedBox(width: 8),
+            const Expanded(
               child: Text('Teacher Portal',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -66,19 +73,10 @@ class TeacherDashboard extends StatelessWidget {
             ),
           ],
         ),
-        actions: [
-          _notificationBell(context, user),
-          IconButton(
-            icon: const Icon(Icons.security_rounded, color: AppColors.accent),
-            onPressed: () => _showSecuritySettings(context),
-          ),
-          const ThemeToggle(), // NEW
-          IconButton(
-            icon: const Icon(Icons.logout_rounded,
-                color: AppColors.textSecondary),
-            onPressed: () => _logout(context),
-          ),
-        ],
+        actions: dashboardAppBarActions(context,
+            notificationBell: _notificationBell(context, user),
+            onSecurity: () => _showSecuritySettings(context),
+            onLogout: () => _logout(context)),
       ),
       body: GradientBackground(
         child: SafeArea(
@@ -122,6 +120,47 @@ class TeacherDashboard extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                           builder: (_) => const MyTimetableScreen())),
+                ),
+                _gridTile(
+                  context,
+                  'My Documents',
+                  'CV and certificates on file',
+                  Icons.folder_rounded,
+                  () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => DocumentsScreen(
+                              title: 'My Documents',
+                              category: FileCategory.teacherDocument,
+                              ownerId: user?.uid ?? ''))),
+                ),
+                _gridTile(
+                  context,
+                  'Academy Location',
+                  'Map and directions',
+                  Icons.place_rounded,
+                  () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const AcademyLocationScreen())),
+                ),
+                _gridTile(
+                  context,
+                  'Reports',
+                  'Attendance & results PDF/Excel',
+                  Icons.summarize_rounded,
+                  () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const ReportsScreen())),
+                ),
+                _gridTile(
+                  context,
+                  'Assignments',
+                  'Set work, review & grade',
+                  Icons.assignment_rounded,
+                  () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const AssignmentsScreen())),
                 ),
                 _gridTile(
                   context,
@@ -375,23 +414,23 @@ class TeacherDashboard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text("Security Settings",
+            Text("Security Settings",
                 style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            const Text(
-                "Enhance your account security with biometric authentication.",
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            Text("Enhance your account security with biometric authentication.",
+                style: TextStyle(
+                    color: context.appColors.textSecondary, fontSize: 13)),
             const SizedBox(height: 24),
             StatefulBuilder(
               builder: (context, setInternalState) {
                 final session = context.watch<SessionProvider>();
                 return SwitchListTile(
-                  title: const Text("Biometric / Face Unlock",
+                  title: Text("Biometric / Face Unlock",
                       style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: context.appColors.textPrimary,
                           fontWeight: FontWeight.w600)),
                   subtitle: const Text("Use fingerprints or face ID to log in.",
                       style: TextStyle(fontSize: 12)),
@@ -453,11 +492,11 @@ class TeacherDashboard extends StatelessWidget {
               icon: const Icon(Icons.sync_problem_rounded),
               label: const Text("Fix Academy Link"),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
+                foregroundColor: context.appColors.textSecondary,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
-                side: const BorderSide(color: AppColors.border),
+                side: BorderSide(color: context.appColors.border),
               ),
             ),
             const SizedBox(height: 24),
@@ -489,9 +528,10 @@ class TeacherDashboard extends StatelessWidget {
                         controller: currentPasswordCtrl,
                         obscure: true),
                     const SizedBox(height: 12),
-                    const Text("Enter a new password for your account.",
+                    Text("Enter a new password for your account.",
                         style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 13)),
+                            color: context.appColors.textSecondary,
+                            fontSize: 13)),
                     const SizedBox(height: 20),
                     LabeledField(
                         label: "New Password",
@@ -572,10 +612,9 @@ class TeacherDashboard extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                  "Enter your account password to enable biometric login.",
-                  style:
-                      TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text("Enter your account password to enable biometric login.",
+                  style: TextStyle(
+                      fontSize: 13, color: context.appColors.textSecondary)),
               const SizedBox(height: 16),
               LabeledField(
                   label: "Current Password",
@@ -614,8 +653,9 @@ class TeacherDashboard extends StatelessWidget {
                       if (ctx.mounted) Navigator.pop(ctx, ctrl.text);
                     },
               child: Text(verifying ? "VERIFYING..." : "VERIFY",
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.accent)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: context.appColors.accentText)),
             ),
           ],
         ),
@@ -635,8 +675,8 @@ class TeacherDashboard extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_rounded,
-                  color: AppColors.accent),
+              icon: Icon(Icons.notifications_rounded,
+                  color: context.appColors.accentText),
               onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -679,15 +719,7 @@ class TeacherDashboard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1)),
           const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.3,
-            children: tiles,
-          ),
+          ResponsiveTileGrid(children: tiles),
         ],
       ),
     );
@@ -711,7 +743,8 @@ class TeacherDashboard extends StatelessWidget {
                   color: AppColors.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: AppColors.accentDark, size: 18),
+                child:
+                    Icon(icon, color: context.appColors.accentText, size: 18),
               ),
               const Spacer(),
               Text(title,

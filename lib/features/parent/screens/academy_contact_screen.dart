@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../../shared/academy_location.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
@@ -9,8 +10,6 @@ import '../../../logic/auth_provider.dart';
 import '../../../widgets/gradient_background.dart';
 import '../../../widgets/web/web_nav_items.dart';
 import '../../../widgets/web/web_shell.dart';
-import '../../../data/models/app_user.dart';
-import '../../../data/remote/auth_service.dart';
 
 class AcademyContactScreen extends StatelessWidget {
   final String academyId;
@@ -60,15 +59,13 @@ class AcademyContactScreen extends StatelessWidget {
   }
 
   Widget _body(BuildContext context) {
-    return FutureBuilder<AppUser?>(
-      future: AuthService().getProfile(academyId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-              child: CircularProgressIndicator(color: AppColors.accent));
-        }
-
-        final academy = snapshot.data;
+    // The signed-in user's profile (/auth/me) already carries their own
+    // academy's details. (Previously this looked up a *user* whose id was the
+    // academy id, which never exists, so the screen always showed
+    // "Academy profile unavailable".)
+    return Builder(
+      builder: (context) {
+        final academy = context.watch<AuthProvider>().currentUser;
         final name = academy?.academyName ?? "Academy profile unavailable";
         final address = academy?.academyAddress ?? "Address not provided";
         final phone = academy?.academyPhone ?? "";
@@ -77,10 +74,12 @@ class AcademyContactScreen extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           children: [
             _buildHeader(context, name),
-            const SizedBox(height: 32),
-            const Text('CONTACT CHANNELS',
+            const SizedBox(height: 16),
+            AcademyLocationCard(user: academy),
+            const SizedBox(height: 24),
+            Text('CONTACT CHANNELS',
                 style: TextStyle(
-                    color: AppColors.textMuted,
+                    color: context.appColors.textMuted,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2)),
@@ -141,8 +140,8 @@ class AcademyContactScreen extends StatelessWidget {
           decoration: BoxDecoration(
               color: AppColors.accent.withValues(alpha: 0.1),
               shape: BoxShape.circle),
-          child: const Icon(Icons.school_rounded,
-              size: 48, color: AppColors.accent),
+          child: Icon(Icons.school_rounded,
+              size: 48, color: context.appColors.accentText),
         ),
         const SizedBox(height: 16),
         Text(name,
@@ -151,8 +150,8 @@ class AcademyContactScreen extends StatelessWidget {
                 color: context.appColors.textPrimary,
                 fontSize: 24,
                 fontWeight: FontWeight.w900)),
-        const Text('Education with Excellence',
-            style: TextStyle(color: AppColors.textMuted)),
+        Text('Education with Excellence',
+            style: TextStyle(color: context.appColors.textMuted)),
       ],
     );
   }
@@ -166,24 +165,26 @@ class AcademyContactScreen extends StatelessWidget {
         border:
             Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Icon(icon, color: color),
-        title: Text(title,
-            style: const TextStyle(
-                color: AppColors.textMuted,
-                fontSize: 11,
-                fontWeight: FontWeight.bold)),
-        subtitle: Text(val.isEmpty ? 'Not configured' : val,
-            style: TextStyle(
-                color: context.appColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold)),
-        trailing: onTap == null
-            ? null
-            : const Icon(Icons.open_in_new_rounded,
-                size: 18, color: AppColors.textMuted),
-      ),
+      child: Material(
+          type: MaterialType.transparency,
+          child: ListTile(
+            onTap: onTap,
+            leading: Icon(icon, color: color),
+            title: Text(title,
+                style: TextStyle(
+                    color: context.appColors.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold)),
+            subtitle: Text(val.isEmpty ? 'Not configured' : val,
+                style: TextStyle(
+                    color: context.appColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
+            trailing: onTap == null
+                ? null
+                : Icon(Icons.open_in_new_rounded,
+                    size: 18, color: context.appColors.textMuted),
+          )),
     );
   }
 
@@ -199,29 +200,32 @@ class AcademyContactScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.location_on_rounded,
+              const Icon(Icons.location_on_rounded,
                   color: AppColors.danger, size: 20),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text('Location',
                   style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: context.appColors.textPrimary,
                       fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 12),
           Text(address,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 13, height: 1.4)),
-          const SizedBox(height: 16),
-          const Text('VISTING HOURS',
               style: TextStyle(
-                  color: AppColors.textMuted,
+                  color: context.appColors.textSecondary,
+                  fontSize: 13,
+                  height: 1.4)),
+          const SizedBox(height: 16),
+          Text('VISTING HOURS',
+              style: TextStyle(
+                  color: context.appColors.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.bold)),
-          const Text('Mon - Fri (09:00 AM - 05:00 PM)',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+          Text('Mon - Fri (09:00 AM - 05:00 PM)',
+              style: TextStyle(
+                  color: context.appColors.textPrimary, fontSize: 12)),
         ],
       ),
     );

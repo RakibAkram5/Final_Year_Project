@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -65,9 +66,9 @@ class _StudentProgressChartScreenState
     final academyId = user?.academyId ?? '';
 
     return academyId.isEmpty
-        ? const Center(
+        ? Center(
             child: Text("Session error",
-                style: TextStyle(color: AppColors.textSecondary)))
+                style: TextStyle(color: context.appColors.textSecondary)))
         : StreamBuilder<List<TestMarkModel>>(
             stream: context
                 .read<QuizProvider>()
@@ -100,18 +101,18 @@ class _StudentProgressChartScreenState
                   children: [
                     _buildStatsRow(results),
                     const SizedBox(height: 32),
-                    const Text("PROGRESS TREND",
+                    Text("PROGRESS TREND",
                         style: TextStyle(
-                            color: AppColors.textMuted,
+                            color: context.appColors.textMuted,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2)),
                     const SizedBox(height: 16),
                     _buildLineChart(results),
                     const SizedBox(height: 32),
-                    const Text("SUBJECT WISE PERFORMANCE",
+                    Text("SUBJECT WISE PERFORMANCE",
                         style: TextStyle(
-                            color: AppColors.textMuted,
+                            color: context.appColors.textMuted,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2)),
@@ -149,9 +150,10 @@ class _StudentProgressChartScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.55),
+          color: context.appColors.surface.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          border: Border.all(
+              color: context.appColors.border.withValues(alpha: 0.5)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -164,8 +166,8 @@ class _StudentProgressChartScreenState
             ),
             const SizedBox(height: 4),
             Text(label,
-                style: const TextStyle(
-                    color: AppColors.textMuted,
+                style: TextStyle(
+                    color: context.appColors.textMuted,
                     fontSize: 10,
                     fontWeight: FontWeight.bold)),
           ],
@@ -188,9 +190,10 @@ class _StudentProgressChartScreenState
       height: 250,
       padding: const EdgeInsets.fromLTRB(8, 24, 24, 10),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: LineChart(
         LineChartData(
@@ -199,7 +202,8 @@ class _StudentProgressChartScreenState
             drawVerticalLine: false,
             horizontalInterval: 25,
             getDrawingHorizontalLine: (value) => FlLine(
-                color: AppColors.border.withValues(alpha: 0.2), strokeWidth: 1),
+                color: context.appColors.border.withValues(alpha: 0.2),
+                strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             show: true,
@@ -215,8 +219,8 @@ class _StudentProgressChartScreenState
                 reservedSize: 40,
                 interval: 25,
                 getTitlesWidget: (val, meta) => Text("${val.toInt()}%",
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 10)),
+                    style: TextStyle(
+                        color: context.appColors.textMuted, fontSize: 10)),
               ),
             ),
           ),
@@ -277,7 +281,7 @@ class _StudentProgressChartScreenState
               backDrawRodData: BackgroundBarChartRodData(
                   show: true,
                   toY: 100,
-                  color: AppColors.border.withValues(alpha: 0.1)),
+                  color: context.appColors.border.withValues(alpha: 0.1)),
             ),
           ],
         ),
@@ -289,9 +293,10 @@ class _StudentProgressChartScreenState
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(8, 24, 16, 8),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: BarChart(
         BarChartData(
@@ -312,8 +317,8 @@ class _StudentProgressChartScreenState
                 reservedSize: 34,
                 interval: 25,
                 getTitlesWidget: (val, meta) => Text("${val.toInt()}",
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 10)),
+                    style: TextStyle(
+                        color: context.appColors.textMuted, fontSize: 10)),
               ),
             ),
             bottomTitles: AxisTitles(
@@ -332,8 +337,8 @@ class _StudentProgressChartScreenState
                       axisSide: meta.axisSide,
                       space: 8,
                       child: Text(label,
-                          style: const TextStyle(
-                              color: AppColors.textSecondary,
+                          style: TextStyle(
+                              color: context.appColors.textSecondary,
                               fontSize: 10,
                               fontWeight: FontWeight.bold)),
                     );
@@ -349,14 +354,15 @@ class _StudentProgressChartScreenState
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bar_chart_rounded, size: 64, color: AppColors.textMuted),
-          SizedBox(height: 16),
+          Icon(Icons.bar_chart_rounded,
+              size: 64, color: context.appColors.textMuted),
+          const SizedBox(height: 16),
           Text("No performance data available yet.",
-              style: TextStyle(color: AppColors.textSecondary)),
+              style: TextStyle(color: context.appColors.textSecondary)),
         ],
       ),
     );

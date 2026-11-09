@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -96,11 +97,12 @@ class StudentAttendanceScreen extends StatelessWidget {
                               style: const TextStyle(color: AppColors.danger),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
+                            Text(
                               "If you see an 'index' error, please wait a minute for Firestore to auto-generate it or check your rules.",
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  color: AppColors.textMuted, fontSize: 12),
+                                  color: context.appColors.textMuted,
+                                  fontSize: 12),
                             ),
                           ],
                         ),
@@ -111,12 +113,12 @@ class StudentAttendanceScreen extends StatelessWidget {
                   final records = snapshot.data ?? [];
 
                   if (records.isEmpty && courses.isEmpty) {
-                    return _buildEmptyState();
+                    return _buildEmptyState(context);
                   }
 
                   return Column(
                     children: [
-                      _buildStatsHeader(records),
+                      _buildStatsHeader(context, records),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                         child: Align(
@@ -147,7 +149,7 @@ class StudentAttendanceScreen extends StatelessWidget {
                         ),
                       ),
                       Expanded(
-                        child: _buildDateGroupedView(courses, records),
+                        child: _buildDateGroupedView(context, courses, records),
                       ),
                     ],
                   );
@@ -157,7 +159,8 @@ class StudentAttendanceScreen extends StatelessWidget {
           );
   }
 
-  Widget _buildStatsHeader(List<AttendanceRecord> records) {
+  Widget _buildStatsHeader(
+      BuildContext context, List<AttendanceRecord> records) {
     final total = records.length;
     final present = records.where((r) => r.status == 'present').length;
     final late = records.where((r) => r.status == 'late').length;
@@ -169,24 +172,25 @@ class StudentAttendanceScreen extends StatelessWidget {
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _statItem(
-              "Overall", "${percentage.toStringAsFixed(1)}%", AppColors.accent),
-          _statItem("Present", "$present", AppColors.success),
-          _statItem("Absent", "$absent", AppColors.danger),
-          _statItem("Leave", "$leave", AppColors.accent),
+          _statItem(context, "Overall", "${percentage.toStringAsFixed(1)}%",
+              AppColors.accent),
+          _statItem(context, "Present", "$present", AppColors.success),
+          _statItem(context, "Absent", "$absent", AppColors.danger),
+          _statItem(context, "Leave", "$leave", AppColors.accent),
         ],
       ),
     );
   }
 
-  Widget _statItem(String label, String value, Color color) {
+  Widget _statItem(
+      BuildContext context, String label, String value, Color color) {
     return Column(
       children: [
         Text(value,
@@ -194,8 +198,8 @@ class StudentAttendanceScreen extends StatelessWidget {
                 color: color, fontSize: 24, fontWeight: FontWeight.w900)),
         const SizedBox(height: 4),
         Text(label,
-            style: const TextStyle(
-                color: AppColors.textMuted,
+            style: TextStyle(
+                color: context.appColors.textMuted,
                 fontSize: 11,
                 fontWeight: FontWeight.w700)),
       ],
@@ -206,9 +210,9 @@ class StudentAttendanceScreen extends StatelessWidget {
   /// attended that day with its status — so "how many lectures did I attend
   /// today" is answerable at a glance, matching how parents/students think
   /// about a day's attendance rather than one subject's history at a time.
-  Widget _buildDateGroupedView(
-      List<ClassEntity> courses, List<AttendanceRecord> records) {
-    if (records.isEmpty) return _buildEmptyState();
+  Widget _buildDateGroupedView(BuildContext context, List<ClassEntity> courses,
+      List<AttendanceRecord> records) {
+    if (records.isEmpty) return _buildEmptyState(context);
 
     final courseById = {for (final c in courses) c.id: c};
     final Map<String, List<AttendanceRecord>> byDate = {};
@@ -224,12 +228,12 @@ class StudentAttendanceScreen extends StatelessWidget {
       itemCount: dateKeys.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, i) =>
-          _dayCard(dateKeys[i], byDate[dateKeys[i]]!, courseById),
+          _dayCard(context, dateKeys[i], byDate[dateKeys[i]]!, courseById),
     );
   }
 
-  Widget _dayCard(String dateKey, List<AttendanceRecord> records,
-      Map<String, ClassEntity> courseById) {
+  Widget _dayCard(BuildContext context, String dateKey,
+      List<AttendanceRecord> records, Map<String, ClassEntity> courseById) {
     final date = DateFormat('yyyy-MM-dd').parse(dateKey);
     final present = records.where((r) => r.isPresent).length;
     final late = records.where((r) => r.isLate).length;
@@ -246,9 +250,10 @@ class StudentAttendanceScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,8 +262,8 @@ class StudentAttendanceScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(DateFormat('EEEE, d MMMM yyyy').format(date),
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontWeight: FontWeight.w700,
                       fontSize: 15)),
               Text('${pct.toStringAsFixed(0)}%',
@@ -271,14 +276,15 @@ class StudentAttendanceScreen extends StatelessWidget {
           const SizedBox(height: 12),
           ...sorted.map((r) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: _subjectRow(r, courseById[r.classId]),
+                child: _subjectRow(context, r, courseById[r.classId]),
               )),
         ],
       ),
     );
   }
 
-  Widget _subjectRow(AttendanceRecord r, ClassEntity? course) {
+  Widget _subjectRow(
+      BuildContext context, AttendanceRecord r, ClassEntity? course) {
     Color statusColor;
     IconData icon;
     switch (r.status) {
@@ -308,8 +314,9 @@ class StudentAttendanceScreen extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: Text(label,
-              style: const TextStyle(
-                  color: AppColors.textPrimary, fontWeight: FontWeight.w500)),
+              style: TextStyle(
+                  color: context.appColors.textPrimary,
+                  fontWeight: FontWeight.w500)),
         ),
         Text(r.status.toUpperCase(),
             style: TextStyle(
@@ -321,15 +328,16 @@ class StudentAttendanceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
-    return const Center(
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.event_busy_rounded, size: 64, color: AppColors.textMuted),
-          SizedBox(height: 16),
+          Icon(Icons.event_busy_rounded,
+              size: 64, color: context.appColors.textMuted),
+          const SizedBox(height: 16),
           Text("No attendance records found.",
-              style: TextStyle(color: AppColors.textSecondary)),
+              style: TextStyle(color: context.appColors.textSecondary)),
         ],
       ),
     );

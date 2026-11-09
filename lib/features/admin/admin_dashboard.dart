@@ -13,14 +13,15 @@ import '../../logic/member_provider.dart';
 import '../../logic/session_provider.dart';
 import '../../data/remote/notification_service.dart';
 import '../../widgets/admin_extra_stats_row.dart';
+import '../../widgets/dashboard_app_bar_actions.dart';
 import '../../widgets/app_widgets.dart';
 import '../../widgets/web/web_cards.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
 import '../shared/notifications_screen.dart'; // NEW
 import '../../widgets/gradient_background.dart';
+import '../../widgets/responsive/responsive_grid.dart';
 import '../../widgets/security_question_dialog.dart';
-import '../../widgets/theme_toggle_widget.dart';
 import '../../core/theme/theme_extensions.dart';
 import 'user_management_screen.dart';
 import 'approval_requests_screen.dart';
@@ -34,6 +35,9 @@ import 'screens/challan_generation_screen.dart';
 import 'screens/unpaid_students_screen.dart';
 import 'screens/timetable_management_screen.dart';
 import 'screens/academic_structure_screen.dart';
+import '../shared/assignments_screen.dart';
+import '../shared/reports_screen.dart';
+import '../shared/academy_location.dart';
 import 'screens/class_reports_screen.dart';
 import 'screens/academy_payment_settings_screen.dart';
 
@@ -104,23 +108,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text("Security Settings",
+            Text("Security Settings",
                 style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            const Text(
-                "Enhance your account security with biometric authentication.",
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            Text("Enhance your account security with biometric authentication.",
+                style: TextStyle(
+                    color: context.appColors.textSecondary, fontSize: 13)),
             const SizedBox(height: 24),
             StatefulBuilder(
               builder: (context, setInternalState) {
                 final session = context.watch<SessionProvider>();
                 return SwitchListTile(
-                  title: const Text("Biometric / Face Unlock",
+                  title: Text("Biometric / Face Unlock",
                       style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: context.appColors.textPrimary,
                           fontWeight: FontWeight.w600)),
                   subtitle: const Text("Use fingerprints or face ID to log in.",
                       style: TextStyle(fontSize: 12)),
@@ -207,9 +211,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   controller: currentPasswordCtrl,
                   obscure: true),
               const SizedBox(height: 12),
-              const Text("Enter a new password for your account.",
-                  style:
-                      TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              Text("Enter a new password for your account.",
+                  style: TextStyle(
+                      color: context.appColors.textSecondary, fontSize: 13)),
               const SizedBox(height: 20),
               LabeledField(
                   label: "New Password",
@@ -291,10 +295,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                  "Enter your account password to enable biometric login.",
-                  style:
-                      TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text("Enter your account password to enable biometric login.",
+                  style: TextStyle(
+                      fontSize: 13, color: context.appColors.textSecondary)),
               const SizedBox(height: 16),
               LabeledField(
                   label: "Current Password",
@@ -333,8 +336,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       if (ctx.mounted) Navigator.pop(ctx, ctrl.text);
                     },
               child: Text(verifying ? "VERIFYING..." : "VERIFY",
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.accent)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: context.appColors.accentText)),
             ),
           ],
         ),
@@ -362,15 +366,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text("Academy Information",
+            Text("Academy Information",
                 style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            const Text(
+            Text(
                 "Update details for official reports and parents support section.",
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                style: TextStyle(
+                    color: context.appColors.textSecondary, fontSize: 12)),
             const SizedBox(height: 24),
             Center(
               child: CircleAvatar(
@@ -380,8 +385,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ? NetworkImage(user.academyLogo!)
                     : null,
                 child: user.academyLogo == null
-                    ? const Icon(Icons.business_rounded,
-                        color: AppColors.accent, size: 32)
+                    ? Icon(Icons.business_rounded,
+                        color: context.appColors.accentText, size: 32)
                     : null,
               ),
             ),
@@ -399,6 +404,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 hint: "+92...",
                 controller: phoneCtrl,
                 keyboardType: TextInputType.phone),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AcademyLocationEditorScreen()));
+              },
+              icon: const Icon(Icons.add_location_alt_rounded),
+              label: Text(user.academyLocation == null
+                  ? "Set location on map"
+                  : "Change map location"),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.accent,
+                side: const BorderSide(color: AppColors.accent),
+                minimumSize: const Size(double.infinity, 48),
+              ),
+            ),
             const SizedBox(height: 16),
             PrimaryButton(
               label: "SAVE CHANGES",
@@ -448,12 +471,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.admin_panel_settings_rounded,
-                color: AppColors.accent, size: 22),
-            SizedBox(width: 8),
-            Expanded(
+                color: context.appColors.accentText, size: 22),
+            const SizedBox(width: 8),
+            const Expanded(
               child: Text('Admin Portal',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -461,24 +484,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ],
         ),
-        actions: [
-          _notificationBell(context, user),
-          IconButton(
-            icon: const Icon(Icons.business_rounded, color: AppColors.accent),
-            tooltip: 'Academy Info',
-            onPressed: () => _showAcademyInfoSettings(context, user),
-          ),
-          IconButton(
-            icon: const Icon(Icons.security_rounded, color: AppColors.accent),
-            onPressed: () => _showSecuritySettings(context),
-          ),
-          const ThemeToggle(),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded,
-                color: AppColors.textSecondary),
-            onPressed: _logout,
-          ),
-        ],
+        actions: dashboardAppBarActions(context,
+            notificationBell: _notificationBell(context, user),
+            onAcademyInfo: () => _showAcademyInfoSettings(context, user),
+            onSecurity: () => _showSecuritySettings(context),
+            onLogout: _logout),
       ),
       body: GradientBackground(
         child: SafeArea(
@@ -500,8 +510,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 if (user?.academyName != null) ...[
                   const SizedBox(height: 4),
                   Text(user!.academyName!,
-                      style: const TextStyle(
-                          color: AppColors.accent,
+                      style: TextStyle(
+                          color: context.appColors.accentText,
                           fontSize: 16,
                           fontWeight: FontWeight.w600)),
                 ],
@@ -592,6 +602,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ]),
                 _gridSection('ACADEMICS', [
                   _gridTile(
+                    'Assignments',
+                    'Homework, submissions & grades',
+                    Icons.assignment_rounded,
+                    () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const AssignmentsScreen())),
+                  ),
+                  _gridTile(
                     'Academic Structure',
                     'Configure levels & groups',
                     Icons.school_rounded,
@@ -678,6 +697,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ]),
                 _gridSection('INSIGHTS & COMMUNICATION', [
                   _gridTile(
+                    'Reports & Exports',
+                    'Attendance, results & fees (PDF/Excel)',
+                    Icons.summarize_rounded,
+                    () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const ReportsScreen())),
+                  ),
+                  _gridTile(
                     'AI Prediction & Insights',
                     'Risk & revenue trends',
                     Icons.auto_awesome_rounded,
@@ -741,8 +769,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             if (user?.academyName != null) ...[
               const SizedBox(height: 6),
               Text(user!.academyName!,
-                  style: const TextStyle(
-                      color: AppColors.accent,
+                  style: TextStyle(
+                      color: context.appColors.accentText,
                       fontSize: 16,
                       fontWeight: FontWeight.w600)),
             ],
@@ -969,8 +997,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_rounded,
-                  color: AppColors.accent),
+              icon: Icon(Icons.notifications_rounded,
+                  color: context.appColors.accentText),
               onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -1015,7 +1043,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     color: AppColors.accent.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: AppColors.accentDark, size: 20),
+                  child:
+                      Icon(icon, color: context.appColors.accentText, size: 20),
                 ),
                 const SizedBox(height: 10),
                 FittedBox(
@@ -1055,22 +1084,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Icon(Icons.vpn_key_rounded,
-                color: AppColors.accent, size: 20),
+            Icon(Icons.vpn_key_rounded,
+                color: context.appColors.accentText, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("ACADEMY JOINING CODE",
+                  Text("ACADEMY JOINING CODE",
                       style: TextStyle(
-                          color: AppColors.textMuted,
+                          color: context.appColors.textMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1)),
                   Text(code,
-                      style: const TextStyle(
-                          color: AppColors.accent,
+                      style: TextStyle(
+                          color: context.appColors.accentText,
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 1.2)),
@@ -1078,8 +1107,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.copy_all_rounded,
-                  color: AppColors.accent, size: 20),
+              icon: Icon(Icons.copy_all_rounded,
+                  color: context.appColors.accentText, size: 20),
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: code));
                 if (mounted) {
@@ -1104,21 +1133,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: const TextStyle(
-                  color: AppColors.textMuted,
+              style: TextStyle(
+                  color: context.appColors.textMuted,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1)),
           const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.3,
-            children: tiles,
-          ),
+          ResponsiveTileGrid(children: tiles),
         ],
       ),
     );
@@ -1142,7 +1163,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   color: AppColors.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: AppColors.accentDark, size: 18),
+                child:
+                    Icon(icon, color: context.appColors.accentText, size: 18),
               ),
               const Spacer(),
               Text(title,

@@ -7,6 +7,7 @@ from app import config
 from app.data.extractor import (extract_fee_rows, extract_performance_rows,
                                 list_academy_ids)
 from app.training.pipeline import InsufficientData, train
+from app import artifact_store
 
 log = logging.getLogger("taleemplus.ml.scheduler")
 scheduler = BackgroundScheduler(daemon=True)
@@ -34,6 +35,7 @@ def retrain_all():
                     # Database and tenant identifiers and exception payloads are
                     # deliberately omitted from scheduler logs.
                     log.error("Scheduled model training failed for model %s", name)
+        artifact_store.push(config.ARTIFACT_DIR, "scheduled retraining")
     except Exception:
         log.error("Scheduled model discovery failed")
 

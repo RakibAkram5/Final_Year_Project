@@ -36,8 +36,9 @@ class AppColors {
   static const Color textMutedDark = Color(0xFF6E8E8E);
 
   static const Color textPrimaryLight = Color(0xFF111827);
-  static const Color textSecondaryLight = Color(0xFF6B7280);
-  static const Color textMutedLight = Color(0xFF9CA3AF);
+  static const Color textSecondaryLight = Color(0xFF4B5563); // 7.6:1 on white
+  static const Color textMutedLight =
+      Color(0xFF6E7681); // 4.6:1 on white (WCAG AA)
 
   static const Color textOnAccent = Color(0xFF042020); // dark text on cyan btn
 

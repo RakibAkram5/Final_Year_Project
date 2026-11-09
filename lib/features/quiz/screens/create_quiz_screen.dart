@@ -92,21 +92,22 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
     final picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading:
-                const Icon(Icons.camera_alt_rounded, color: AppColors.accent),
-            title: const Text("Camera",
-                style: TextStyle(color: AppColors.textPrimary)),
+            leading: Icon(Icons.camera_alt_rounded,
+                color: context.appColors.accentText),
+            title: Text("Camera",
+                style: TextStyle(color: context.appColors.textPrimary)),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
-            leading: const Icon(Icons.image_rounded, color: AppColors.accent),
-            title: const Text("Gallery",
-                style: TextStyle(color: AppColors.textPrimary)),
+            leading:
+                Icon(Icons.image_rounded, color: context.appColors.accentText),
+            title: Text("Gallery",
+                style: TextStyle(color: context.appColors.textPrimary)),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
         ],
@@ -186,13 +187,14 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Row(
+        backgroundColor: context.appColors.surface,
+        title: Row(
           children: [
-            Icon(Icons.auto_awesome, color: AppColors.accent, size: 20),
-            SizedBox(width: 10),
+            Icon(Icons.auto_awesome,
+                color: context.appColors.accentText, size: 20),
+            const SizedBox(width: 10),
             Text("AI Test Blueprint",
-                style: TextStyle(color: AppColors.textPrimary)),
+                style: TextStyle(color: context.appColors.textPrimary)),
           ],
         ),
         content: SingleChildScrollView(
@@ -201,16 +203,16 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text("Topic: $preview...",
-                  style: const TextStyle(
-                      color: AppColors.textMuted,
+                  style: TextStyle(
+                      color: context.appColors.textMuted,
                       fontSize: 12,
                       fontStyle: FontStyle.italic)),
               const SizedBox(height: 16),
               _aiStatRow("Predicted Difficulty", diff, AppColors.accent),
-              const Divider(color: AppColors.border, height: 24),
-              const Text("ADJUST QUESTION COUNTS:",
+              Divider(color: context.appColors.border, height: 24),
+              Text("ADJUST QUESTION COUNTS:",
                   style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1)),
@@ -224,8 +226,8 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("CANCEL",
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text("CANCEL",
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -260,19 +262,20 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
         children: [
           Expanded(
               child: Text(label,
-                  style: const TextStyle(
-                      color: AppColors.textPrimary, fontSize: 13))),
+                  style: TextStyle(
+                      color: context.appColors.textPrimary, fontSize: 13))),
           SizedBox(
             width: 60,
             child: TextField(
               controller: ctrl,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: AppColors.accent, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: context.appColors.accentText,
+                  fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                fillColor: AppColors.inputFill,
+                fillColor: context.appColors.inputFill,
                 filled: true,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -470,8 +473,8 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
         children: [
           Expanded(
               child: Text(label,
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13))),
+                  style: TextStyle(
+                      color: context.appColors.textSecondary, fontSize: 13))),
           const SizedBox(width: 8),
           Text(value,
               style: TextStyle(
@@ -654,9 +657,9 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
                 controller: _instructionsCtrl),
           ]),
           const SizedBox(height: 10),
-          const Text('QUESTIONS',
+          Text('QUESTIONS',
               style: TextStyle(
-                  color: AppColors.textMuted,
+                  color: context.appColors.textMuted,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1)),
@@ -665,11 +668,12 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _addQuestion,
-            icon: const Icon(Icons.add_circle_outline, color: AppColors.accent),
-            label: const Text('Add Question',
-                style: TextStyle(color: AppColors.accent)),
+            icon: Icon(Icons.add_circle_outline,
+                color: context.appColors.accentText),
+            label: Text('Add Question',
+                style: TextStyle(color: context.appColors.accentText)),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: context.appColors.border),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
@@ -698,23 +702,26 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
       ),
       child: Column(
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.auto_awesome, color: AppColors.accent, size: 20),
-              SizedBox(width: 10),
+              Icon(Icons.auto_awesome,
+                  color: context.appColors.accentText, size: 20),
+              const SizedBox(width: 10),
               Text("AI TEST ASSISTANT",
                   style: TextStyle(
-                      color: AppColors.accent,
+                      color: context.appColors.accentText,
                       fontWeight: FontWeight.w800,
                       fontSize: 11,
                       letterSpacing: 1.2)),
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
               "Take a photo of the textbook topic — TextRank ranks the most important sentences to build your questions from, offline.",
               style: TextStyle(
-                  color: AppColors.textSecondary, fontSize: 13, height: 1.4)),
+                  color: context.appColors.textSecondary,
+                  fontSize: 13,
+                  height: 1.4)),
           const SizedBox(height: 16),
           PrimaryButton(
             label: "SCAN TOPIC WITH AI",
@@ -732,8 +739,8 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
-            style: const TextStyle(
-                color: AppColors.accent,
+            style: TextStyle(
+                color: context.appColors.accentText,
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2)),
@@ -754,9 +761,9 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Total Marks',
+        Text('Total Marks',
             style: TextStyle(
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
                 fontSize: 13,
                 fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
@@ -764,16 +771,17 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: AppColors.inputFill,
+            color: context.appColors.inputFill,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.appColors.border),
           ),
           child: Text(
               _questions.isEmpty
                   ? '$formatted (add questions below)'
                   : formatted,
-              style: const TextStyle(
-                  color: AppColors.accent, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  color: context.appColors.accentText,
+                  fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -785,17 +793,17 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(
-                color: AppColors.textSecondary,
+            style: TextStyle(
+                color: context.appColors.textSecondary,
                 fontSize: 13,
                 fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: AppColors.inputFill,
+            color: context.appColors.inputFill,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.appColors.border),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -805,13 +813,13 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
                       value: m,
                       child: Text(m,
                           style:
-                              const TextStyle(color: AppColors.textPrimary))))
+                              TextStyle(color: context.appColors.textPrimary))))
                   .toList(),
               onChanged: onChanged,
-              dropdownColor: AppColors.surface,
+              dropdownColor: context.appColors.surface,
               isExpanded: true,
-              icon: const Icon(Icons.keyboard_arrow_down,
-                  color: AppColors.accent),
+              icon: Icon(Icons.keyboard_arrow_down,
+                  color: context.appColors.accentText),
             ),
           ),
         ),
@@ -838,8 +846,8 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
         widgets.add(Padding(
           padding: const EdgeInsets.only(bottom: 8, top: 4),
           child: Text(header,
-              style: const TextStyle(
-                  color: AppColors.accent,
+              style: TextStyle(
+                  color: context.appColors.accentText,
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.5)),
@@ -856,9 +864,9 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.5),
+        color: context.appColors.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -881,8 +889,8 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
                     QuestionType.long => 'Long Answer',
                     QuestionType.short => 'Short Answer',
                   },
-                  style: const TextStyle(
-                      color: AppColors.accent,
+                  style: TextStyle(
+                      color: context.appColors.accentText,
                       fontSize: 12,
                       fontWeight: FontWeight.w700)),
               const Spacer(),
@@ -895,8 +903,9 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
           ),
           const SizedBox(height: 8),
           Text(q.text,
-              style: const TextStyle(
-                  color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+              style: TextStyle(
+                  color: context.appColors.textPrimary,
+                  fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -942,9 +951,9 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Add Question',
+            Text('Add Question',
                 style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.w800)),
             const SizedBox(height: 20),
@@ -974,9 +983,9 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
                 controller: _keywordsCtrl,
               ),
             if (_type == QuestionType.mcq) ...[
-              const Text('OPTIONS',
+              Text('OPTIONS',
                   style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 11,
                       fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
@@ -1054,14 +1063,16 @@ class _AddQuestionSheetState extends State<_AddQuestionSheet> {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.accent.withValues(alpha: 0.15)
-                : AppColors.surface,
+                : context.appColors.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: selected ? AppColors.accent : AppColors.border),
+                color: selected ? AppColors.accent : context.appColors.border),
           ),
           child: Text(label,
               style: TextStyle(
-                  color: selected ? AppColors.accent : AppColors.textSecondary,
+                  color: selected
+                      ? context.appColors.accentText
+                      : context.appColors.textSecondary,
                   fontWeight: FontWeight.bold)),
         ),
       ),

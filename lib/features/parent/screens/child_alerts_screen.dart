@@ -75,20 +75,21 @@ class ChildAlertsScreen extends StatelessWidget {
               }
 
               if (snapshot.hasError) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.error_outline_rounded,
+                        const Icon(Icons.error_outline_rounded,
                             size: 48, color: AppColors.danger),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         Text(
                             "Could not load attendance alerts. "
                             "Check your connection.",
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: AppColors.textSecondary)),
+                            style: TextStyle(
+                                color: context.appColors.textSecondary)),
                       ],
                     ),
                   ),
@@ -141,8 +142,8 @@ class ChildAlertsScreen extends StatelessWidget {
                         color: context.appColors.textPrimary,
                         fontWeight: FontWeight.bold)),
                 Text(DateFormat('EEEE, MMM d, yyyy').format(r.logDate),
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 12)),
+                    style: TextStyle(
+                        color: context.appColors.textMuted, fontSize: 12)),
               ],
             ),
           ),
@@ -160,11 +161,13 @@ class ChildAlertsScreen extends StatelessWidget {
               size: 64,
               color: context.appColors.textMuted.withValues(alpha: 0.5)),
           const SizedBox(height: 16),
-          const Text('No new alerts',
+          Text('No new alerts',
               style: TextStyle(
-                  color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
-          const Text('Your child has been regular!',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  color: context.appColors.textSecondary,
+                  fontWeight: FontWeight.bold)),
+          Text('Your child has been regular!',
+              style:
+                  TextStyle(color: context.appColors.textMuted, fontSize: 12)),
         ],
       ),
     );

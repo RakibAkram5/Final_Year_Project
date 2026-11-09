@@ -139,17 +139,19 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   }
 
   Widget _emptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.campaign_outlined, size: 56, color: AppColors.textMuted),
-          SizedBox(height: 12),
+          Icon(Icons.campaign_outlined,
+              size: 56, color: context.appColors.textMuted),
+          const SizedBox(height: 12),
           Text('No announcements yet',
-              style: TextStyle(color: AppColors.textSecondary)),
-          SizedBox(height: 4),
+              style: TextStyle(color: context.appColors.textSecondary)),
+          const SizedBox(height: 4),
           Text('Tap "New Announcement" to broadcast one',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              style:
+                  TextStyle(color: context.appColors.textMuted, fontSize: 12)),
         ],
       ),
     );
@@ -159,9 +161,10 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,8 +173,8 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
             children: [
               Expanded(
                 child: Text(a.title,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: context.appColors.textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w700)),
               ),
@@ -180,40 +183,40 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
           ),
           const SizedBox(height: 6),
           Text(a.message,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 13)),
+              style: TextStyle(
+                  color: context.appColors.textSecondary, fontSize: 13)),
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.person_rounded,
-                  size: 14, color: AppColors.textMuted),
+              Icon(Icons.person_rounded,
+                  size: 14, color: context.appColors.textMuted),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(a.createdByName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 11)),
+                    style: TextStyle(
+                        color: context.appColors.textMuted, fontSize: 11)),
               ),
               const SizedBox(width: 12),
-              const Icon(Icons.schedule_rounded,
-                  size: 14, color: AppColors.textMuted),
+              Icon(Icons.schedule_rounded,
+                  size: 14, color: context.appColors.textMuted),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                     DateFormat('EEEE, d MMM yyyy, h:mm a').format(a.createdAt),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 11)),
+                    style: TextStyle(
+                        color: context.appColors.textMuted, fontSize: 11)),
               ),
               const SizedBox(width: 8),
               IconButton(
                 iconSize: 20,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                icon: const Icon(Icons.edit_outlined,
-                    color: AppColors.textSecondary),
+                icon: Icon(Icons.edit_outlined,
+                    color: context.appColors.textSecondary),
                 onPressed: () => _openComposeSheet(academyId, existing: a),
               ),
               const SizedBox(width: 8),
@@ -240,8 +243,8 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.5)),
       ),
       child: Text(label,
-          style: const TextStyle(
-              color: AppColors.accent,
+          style: TextStyle(
+              color: context.appColors.accentText,
               fontSize: 10,
               fontWeight: FontWeight.w700)),
     );
@@ -251,16 +254,16 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
-        title: const Text('Delete announcement?',
-            style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: context.appColors.surfaceAlt,
+        title: Text('Delete announcement?',
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: Text('Remove "${a.title}" for everyone?',
-            style: const TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: context.appColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('Cancel',
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -440,14 +443,14 @@ class _ComposeSheetState extends State<_ComposeSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: context.appColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               Text(_isEditing ? 'Edit Announcement' : 'New Announcement',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: context.appColors.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   )),
@@ -479,9 +482,9 @@ class _ComposeSheetState extends State<_ComposeSheet> {
                     : null,
               ),
               const SizedBox(height: 16),
-              const Text('AUDIENCE',
+              Text('AUDIENCE',
                   style: TextStyle(
-                    color: AppColors.textMuted,
+                    color: context.appColors.textMuted,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1,
@@ -559,30 +562,32 @@ class _ComposeSheetState extends State<_ComposeSheet> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.inputFill,
+          color: context.appColors.inputFill,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? AppColors.accent : AppColors.border,
+            color: selected ? AppColors.accent : context.appColors.border,
             width: selected ? 1.4 : 1,
           ),
         ),
         child: Row(
           children: [
             Icon(icon,
-                color: selected ? AppColors.accent : AppColors.textMuted,
+                color: selected
+                    ? context.appColors.accentText
+                    : context.appColors.textMuted,
                 size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(label,
                   style: TextStyle(
                       color: selected
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
+                          ? context.appColors.textPrimary
+                          : context.appColors.textSecondary,
                       fontWeight: FontWeight.w600)),
             ),
             if (selected)
-              const Icon(Icons.check_circle_rounded,
-                  color: AppColors.accent, size: 20),
+              Icon(Icons.check_circle_rounded,
+                  color: context.appColors.accentText, size: 20),
           ],
         ),
       ),
@@ -603,14 +608,16 @@ class _ComposeSheetState extends State<_ComposeSheet> {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.accent.withValues(alpha: 0.18)
-              : AppColors.inputFill,
+              : context.appColors.inputFill,
           borderRadius: BorderRadius.circular(20),
-          border:
-              Border.all(color: selected ? AppColors.accent : AppColors.border),
+          border: Border.all(
+              color: selected ? AppColors.accent : context.appColors.border),
         ),
         child: Text(label,
             style: TextStyle(
-              color: selected ? AppColors.accent : AppColors.textSecondary,
+              color: selected
+                  ? context.appColors.accentText
+                  : context.appColors.textSecondary,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             )),

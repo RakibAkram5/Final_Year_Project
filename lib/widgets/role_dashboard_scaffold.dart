@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import '../core/theme/theme_extensions.dart';
 import 'package:provider/provider.dart';
 
 import '../core/constants/app_constants.dart';
-import '../core/theme/app_colors.dart';
 import '../logic/auth_provider.dart';
 import 'gradient_background.dart';
 
@@ -44,15 +44,15 @@ class RoleDashboardScaffold extends StatelessWidget {
         elevation: 0,
         title: Row(
           children: [
-            Icon(icon, color: AppColors.accent, size: 22),
+            Icon(icon, color: context.appColors.accentText, size: 22),
             const SizedBox(width: 8),
             Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout_rounded,
-                color: AppColors.textSecondary),
+            icon: Icon(Icons.logout_rounded,
+                color: context.appColors.textSecondary),
             tooltip: 'Log out',
             onPressed: () => _logout(context),
           ),
@@ -67,8 +67,8 @@ class RoleDashboardScaffold extends StatelessWidget {
               children: [
                 Text(
                   'Welcome, ${user?.fullName ?? 'User'}',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: context.appColors.textPrimary,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                   ),
@@ -76,13 +76,13 @@ class RoleDashboardScaffold extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   user?.role.label ?? '',
-                  style: const TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(color: context.appColors.textSecondary),
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'MODULES (coming next sprint)',
                   style: TextStyle(
-                    color: AppColors.textMuted,
+                    color: context.appColors.textMuted,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1,
@@ -93,7 +93,7 @@ class RoleDashboardScaffold extends StatelessWidget {
                   child: ListView.separated(
                     itemCount: features.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, i) => _moduleTile(features[i]),
+                    itemBuilder: (_, i) => _moduleTile(context, features[i]),
                   ),
                 ),
               ],
@@ -104,24 +104,27 @@ class RoleDashboardScaffold extends StatelessWidget {
     );
   }
 
-  Widget _moduleTile(String label) {
+  Widget _moduleTile(BuildContext context, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.widgets_outlined, color: AppColors.accent, size: 20),
+          Icon(Icons.widgets_outlined,
+              color: context.appColors.accentText, size: 20),
           const SizedBox(width: 14),
           Expanded(
             child: Text(label,
-                style: const TextStyle(
-                    color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: context.appColors.textPrimary,
+                    fontWeight: FontWeight.w600)),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.textMuted),
+          Icon(Icons.chevron_right, color: context.appColors.textMuted),
         ],
       ),
     );

@@ -211,8 +211,8 @@ class _ViewAnnouncementsScreenState extends State<ViewAnnouncementsScreen> {
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.5)),
       ),
       child: Text(label,
-          style: const TextStyle(
-              color: AppColors.accent,
+          style: TextStyle(
+              color: context.appColors.accentText,
               fontSize: 10,
               fontWeight: FontWeight.w700)),
     );

@@ -10,7 +10,9 @@ async function request(path, { method = 'GET', academyId, body } = {}) {
   const url = new URL(path, BASE_URL);
   if (method === 'GET') url.searchParams.set('academy_id', academyId);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
+  // A sleeping Hugging Face Space can take ~20 s to wake; stay under
+  // Vercel's 30 s function limit.
+  const timer = setTimeout(() => controller.abort(), Number(process.env.ML_TIMEOUT_MS || 25000));
   try {
     const response = await fetch(url, {
       method,

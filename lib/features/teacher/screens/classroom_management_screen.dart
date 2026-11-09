@@ -1,3 +1,4 @@
+import '../../shared/course_materials_view.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -5,7 +6,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_extensions.dart';
 import '../../../core/web/web_breakpoints.dart';
 import '../../../data/models/class_entity.dart';
-import '../../../data/models/shared_resource.dart';
 import '../../../data/models/student_query.dart';
 import '../../../data/remote/classroom_service.dart';
 import '../../../logic/auth_provider.dart';
@@ -262,61 +262,8 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen>
     );
   }
 
-  Widget _buildShareTab() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Resources published from OCR Documents appear here for this class.',
-              style:
-                  TextStyle(color: context.appColors.textMuted, fontSize: 12),
-            ),
-          ),
-        ),
-        Expanded(
-          child: StreamBuilder<List<SharedResource>>(
-            stream: _classroomService.watchResources(
-                widget.classEntity.id, widget.classEntity.academyId),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child: CircularProgressIndicator(color: AppColors.accent));
-              }
-              if (snap.hasError) {
-                return Center(
-                    child: Text('Error loading resources: ${snap.error}',
-                        style: const TextStyle(color: AppColors.danger)));
-              }
-              final list = snap.data ?? [];
-              if (list.isEmpty) {
-                return _emptyState(Icons.folder_open_rounded,
-                    "You haven't shared any content yet.");
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: list.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, i) => ListTile(
-                  tileColor: context.appColors.surface.withValues(alpha: 0.4),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  title: Text(list[i].title,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(list[i].description,
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                  trailing: const Icon(Icons.description_rounded,
-                      color: AppColors.accent),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildShareTab() =>
+      CourseMaterialsView(classEntity: widget.classEntity, canManage: true);
 
   Widget _emptyState(IconData icon, String msg) {
     return Center(

@@ -27,7 +27,10 @@ describeWithDatabase('API v2 contract foundation', () => {
     classA = await createClass(academyA.tokens.admin, {
       primaryTeacherId: academyA.teacher.user.id
     });
-    classB = await createClass(academyB.tokens.admin);
+    // Teachers may only share materials with classes they teach.
+    classB = await createClass(academyB.tokens.admin, {
+      primaryTeacherId: academyB.teacher.user.id
+    });
     await enrollStudent(academyA.tokens.admin, classA.id, academyA.student.user.id);
     await enrollStudent(academyB.tokens.admin, classB.id, academyB.student.user.id);
   });

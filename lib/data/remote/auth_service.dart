@@ -78,6 +78,9 @@ class AuthService {
         'academyAddress': user.academyAddress,
         'academyPhone': user.academyPhone,
         'academyLogo': user.academyLogo,
+        'academyLatitude': user.academyLocation?.latitude,
+        'academyLongitude': user.academyLocation?.longitude,
+        'academyLocationLabel': user.academyLocation?.label,
         'academyCode': user.academyCode,
         'assignedSections': user.assignedSections,
         'linkedChildren': user.linkedChildren,
@@ -329,6 +332,29 @@ class AuthService {
       );
       await _cacheUser(_currentUser!);
     }
+  }
+
+  /// Saves (or clears, when [location] is null) the academy location and
+  /// optionally its street address. Admin only; the server validates ranges.
+  Future<AcademyLocation?> saveAcademyLocation(AcademyLocation? location,
+      {String? address}) async {
+    final response = await _api.put('/auth/academy', {
+      'latitude': location?.latitude,
+      'longitude': location?.longitude,
+      if (location != null) 'locationLabel': location.label,
+      if (address != null) 'address': address,
+    });
+    final saved = AcademyLocation.tryParse(response['academyLatitude'],
+        response['academyLongitude'], response['academyLocationLabel']);
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(
+        academyLocation: saved,
+        clearAcademyLocation: saved == null,
+        academyAddress: response['academyAddress'] as String?,
+      );
+      await _cacheUser(_currentUser!);
+    }
+    return saved;
   }
 
   Future<void> directUpdatePassword(String newPassword,
@@ -586,6 +612,8 @@ class AuthService {
       academyAddress: json['academyAddress'] ?? json['academy_address'],
       academyPhone: json['academyPhone'] ?? json['academy_phone'],
       academyLogo: json['academyLogo'] ?? json['academy_logo'],
+      academyLocation: AcademyLocation.tryParse(json['academyLatitude'],
+          json['academyLongitude'], json['academyLocationLabel']),
       academyCode: json['academyCode'] ?? json['academy_code'],
       assignedSections: (json['assignedSections'] as List?)
               ?.map((e) => e.toString())

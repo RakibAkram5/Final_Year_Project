@@ -142,17 +142,19 @@ class _TeacherAnnouncementsScreenState
   }
 
   Widget _emptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.campaign_outlined, size: 56, color: AppColors.textMuted),
-          SizedBox(height: 12),
+          Icon(Icons.campaign_outlined,
+              size: 56, color: context.appColors.textMuted),
+          const SizedBox(height: 12),
           Text('No announcements sent yet',
-              style: TextStyle(color: AppColors.textSecondary)),
-          SizedBox(height: 4),
+              style: TextStyle(color: context.appColors.textSecondary)),
+          const SizedBox(height: 4),
           Text('Tap "New Announcement" to reach parents & students',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              style:
+                  TextStyle(color: context.appColors.textMuted, fontSize: 12)),
         ],
       ),
     );
@@ -189,16 +191,16 @@ class _TeacherAnnouncementsScreenState
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.calendar_month_rounded,
-                  size: 14, color: AppColors.accent),
+              Icon(Icons.calendar_month_rounded,
+                  size: 14, color: context.appColors.accentText),
               const SizedBox(width: 4),
               // Added Day and Date as requested
               Expanded(
                 child: Text(DateFormat('EEEE, d MMM yyyy').format(a.createdAt),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: AppColors.textMuted,
+                    style: TextStyle(
+                        color: context.appColors.textMuted,
                         fontSize: 11,
                         fontWeight: FontWeight.bold)),
               ),
@@ -226,8 +228,8 @@ class _TeacherAnnouncementsScreenState
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.5)),
       ),
       child: Text(label,
-          style: const TextStyle(
-              color: AppColors.accent,
+          style: TextStyle(
+              color: context.appColors.accentText,
               fontSize: 10,
               fontWeight: FontWeight.w700)),
     );
@@ -237,7 +239,7 @@ class _TeacherAnnouncementsScreenState
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
+        backgroundColor: context.appColors.surfaceAlt,
         title: const Text('Delete announcement?'),
         content: const Text(
             'This will remove the message for all students and parents.'),
@@ -354,9 +356,9 @@ class _TeacherComposeSheetState extends State<_TeacherComposeSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('New Announcement',
+              Text('New Announcement',
                   style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: context.appColors.textPrimary,
                       fontSize: 20,
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 20),
@@ -381,9 +383,9 @@ class _TeacherComposeSheetState extends State<_TeacherComposeSheet> {
                     (v == null || v.isEmpty) ? 'Message is required' : null,
               ),
               const SizedBox(height: 20),
-              const Text('RECIPIENTS',
+              Text('RECIPIENTS',
                   style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1)),
@@ -418,7 +420,9 @@ class _TeacherComposeSheetState extends State<_TeacherComposeSheet> {
       selectedColor: AppColors.accent.withValues(alpha: 0.2),
       checkmarkColor: AppColors.accent,
       labelStyle: TextStyle(
-          color: value ? AppColors.accent : AppColors.textSecondary,
+          color: value
+              ? context.appColors.accentText
+              : context.appColors.textSecondary,
           fontWeight: value ? FontWeight.bold : FontWeight.normal),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -138,16 +139,16 @@ class _UnpaidStudentsScreenState extends State<UnpaidStudentsScreen> {
 
   Widget _emptyState() {
     return ListView(
-      children: const [
+      children: [
         Padding(
-          padding: EdgeInsets.only(top: 100),
+          padding: const EdgeInsets.only(top: 100),
           child: Column(
             children: [
-              Icon(Icons.check_circle_outline_rounded,
+              const Icon(Icons.check_circle_outline_rounded,
                   size: 56, color: AppColors.success),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text('No unpaid students right now',
-                  style: TextStyle(color: AppColors.textSecondary)),
+                  style: TextStyle(color: context.appColors.textSecondary)),
             ],
           ),
         ),
@@ -159,25 +160,29 @@ class _UnpaidStudentsScreenState extends State<UnpaidStudentsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: true,
-          title: Text(classLabel,
-              style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15)),
-          subtitle: Text(
-              '${challans.length} unpaid student${challans.length == 1 ? '' : 's'}',
-              style: const TextStyle(color: AppColors.danger, fontSize: 12)),
-          children: challans.map(_challanTile).toList(),
-        ),
-      ),
+      child: Material(
+          type: MaterialType.transparency,
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              initiallyExpanded: true,
+              title: Text(classLabel,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15)),
+              subtitle: Text(
+                  '${challans.length} unpaid student${challans.length == 1 ? '' : 's'}',
+                  style:
+                      const TextStyle(color: AppColors.danger, fontSize: 12)),
+              children: challans.map(_challanTile).toList(),
+            ),
+          )),
     );
   }
 
@@ -188,18 +193,20 @@ class _UnpaidStudentsScreenState extends State<UnpaidStudentsScreen> {
         color: c.isOverdue ? AppColors.danger : AppColors.warning,
       ),
       title: Text(c.studentName,
-          style: const TextStyle(
-              color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+          style: TextStyle(
+              color: context.appColors.textPrimary,
+              fontWeight: FontWeight.w600)),
       subtitle: Text(
           '${c.rollNumber.isNotEmpty ? 'Roll: ${c.rollNumber} • ' : ''}Due ${DateFormat('d MMM yyyy').format(c.dueDate)}',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          style: TextStyle(color: context.appColors.textMuted, fontSize: 12)),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(_currency.format(c.totalAmount),
-              style: const TextStyle(
-                  color: AppColors.accent, fontWeight: FontWeight.w800)),
+              style: TextStyle(
+                  color: context.appColors.accentText,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           InkWell(
             onTap: () => _markPaid(c),

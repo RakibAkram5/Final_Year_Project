@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/theme_extensions.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -159,19 +160,19 @@ class _SplashScreenState extends State<SplashScreen>
                               letterSpacing: 1.2,
                             ),
                             children: [
-                              const TextSpan(
+                              TextSpan(
                                 text: 'Taleem',
                                 style: TextStyle(
-                                  color: AppColors.textPrimary,
+                                  color: context.appColors.textPrimary,
                                 ),
                               ),
                               TextSpan(
                                 text: 'Plus',
                                 style: TextStyle(
-                                  color: AppColors.accent,
+                                  color: context.appColors.accentText,
                                   shadows: [
                                     Shadow(
-                                      color: AppColors.accent
+                                      color: context.appColors.accentText
                                           .withValues(alpha: 0.6),
                                       blurRadius: 18,
                                     ),
@@ -188,10 +189,10 @@ class _SplashScreenState extends State<SplashScreen>
                     // ---- New Tagline ----
                     FadeTransition(
                       opacity: _taglineFade,
-                      child: const Text(
+                      child: Text(
                         'The Future of Smart Learning',
                         style: TextStyle(
-                          color: AppColors.accent,
+                          color: context.appColors.accentText,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           fontStyle: FontStyle.italic,
@@ -204,10 +205,10 @@ class _SplashScreenState extends State<SplashScreen>
                     // ---- Original Tagline ----
                     FadeTransition(
                       opacity: _taglineFade,
-                      child: const Text(
+                      child: Text(
                         'AI-POWERED. SMART LEARNING.',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: context.appColors.textSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 2.0,

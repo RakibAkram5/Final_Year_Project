@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_extensions.dart';
 import '../../core/web/web_breakpoints.dart';
 import '../../data/models/app_user.dart';
 import '../../data/models/class_section.dart';
@@ -13,6 +14,7 @@ import '../../logic/auth_provider.dart';
 import '../../logic/class_section_provider.dart';
 import '../../widgets/app_widgets.dart';
 import '../../widgets/gradient_background.dart';
+import '../../widgets/responsive/responsive_action_tile.dart';
 import '../../widgets/student_roster_dialog.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
@@ -115,71 +117,83 @@ class _ClassSectionsScreenState extends State<ClassSectionsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: sections.isNotEmpty,
-          title: Text(className,
-              style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16)),
-          subtitle: Text(
-              '${sections.length} section${sections.length == 1 ? '' : 's'}',
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12)),
-          trailing: IconButton(
-            icon: const Icon(Icons.add_circle_rounded, color: AppColors.accent),
-            tooltip: 'Add Section',
-            onPressed: () => _openAddSectionDialog(className),
-          ),
-          children: [
-            if (sections.isEmpty)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Text('No sections yet. Tap + to add one.',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+      child: Material(
+          type: MaterialType.transparency,
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              initiallyExpanded: sections.isNotEmpty,
+              title: Text(className,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16)),
+              subtitle: Text(
+                  '${sections.length} section${sections.length == 1 ? '' : 's'}',
+                  style: TextStyle(
+                      color: context.appColors.textSecondary, fontSize: 12)),
+              trailing: IconButton(
+                icon: Icon(Icons.add_circle_rounded,
+                    color: context.appColors.accentText),
+                tooltip: 'Add Section',
+                onPressed: () => _openAddSectionDialog(className),
               ),
-            for (final s in sections) _sectionTile(s),
-          ],
-        ),
-      ),
+              children: [
+                if (sections.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Text('No sections yet. Tap + to add one.',
+                        style: TextStyle(
+                            color: context.appColors.textMuted, fontSize: 12)),
+                  ),
+                for (final s in sections) _sectionTile(s),
+              ],
+            ),
+          )),
     );
   }
 
   Widget _sectionTile(ClassSectionEntity s) {
-    return ListTile(
-      leading: const Icon(Icons.groups_rounded, color: AppColors.accent),
-      title: Text('Section ${s.section.isEmpty ? '-' : s.section}',
-          style: const TextStyle(
-              color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
-      subtitle: Text(
-          '${s.enrollmentCount} student${s.enrollmentCount == 1 ? '' : 's'} enrolled',
-          style: const TextStyle(color: AppColors.accent, fontSize: 12)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.visibility_rounded, color: AppColors.accent),
-            tooltip: 'View Students',
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: ResponsiveActionTile(
+        background: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        leading:
+            Icon(Icons.groups_rounded, color: context.appColors.accentText),
+        title: 'Section ${s.section.isEmpty ? '-' : s.section}',
+        titleStyle: TextStyle(
+            color: context.appColors.textPrimary, fontWeight: FontWeight.w600),
+        subtitles: [
+          Text(
+              '${s.enrollmentCount} student${s.enrollmentCount == 1 ? '' : 's'} enrolled',
+              style:
+                  TextStyle(color: context.appColors.accentText, fontSize: 12)),
+        ],
+        actions: [
+          TileAction(
+            icon: Icons.visibility_rounded,
+            label: 'View students',
             onPressed: () => showStudentRosterDialog(
               context,
               title: s.displayLabel,
               studentNames: s.studentNames,
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.group_add_rounded, color: AppColors.accent),
-            tooltip: 'Manage Enrollment',
+          TileAction(
+            icon: Icons.group_add_rounded,
+            label: 'Manage enrollment',
             onPressed: () => _openEnrollmentSheet(s),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-            tooltip: 'Delete Section',
+          TileAction(
+            icon: Icons.delete_outline,
+            label: 'Delete section',
+            destructive: true,
             onPressed: () => _confirmDeleteSection(s),
           ),
         ],
@@ -193,25 +207,25 @@ class _ClassSectionsScreenState extends State<ClassSectionsScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
+        backgroundColor: context.appColors.surfaceAlt,
         title: Text('New section in $className',
-            style: const TextStyle(color: AppColors.textPrimary)),
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: context.appColors.textPrimary),
           decoration: const InputDecoration(hintText: 'e.g. A, B, Morning'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('Cancel',
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child:
-                const Text('Create', style: TextStyle(color: AppColors.accent)),
+            child: Text('Create',
+                style: TextStyle(color: context.appColors.accentText)),
           ),
         ],
       ),
@@ -248,18 +262,18 @@ class _ClassSectionsScreenState extends State<ClassSectionsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
-        title: const Text('Delete section?',
-            style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: context.appColors.surfaceAlt,
+        title: Text('Delete section?',
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: Text(
             'Remove ${s.displayLabel}? Its section roster is removed; '
             'subject classes, attendance and timetable history are kept.',
-            style: const TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: context.appColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('Cancel',
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -393,34 +407,34 @@ class _EnrollmentSheetState extends State<_EnrollmentSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: context.appColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           Text('Enroll Students: ${widget.section.displayLabel}',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: context.appColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
               )),
           const SizedBox(height: 4),
-          const Text(
-              'This roster is shared by every subject taught to this section.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          Text('This roster is shared by every subject taught to this section.',
+              style:
+                  TextStyle(color: context.appColors.textMuted, fontSize: 11)),
           const SizedBox(height: 16),
           Row(
             children: [
-              const Text('STUDENTS',
+              Text('STUDENTS',
                   style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1)),
               const Spacer(),
               Text('${_selectedStudentUids.length} selected',
-                  style: const TextStyle(
-                      color: AppColors.accent,
+                  style: TextStyle(
+                      color: context.appColors.accentText,
                       fontSize: 12,
                       fontWeight: FontWeight.w600)),
             ],
@@ -443,9 +457,9 @@ class _EnrollmentSheetState extends State<_EnrollmentSheet> {
     return Container(
       constraints: const BoxConstraints(maxHeight: 300),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.appColors.inputFill,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appColors.border),
       ),
       child: ListView.builder(
         shrinkWrap: true,
@@ -466,7 +480,7 @@ class _EnrollmentSheetState extends State<_EnrollmentSheet> {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: AppColors.border.withValues(alpha: 0.4),
+                    color: context.appColors.border.withValues(alpha: 0.4),
                   ),
                 ),
               ),
@@ -476,7 +490,9 @@ class _EnrollmentSheetState extends State<_EnrollmentSheet> {
                     selected
                         ? Icons.check_box_rounded
                         : Icons.check_box_outline_blank_rounded,
-                    color: selected ? AppColors.accent : AppColors.textMuted,
+                    color: selected
+                        ? context.appColors.accentText
+                        : context.appColors.textMuted,
                     size: 22,
                   ),
                   const SizedBox(width: 12),
@@ -485,12 +501,13 @@ class _EnrollmentSheetState extends State<_EnrollmentSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(s.fullName,
-                            style: const TextStyle(
-                                color: AppColors.textPrimary,
+                            style: TextStyle(
+                                color: context.appColors.textPrimary,
                                 fontWeight: FontWeight.w600)),
                         Text(s.email,
-                            style: const TextStyle(
-                                color: AppColors.textMuted, fontSize: 11)),
+                            style: TextStyle(
+                                color: context.appColors.textMuted,
+                                fontSize: 11)),
                       ],
                     ),
                   ),

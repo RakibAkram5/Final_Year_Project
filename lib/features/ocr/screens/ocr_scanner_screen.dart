@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -121,23 +122,24 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text("Document Title",
-            style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: context.appColors.surface,
+        title: Text("Document Title",
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               "Enter a title for your document to save it in history.",
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              style: TextStyle(
+                  color: context.appColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _titleController,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(
+              style: TextStyle(color: context.appColors.textPrimary),
+              decoration: InputDecoration(
                 hintText: "E.g. Class Notes Ch 1",
-                hintStyle: TextStyle(color: AppColors.textMuted),
+                hintStyle: TextStyle(color: context.appColors.textMuted),
               ),
               autofocus: true,
             ),
@@ -146,14 +148,15 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("CANCEL",
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text("CANCEL",
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, _titleController.text),
-            child: const Text("SAVE",
+            child: Text("SAVE",
                 style: TextStyle(
-                    color: AppColors.accent, fontWeight: FontWeight.bold)),
+                    color: context.appColors.accentText,
+                    fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -261,8 +264,8 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
                 height: 200,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border.all(color: AppColors.border),
+                  color: context.appColors.surface,
+                  border: Border.all(color: context.appColors.border),
                 ),
                 child: Image.file(_image!, fit: BoxFit.cover),
               ),
@@ -271,10 +274,10 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
           ],
 
           // Extracted Text Area
-          const Text(
+          Text(
             "EXTRACTED TEXT",
             style: TextStyle(
-              color: AppColors.textMuted,
+              color: context.appColors.textMuted,
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1,
@@ -285,9 +288,9 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.inputFill,
+              color: context.appColors.inputFill,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.appColors.border),
             ),
             child: _isProcessing
                 ? const Center(
@@ -299,12 +302,12 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
                 : TextField(
                     controller: _textController,
                     maxLines: 12,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary, fontSize: 14),
-                    decoration: const InputDecoration(
+                    style: TextStyle(
+                        color: context.appColors.textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
                       hintText: "Extracted text will appear here...",
                       border: InputBorder.none,
-                      hintStyle: TextStyle(color: AppColors.textMuted),
+                      hintStyle: TextStyle(color: context.appColors.textMuted),
                     ),
                   ),
           ),
@@ -319,8 +322,8 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
                   icon: const Icon(Icons.copy_rounded, size: 18),
                   label: const Text("COPY"),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: const BorderSide(color: AppColors.border),
+                    foregroundColor: context.appColors.textSecondary,
+                    side: BorderSide(color: context.appColors.border),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -353,18 +356,19 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 24),
           decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.55),
+            color: context.appColors.surface.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            border: Border.all(
+                color: context.appColors.border.withValues(alpha: 0.5)),
           ),
           child: Column(
             children: [
-              Icon(icon, color: AppColors.accent, size: 32),
+              Icon(icon, color: context.appColors.accentText, size: 32),
               const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
+                style: TextStyle(
+                  color: context.appColors.textPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
                 ),
@@ -384,12 +388,12 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.lightbulb_outline_rounded,
-              color: AppColors.accent, size: 20),
-          SizedBox(width: 12),
+              color: context.appColors.accentText, size: 20),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,16 +401,18 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
                 Text(
                   "TIPS FOR BETTER SCAN",
                   style: TextStyle(
-                      color: AppColors.accent,
+                      color: context.appColors.accentText,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.5),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   "1. Use dark blue/black ink.\n2. Ensure good lighting (no shadows).\n3. Keep the paper flat and camera steady.",
                   style: TextStyle(
-                      color: AppColors.textMuted, fontSize: 11, height: 1.5),
+                      color: context.appColors.textMuted,
+                      fontSize: 11,
+                      height: 1.5),
                 ),
               ],
             ),

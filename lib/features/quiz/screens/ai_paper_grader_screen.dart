@@ -13,6 +13,7 @@ import '../../../logic/class_provider.dart';
 import '../../../logic/session_provider.dart';
 import '../../../logic/tfidf_grader.dart';
 import '../../../widgets/gradient_background.dart';
+import '../../../widgets/responsive/responsive_row.dart';
 import '../../../widgets/app_widgets.dart';
 
 class AiPaperGraderScreen extends StatefulWidget {
@@ -83,9 +84,9 @@ class _AiPaperGraderScreenState extends State<AiPaperGraderScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("SELECT STUDENT TO GRADE",
+          Text("SELECT STUDENT TO GRADE",
               style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1)),
@@ -105,7 +106,8 @@ class _AiPaperGraderScreenState extends State<AiPaperGraderScreen> {
                 hint: const Text("Choose a student"),
                 items: cls.studentIds.map((sid) {
                   final name = cls.studentNames[sid] ?? 'Student';
-                  return DropdownMenuItem(value: sid, child: Text(name));
+                  return DropdownMenuItem(
+                      value: sid, child: DropdownLabel(name));
                 }).toList(),
                 onChanged: (val) {
                   setState(() {
@@ -168,8 +170,9 @@ class _AiPaperGraderScreenState extends State<AiPaperGraderScreen> {
               ),
               const SizedBox(width: 10),
               Text("${q.marks} Pts",
-                  style: const TextStyle(
-                      color: AppColors.accent, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      color: context.appColors.accentText,
+                      fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 8),
@@ -183,17 +186,17 @@ class _AiPaperGraderScreenState extends State<AiPaperGraderScreen> {
                     style: TextStyle(
                         color: q.gradingKeywords.isEmpty
                             ? AppColors.danger
-                            : AppColors.textMuted,
+                            : context.appColors.textMuted,
                         fontSize: 11,
                         fontStyle: FontStyle.italic)),
               ),
               InkWell(
                 onTap: () => _editKeywords(q),
                 borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
                   child: Icon(Icons.edit_rounded,
-                      size: 16, color: AppColors.accent),
+                      size: 16, color: context.appColors.accentText),
                 ),
               ),
             ],
@@ -216,10 +219,10 @@ class _AiPaperGraderScreenState extends State<AiPaperGraderScreen> {
               const SizedBox(width: 10),
               OutlinedButton.icon(
                 onPressed: _isProcessing ? null : () => _enterMarksManually(q),
-                icon: const Icon(Icons.edit_note_rounded,
-                    size: 18, color: AppColors.accent),
-                label: const Text('Manual',
-                    style: TextStyle(color: AppColors.accent)),
+                icon: Icon(Icons.edit_note_rounded,
+                    size: 18, color: context.appColors.accentText),
+                label: Text('Manual',
+                    style: TextStyle(color: context.appColors.accentText)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.accent),
                   padding:
@@ -242,9 +245,9 @@ class _AiPaperGraderScreenState extends State<AiPaperGraderScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("DETECTED TEXT:",
+        Text("DETECTED TEXT:",
             style: TextStyle(
-                color: AppColors.textMuted,
+                color: context.appColors.textMuted,
                 fontSize: 10,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
@@ -292,8 +295,8 @@ class _AiPaperGraderScreenState extends State<AiPaperGraderScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(q.text,
-                style:
-                    const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                style: TextStyle(
+                    fontSize: 13, color: context.appColors.textMuted)),
             const SizedBox(height: 12),
             TextField(
               controller: ctrl,
@@ -519,8 +522,8 @@ class _AiPaperGraderScreenState extends State<AiPaperGraderScreen> {
               size: 64,
               color: context.appColors.textMuted.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          const Text("Select a student to begin AI grading",
-              style: TextStyle(color: AppColors.textSecondary)),
+          Text("Select a student to begin AI grading",
+              style: TextStyle(color: context.appColors.textSecondary)),
         ],
       ),
     );

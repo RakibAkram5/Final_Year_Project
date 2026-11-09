@@ -194,6 +194,22 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Admin: saves the academy location and updates [currentUser] so every
+  /// screen showing the map refreshes immediately.
+  Future<void> saveAcademyLocation(AcademyLocation? location,
+      {String? address}) async {
+    final saved =
+        await _authService.saveAcademyLocation(location, address: address);
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(
+        academyLocation: saved,
+        clearAcademyLocation: saved == null,
+        academyAddress: address,
+      );
+      notifyListeners();
+    }
+  }
+
   void clearError() {
     if (_status == AuthStatus.error) {
       _status = AuthStatus.idle;

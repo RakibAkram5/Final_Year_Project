@@ -1,5 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../shared/assignments_screen.dart';
+import '../shared/documents_screen.dart';
+import '../shared/academy_location.dart';
+import '../../data/remote/file_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -17,12 +21,12 @@ import '../../data/remote/auth_service.dart';
 import '../../data/remote/notification_service.dart';
 import 'screens/my_classroom_hub.dart';
 import '../../widgets/app_widgets.dart';
+import '../../widgets/dashboard_app_bar_actions.dart';
 import '../../widgets/latest_announcement_card.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
 import '../shared/notifications_screen.dart';
 import '../../widgets/gradient_background.dart';
-import '../../widgets/theme_toggle_widget.dart';
 import '../../core/theme/theme_extensions.dart';
 import '../quiz/screens/student_test_report_screen.dart';
 import '../shared/view_announcements_screen.dart';
@@ -94,11 +98,12 @@ class StudentDashboard extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.school_rounded, color: AppColors.accent, size: 22),
-            SizedBox(width: 8),
-            Expanded(
+            Icon(Icons.school_rounded,
+                color: context.appColors.accentText, size: 22),
+            const SizedBox(width: 8),
+            const Expanded(
               child: Text('Student Portal',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -106,19 +111,10 @@ class StudentDashboard extends StatelessWidget {
             ),
           ],
         ),
-        actions: [
-          _notificationBell(context, user),
-          IconButton(
-            icon: const Icon(Icons.security_rounded, color: AppColors.accent),
-            onPressed: () => _showSecuritySettings(context),
-          ),
-          const ThemeToggle(),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded,
-                color: AppColors.textSecondary),
-            onPressed: () => _logout(context),
-          ),
-        ],
+        actions: dashboardAppBarActions(context,
+            notificationBell: _notificationBell(context, user),
+            onSecurity: () => _showSecuritySettings(context),
+            onLogout: () => _logout(context)),
       ),
       body: GradientBackground(
         child: SafeArea(
@@ -186,6 +182,33 @@ class StudentDashboard extends StatelessWidget {
                 _sectionLabel(context, 'LEARNING'),
                 const SizedBox(height: 10),
                 _moduleGroup(context, Icons.menu_book_rounded, [
+                  _ModuleItem(
+                      'Assignments',
+                      'View, submit and track your work',
+                      Icons.assignment_rounded,
+                      () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AssignmentsScreen()))),
+                  _ModuleItem(
+                      'Academy Location',
+                      'Address, map and directions',
+                      Icons.place_rounded,
+                      () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AcademyLocationScreen()))),
+                  _ModuleItem(
+                      'My Documents',
+                      'Admission papers and certificates',
+                      Icons.folder_rounded,
+                      () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => DocumentsScreen(
+                                  title: 'My Documents',
+                                  category: FileCategory.studentDocument,
+                                  ownerId: user?.uid ?? '')))),
                   _ModuleItem(
                       'My Classroom Hub',
                       'Teacher resources & discussions',
@@ -305,8 +328,8 @@ class StudentDashboard extends StatelessWidget {
               radius: 28,
               backgroundColor: AppColors.accent.withValues(alpha: 0.12),
               child: Text(initial,
-                  style: const TextStyle(
-                      color: AppColors.accentDark,
+                  style: TextStyle(
+                      color: context.appColors.accentText,
                       fontSize: 22,
                       fontWeight: FontWeight.w800)),
             ),
@@ -340,8 +363,8 @@ class StudentDashboard extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.format_quote_rounded,
-                            color: AppColors.accentDark, size: 16),
+                        Icon(Icons.format_quote_rounded,
+                            color: context.appColors.accentText, size: 16),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text('"${_quoteOfTheDay()}"',
@@ -427,9 +450,15 @@ class StudentDashboard extends StatelessWidget {
                     fontSize: 20,
                     fontWeight: FontWeight.w800)),
             const SizedBox(height: 2),
-            Text(label,
-                style: TextStyle(
-                    color: context.appColors.textMuted, fontSize: 11)),
+            // Three cards share a 320 px row: scale single long words (e.g.
+            // "Attendance") down slightly instead of splitting them.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(label,
+                  style: TextStyle(
+                      color: context.appColors.textMuted, fontSize: 11)),
+            ),
           ],
         ),
       ),
@@ -446,20 +475,22 @@ class StudentDashboard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.trending_up_rounded,
-                    color: AppColors.accent, size: 20),
+                Icon(Icons.trending_up_rounded,
+                    color: context.appColors.accentText, size: 20),
                 const SizedBox(width: 8),
-                Text('Overall Performance',
-                    style: TextStyle(
-                        color: context.appColors.textPrimary,
-                        fontWeight: FontWeight.w700)),
-                const Spacer(),
+                Expanded(
+                  child: Text('Overall Performance',
+                      style: TextStyle(
+                          color: context.appColors.textPrimary,
+                          fontWeight: FontWeight.w700)),
+                ),
+                const SizedBox(width: 8),
                 Text(
                     avgPercent == null
                         ? 'No data yet'
                         : '${avgPercent.round()}%',
-                    style: const TextStyle(
-                        color: AppColors.accentDark,
+                    style: TextStyle(
+                        color: context.appColors.accentText,
                         fontWeight: FontWeight.w800)),
               ],
             ),
@@ -529,7 +560,8 @@ class StudentDashboard extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(a.icon, color: AppColors.accentDark, size: 22),
+                            Icon(a.icon,
+                                color: context.appColors.accentText, size: 22),
                             const SizedBox(height: 6),
                             Text(a.title,
                                 textAlign: TextAlign.center,
@@ -566,8 +598,8 @@ class StudentDashboard extends StatelessWidget {
                   color: AppColors.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child:
-                    Icon(items[i].icon, color: AppColors.accentDark, size: 20),
+                child: Icon(items[i].icon,
+                    color: context.appColors.accentText, size: 20),
               ),
               title: Text(items[i].title,
                   style: TextStyle(
@@ -577,7 +609,7 @@ class StudentDashboard extends StatelessWidget {
                   style: TextStyle(
                       color: context.appColors.textMuted, fontSize: 12)),
               trailing:
-                  const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                  Icon(Icons.chevron_right, color: context.appColors.textMuted),
               onTap: items[i].onTap,
             ),
           ],
@@ -598,8 +630,8 @@ class StudentDashboard extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_rounded,
-                  color: AppColors.accent),
+              icon: Icon(Icons.notifications_rounded,
+                  color: context.appColors.accentText),
               onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -638,23 +670,23 @@ class StudentDashboard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text("Security Settings",
+            Text("Security Settings",
                 style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            const Text(
-                "Enhance your account security with biometric authentication.",
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            Text("Enhance your account security with biometric authentication.",
+                style: TextStyle(
+                    color: context.appColors.textSecondary, fontSize: 13)),
             const SizedBox(height: 24),
             StatefulBuilder(
               builder: (context, setInternalState) {
                 final session = context.watch<SessionProvider>();
                 return SwitchListTile(
-                  title: const Text("Biometric / Face Unlock",
+                  title: Text("Biometric / Face Unlock",
                       style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: context.appColors.textPrimary,
                           fontWeight: FontWeight.w600)),
                   subtitle: const Text("Use fingerprints or face ID to log in.",
                       style: TextStyle(fontSize: 12)),
@@ -716,11 +748,11 @@ class StudentDashboard extends StatelessWidget {
               icon: const Icon(Icons.sync_problem_rounded),
               label: const Text("Fix Academy Link"),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
+                foregroundColor: context.appColors.textSecondary,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
-                side: const BorderSide(color: AppColors.border),
+                side: BorderSide(color: context.appColors.border),
               ),
             ),
             const SizedBox(height: 24),
@@ -752,9 +784,10 @@ class StudentDashboard extends StatelessWidget {
                         controller: currentPasswordCtrl,
                         obscure: true),
                     const SizedBox(height: 12),
-                    const Text("Enter a new password for your account.",
+                    Text("Enter a new password for your account.",
                         style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 13)),
+                            color: context.appColors.textSecondary,
+                            fontSize: 13)),
                     const SizedBox(height: 20),
                     LabeledField(
                         label: "New Password",
@@ -835,10 +868,9 @@ class StudentDashboard extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                  "Enter your account password to enable biometric login.",
-                  style:
-                      TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text("Enter your account password to enable biometric login.",
+                  style: TextStyle(
+                      fontSize: 13, color: context.appColors.textSecondary)),
               const SizedBox(height: 16),
               LabeledField(
                   label: "Current Password",
@@ -877,8 +909,9 @@ class StudentDashboard extends StatelessWidget {
                       if (ctx.mounted) Navigator.pop(ctx, ctrl.text);
                     },
               child: Text(verifying ? "VERIFYING..." : "VERIFY",
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.accent)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: context.appColors.accentText)),
             ),
           ],
         ),

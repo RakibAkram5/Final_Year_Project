@@ -16,6 +16,7 @@ import '../../../logic/timetable_provider.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/gradient_background.dart';
 import '../../../widgets/web/web_nav_items.dart';
+import '../../../widgets/responsive/responsive_row.dart';
 import '../../../widgets/web/web_shell.dart';
 
 class TimetableManagementScreen extends StatefulWidget {
@@ -200,33 +201,30 @@ class _TimetableManagementScreenState extends State<TimetableManagementScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
+          ResponsiveRow(
             children: [
-              Expanded(
-                  child: _filterDropdown<String?>(
+              _filterDropdown<String?>(
                 hint: 'All Classes',
                 value: _classFilter,
                 items: [
                   const DropdownMenuItem<String?>(
-                      value: null, child: Text('All Classes')),
+                      value: null, child: DropdownLabel('All Classes')),
                   ...classes.map((c) => DropdownMenuItem<String?>(
-                      value: c.id, child: Text(c.displayLabel))),
+                      value: c.id, child: DropdownLabel(c.displayLabel))),
                 ],
                 onChanged: (v) => setState(() => _classFilter = v),
-              )),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: _filterDropdown<String?>(
+              ),
+              _filterDropdown<String?>(
                 hint: 'All Teachers',
                 value: _teacherFilter,
                 items: [
                   const DropdownMenuItem<String?>(
-                      value: null, child: Text('All Teachers')),
+                      value: null, child: DropdownLabel('All Teachers')),
                   ..._teachers.map((t) => DropdownMenuItem<String?>(
-                      value: t.uid, child: Text(t.fullName))),
+                      value: t.uid, child: DropdownLabel(t.fullName))),
                 ],
                 onChanged: (v) => setState(() => _teacherFilter = v),
-              )),
+              ),
             ],
           ),
         ],
@@ -244,7 +242,9 @@ class _TimetableManagementScreenState extends State<TimetableManagementScreen> {
         onSelected: (_) => setState(() => _dayFilter = day),
         selectedColor: AppColors.accent.withValues(alpha: 0.2),
         labelStyle: TextStyle(
-            color: selected ? AppColors.accent : AppColors.textSecondary,
+            color: selected
+                ? context.appColors.accentText
+                : context.appColors.textSecondary,
             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
             fontSize: 12),
       ),
@@ -260,16 +260,16 @@ class _TimetableManagementScreenState extends State<TimetableManagementScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.appColors.inputFill,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appColors.border),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
           isExpanded: true,
-          dropdownColor: AppColors.surfaceAlt,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+          dropdownColor: context.appColors.surfaceAlt,
+          style: TextStyle(color: context.appColors.textPrimary, fontSize: 13),
           items: items,
           onChanged: onChanged,
         ),
@@ -283,13 +283,15 @@ class _TimetableManagementScreenState extends State<TimetableManagementScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.calendar_month_rounded,
-              size: 56, color: AppColors.textMuted.withValues(alpha: 0.4)),
+              size: 56,
+              color: context.appColors.textMuted.withValues(alpha: 0.4)),
           const SizedBox(height: 16),
-          const Text('No timetable slots yet',
-              style: TextStyle(color: AppColors.textSecondary)),
+          Text('No timetable slots yet',
+              style: TextStyle(color: context.appColors.textSecondary)),
           const SizedBox(height: 4),
-          const Text('Tap "Add Slot" to start building the schedule.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text('Tap "Add Slot" to start building the schedule.',
+              style:
+                  TextStyle(color: context.appColors.textMuted, fontSize: 12)),
         ],
       ),
     );
@@ -315,8 +317,8 @@ class _TimetableManagementScreenState extends State<TimetableManagementScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(TimetableSlot.weekdayNames[day - 1].toUpperCase(),
-                  style: const TextStyle(
-                      color: AppColors.accent,
+                  style: TextStyle(
+                      color: context.appColors.accentText,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1)),
@@ -373,12 +375,12 @@ class _TimetableManagementScreenState extends State<TimetableManagementScreen> {
                     Text(
                         '${slot.teacherName}'
                         '${slot.room.isNotEmpty ? ' • ${slot.room}' : ''}',
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 11)),
+                        style: TextStyle(
+                            color: context.appColors.textMuted, fontSize: 11)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            Icon(Icons.chevron_right, color: context.appColors.textMuted),
           ],
         ),
       ),
@@ -661,7 +663,7 @@ class _AddSlotSheetState extends State<_AddSlotSheet> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
+        backgroundColor: context.appColors.surfaceAlt,
         title: const Text('Delete this slot?'),
         content: const Text('This will remove it from every portal.'),
         actions: [
@@ -709,15 +711,16 @@ class _AddSlotSheetState extends State<_AddSlotSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(widget.existing != null ? 'Edit Slot' : 'Add Slot',
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: context.appColors.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.w800)),
             const SizedBox(height: 20),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('This is a break (no class)',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+              title: Text('This is a break (no class)',
+                  style: TextStyle(
+                      color: context.appColors.textPrimary, fontSize: 14)),
               value: _isBreak,
               activeThumbColor: AppColors.accent,
               onChanged: (v) => setState(() {
@@ -726,9 +729,9 @@ class _AddSlotSheetState extends State<_AddSlotSheet> {
               }),
             ),
             if (!_isBreak) ...[
-              const Text('CLASS',
+              Text('CLASS',
                   style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 11,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -752,18 +755,19 @@ class _AddSlotSheetState extends State<_AddSlotSheet> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                          color: AppColors.inputFill,
+                          color: context.appColors.inputFill,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border)),
+                          border: Border.all(color: context.appColors.border)),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<ClassEntity>(
                           value: _selectedClass,
                           isExpanded: true,
-                          dropdownColor: AppColors.surfaceAlt,
+                          dropdownColor: context.appColors.surfaceAlt,
                           hint: const Text('Select a class'),
                           items: available
                               .map((c) => DropdownMenuItem(
-                                  value: c, child: Text(c.displayLabel)))
+                                  value: c,
+                                  child: DropdownLabel(c.displayLabel)))
                               .toList(),
                           onChanged: (c) => setState(() => _selectedClass = c),
                         ),
@@ -785,8 +789,8 @@ class _AddSlotSheetState extends State<_AddSlotSheet> {
                 widget.existing != null
                     ? 'DAY OF WEEK'
                     : 'DAY(S) OF WEEK — select one or more',
-                style: const TextStyle(
-                    color: AppColors.textMuted,
+                style: TextStyle(
+                    color: context.appColors.textMuted,
                     fontSize: 11,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -804,8 +808,8 @@ class _AddSlotSheetState extends State<_AddSlotSheet> {
                     checkmarkColor: AppColors.accent,
                     labelStyle: TextStyle(
                         color: _selectedDays.contains(d)
-                            ? AppColors.accent
-                            : AppColors.textSecondary,
+                            ? context.appColors.accentText
+                            : context.appColors.textSecondary,
                         fontWeight: _selectedDays.contains(d)
                             ? FontWeight.bold
                             : FontWeight.normal),
@@ -887,8 +891,8 @@ class _AddSlotSheetState extends State<_AddSlotSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(
-                color: AppColors.textSecondary,
+            style: TextStyle(
+                color: context.appColors.textSecondary,
                 fontSize: 13,
                 fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
@@ -898,16 +902,18 @@ class _AddSlotSheetState extends State<_AddSlotSheet> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.inputFill,
+              color: context.appColors.inputFill,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.appColors.border),
             ),
             child: Row(
               children: [
                 Expanded(
                     child: Text(value,
-                        style: const TextStyle(color: AppColors.textPrimary))),
-                const Icon(Icons.arrow_drop_down, color: AppColors.accent),
+                        style:
+                            TextStyle(color: context.appColors.textPrimary))),
+                Icon(Icons.arrow_drop_down,
+                    color: context.appColors.accentText),
               ],
             ),
           ),

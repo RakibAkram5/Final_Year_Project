@@ -1,13 +1,12 @@
+import '../../shared/course_materials_view.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_extensions.dart';
 import '../../../core/web/web_breakpoints.dart';
 import '../../../data/models/class_entity.dart';
-import '../../../data/models/shared_resource.dart';
 import '../../../data/models/student_query.dart';
 import '../../../data/models/attendance_record.dart';
 import '../../../data/remote/classroom_service.dart';
@@ -62,6 +61,11 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen>
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
+          // Fixed equal-width tabs cut "ATTENDANCE" mid-word on small phones.
+          isScrollable: MediaQuery.sizeOf(context).width < 400,
+          tabAlignment: MediaQuery.sizeOf(context).width < 400
+              ? TabAlignment.start
+              : null,
           indicatorColor: AppColors.accent,
           labelColor: AppColors.accent,
           unselectedLabelColor: context.appColors.textSecondary,
@@ -138,96 +142,8 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen>
     );
   }
 
-  Widget _buildResourcesTab() {
-    return StreamBuilder<List<SharedResource>>(
-      stream: _classroomService.watchResources(
-          widget.classEntity.id, widget.classEntity.academyId),
-      builder: (context, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snap.hasError) {
-          return Center(
-              child: Text('Error loading resources: ${snap.error}',
-                  style: const TextStyle(color: AppColors.danger)));
-        }
-        final list = snap.data ?? [];
-        if (list.isEmpty) {
-          return _emptyState(
-              Icons.folder_open_rounded, "No resources shared yet.");
-        }
-
-        return ListView.separated(
-          padding: const EdgeInsets.all(20),
-          itemCount: list.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, i) => _resourceCard(list[i]),
-        );
-      },
-    );
-  }
-
-  Future<void> _openResourceLink(String url) async {
-    final uri = Uri.tryParse(url);
-    final ok = uri != null && await launchUrl(uri);
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Could not open this link.")));
-    }
-  }
-
-  Widget _resourceCard(SharedResource res) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.appColors.surface.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.description_rounded,
-                  color: AppColors.accent, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: Text(res.title,
-                      style: TextStyle(
-                          color: context.appColors.textPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16))),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(res.description,
-              style: TextStyle(
-                  color: context.appColors.textSecondary, fontSize: 13)),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(DateFormat('MMM dd, yyyy').format(res.createdAt),
-                  style: TextStyle(
-                      color: context.appColors.textMuted, fontSize: 11)),
-              if (res.fileUrl != null)
-                TextButton.icon(
-                  onPressed: () => _openResourceLink(res.fileUrl!),
-                  icon: const Icon(Icons.download_rounded, size: 16),
-                  label: const Text("View File",
-                      style:
-                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  style:
-                      TextButton.styleFrom(foregroundColor: AppColors.accent),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildResourcesTab() =>
+      CourseMaterialsView(classEntity: widget.classEntity);
 
   Widget _buildAttendanceTab() {
     final user = context.watch<AuthProvider>().currentUser;
@@ -455,7 +371,7 @@ class _TeacherDetailsScreenState extends State<TeacherDetailsScreen>
                     height: 20,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: AppColors.accent))
-                : const Icon(Icons.send_rounded, color: AppColors.accent),
+                : Icon(Icons.send_rounded, color: context.appColors.accentText),
           ),
         ],
       ),

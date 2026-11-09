@@ -102,51 +102,54 @@ class _MyClassroomHubState extends State<MyClassroomHub> {
         border:
             Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(20),
-        leading: CircleAvatar(
-          radius: 28,
-          backgroundColor: AppColors.accent.withValues(alpha: 0.1),
-          child: Text(
-              cls.primaryTeacherName.isNotEmpty
-                  ? cls.primaryTeacherName[0].toUpperCase()
-                  : '?',
-              style: const TextStyle(
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20)),
-        ),
-        title: Text(cls.primaryTeacherName,
-            style: TextStyle(
-                color: context.appColors.textPrimary,
-                fontWeight: FontWeight.w800,
-                fontSize: 18)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text("${cls.subject} • ${cls.className} (${cls.section})",
+      child: Material(
+          type: MaterialType.transparency,
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(20),
+            leading: CircleAvatar(
+              radius: 28,
+              backgroundColor: AppColors.accent.withValues(alpha: 0.1),
+              child: Text(
+                  cls.primaryTeacherName.isNotEmpty
+                      ? cls.primaryTeacherName[0].toUpperCase()
+                      : '?',
+                  style: TextStyle(
+                      color: context.appColors.accentText,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20)),
+            ),
+            title: Text(cls.primaryTeacherName,
                 style: TextStyle(
-                    color: context.appColors.textSecondary,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Row(
+                    color: context.appColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _smallBadge(Icons.menu_book_rounded, "Resources"),
-                const SizedBox(width: 8),
-                _smallBadge(Icons.question_answer_rounded, "Discussions"),
+                const SizedBox(height: 4),
+                Text("${cls.subject} • ${cls.className} (${cls.section})",
+                    style: TextStyle(
+                        color: context.appColors.textSecondary,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _smallBadge(Icons.menu_book_rounded, "Resources"),
+                    _smallBadge(Icons.question_answer_rounded, "Discussions"),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
-        trailing:
-            const Icon(Icons.chevron_right_rounded, color: AppColors.accent),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => TeacherDetailsScreen(classEntity: cls)),
-        ),
-      ),
+            trailing: Icon(Icons.chevron_right_rounded,
+                color: context.appColors.accentText),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => TeacherDetailsScreen(classEntity: cls)),
+            ),
+          )),
     );
   }
 
@@ -160,11 +163,11 @@ class _MyClassroomHubState extends State<MyClassroomHub> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppColors.accent),
+          Icon(icon, size: 12, color: context.appColors.accentText),
           const SizedBox(width: 4),
           Text(label,
-              style: const TextStyle(
-                  color: AppColors.accent,
+              style: TextStyle(
+                  color: context.appColors.accentText,
                   fontSize: 10,
                   fontWeight: FontWeight.bold)),
         ],

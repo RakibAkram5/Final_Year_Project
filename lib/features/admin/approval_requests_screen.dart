@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -92,7 +93,7 @@ class _ApprovalRequestsScreenState extends State<ApprovalRequestsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         title: const Text('Reject this request?'),
         content: Text(
             "This will reject ${u.fullName}'s signup request. They will be "
@@ -202,23 +203,23 @@ class _ApprovalRequestsScreenState extends State<ApprovalRequestsScreen> {
           const SizedBox(height: 120),
           Center(
             child: Text(_error!,
-                style: const TextStyle(color: AppColors.textSecondary)),
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
         ],
       );
     }
     if (_pending.isEmpty) {
       return ListView(
-        children: const [
-          SizedBox(height: 120),
+        children: [
+          const SizedBox(height: 120),
           Center(
             child: Column(
               children: [
                 Icon(Icons.done_all_rounded,
-                    size: 56, color: AppColors.textMuted),
-                SizedBox(height: 12),
+                    size: 56, color: context.appColors.textMuted),
+                const SizedBox(height: 12),
                 Text('No pending requests',
-                    style: TextStyle(color: AppColors.textSecondary)),
+                    style: TextStyle(color: context.appColors.textSecondary)),
               ],
             ),
           ),
@@ -237,9 +238,10 @@ class _ApprovalRequestsScreenState extends State<ApprovalRequestsScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,8 +252,9 @@ class _ApprovalRequestsScreenState extends State<ApprovalRequestsScreen> {
                 backgroundColor: AppColors.accent.withValues(alpha: 0.15),
                 child: Text(
                   u.fullName.isNotEmpty ? u.fullName[0].toUpperCase() : '?',
-                  style: const TextStyle(
-                      color: AppColors.accent, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                      color: context.appColors.accentText,
+                      fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(width: 12),
@@ -260,16 +263,17 @@ class _ApprovalRequestsScreenState extends State<ApprovalRequestsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(u.fullName,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
+                        style: TextStyle(
+                            color: context.appColors.textPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: 15)),
                     Text(u.role.label,
-                        style: const TextStyle(
-                            color: AppColors.accent, fontSize: 12)),
+                        style: TextStyle(
+                            color: context.appColors.accentText, fontSize: 12)),
                     Text(u.email,
-                        style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: 12)),
+                        style: TextStyle(
+                            color: context.appColors.textSecondary,
+                            fontSize: 12)),
                   ],
                 ),
               ),

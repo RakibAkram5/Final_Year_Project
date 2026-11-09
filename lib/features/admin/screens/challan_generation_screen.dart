@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -140,9 +141,9 @@ class _ChallanGenerationScreenState extends State<ChallanGenerationScreen> {
         const SizedBox(height: 16),
         _buildMonthSelector(),
         const SizedBox(height: 24),
-        const Text("FEE STRUCTURE",
+        Text("FEE STRUCTURE",
             style: TextStyle(
-                color: AppColors.accent,
+                color: context.appColors.accentText,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.2)),
@@ -177,10 +178,10 @@ class _ChallanGenerationScreenState extends State<ChallanGenerationScreen> {
               : _confirmAndGenerate,
         ),
         const SizedBox(height: 12),
-        const Text(
+        Text(
             "Note: This will create pending challans for all students enrolled in the selected class+section.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+            style: TextStyle(color: context.appColors.textMuted, fontSize: 11)),
       ],
     );
   }
@@ -189,30 +190,30 @@ class _ChallanGenerationScreenState extends State<ChallanGenerationScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("SELECT CLASS & SECTION",
+        Text("SELECT CLASS & SECTION",
             style: TextStyle(
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
                 fontSize: 13,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.appColors.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border)),
+              border: Border.all(color: context.appColors.border)),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<ClassSectionEntity>(
               value: _selectedSection,
               isExpanded: true,
-              dropdownColor: AppColors.surface,
+              dropdownColor: context.appColors.surface,
               hint: const Text("Pick a class & section"),
               items: sections
                   .map((s) => DropdownMenuItem(
                       value: s,
                       child: Text(s.displayLabel,
                           style:
-                              const TextStyle(color: AppColors.textPrimary))))
+                              TextStyle(color: context.appColors.textPrimary))))
                   .toList(),
               onChanged: (v) => setState(() => _selectedSection = v),
             ),
@@ -226,29 +227,29 @@ class _ChallanGenerationScreenState extends State<ChallanGenerationScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("BILLING MONTH",
+        Text("BILLING MONTH",
             style: TextStyle(
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
                 fontSize: 13,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.appColors.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border)),
+              border: Border.all(color: context.appColors.border)),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _selectedMonth,
               isExpanded: true,
-              dropdownColor: AppColors.surface,
+              dropdownColor: context.appColors.surface,
               items: _months
                   .map((m) => DropdownMenuItem(
                       value: m,
                       child: Text(m,
                           style:
-                              const TextStyle(color: AppColors.textPrimary))))
+                              TextStyle(color: context.appColors.textPrimary))))
                   .toList(),
               onChanged: (v) => setState(() => _selectedMonth = v!),
             ),
@@ -264,7 +265,7 @@ class _ChallanGenerationScreenState extends State<ChallanGenerationScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         title: const Text('Generate challans?'),
         content: Text(
             'This will create pending challans for every student enrolled in '
