@@ -51,8 +51,9 @@ class AppTheme {
         hintStyle: const TextStyle(color: AppColors.textMutedDark),
         labelStyle: const TextStyle(color: AppColors.textSecondaryDark),
         floatingLabelStyle: const TextStyle(color: AppColors.accent),
+        isDense: true,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: _inputBorder(AppColors.borderDark),
         enabledBorder: _inputBorder(AppColors.borderDark),
         focusedBorder: _inputBorder(AppColors.accent, width: 1.4),
@@ -113,8 +114,9 @@ class AppTheme {
         hintStyle: const TextStyle(color: AppColors.textMutedLight),
         labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
         floatingLabelStyle: const TextStyle(color: AppColors.accentDark),
+        isDense: true,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: _inputBorder(AppColors.borderLight),
         enabledBorder: _inputBorder(AppColors.borderLight),
         focusedBorder: _inputBorder(AppColors.accentDark, width: 1.4),
@@ -162,7 +164,7 @@ class AppTheme {
         elevation: 1,
         shadowColor: Colors.black.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: border.withValues(alpha: 0.6)),
         ),
         margin: EdgeInsets.zero,
@@ -172,7 +174,7 @@ class AppTheme {
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
         elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       );
 
   static ListTileThemeData _listTileTheme(Color textColor) => ListTileThemeData(
@@ -218,9 +220,11 @@ class AppTheme {
           backgroundColor: AppColors.accent,
           foregroundColor: AppColors.textOnAccent,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          minimumSize: const Size(0, 42),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
 
@@ -228,9 +232,11 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accent,
           foregroundColor: AppColors.textOnAccent,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          minimumSize: const Size(0, 42),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
 
@@ -240,9 +246,11 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: foreground,
           side: BorderSide(color: border),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          minimumSize: const Size(0, 42),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
 
@@ -256,7 +264,7 @@ class AppTheme {
 
   static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       borderSide: BorderSide(color: color, width: width),
     );
   }
