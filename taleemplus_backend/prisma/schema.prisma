@@ -66,6 +66,15 @@ model Academy {
   paymentQrEnabled      Boolean  @default(false)
   legacyFirebaseUid     String?  @unique
   academicStructure     Json?
+  // Phase 6: academy location (OpenStreetMap / Nominatim, WGS84)
+  latitude              Decimal? @db.Decimal(9, 6)
+  longitude             Decimal? @db.Decimal(9, 6)
+  locationLabel         String?
+  // Phase 8: structured bank details shown to parents and students
+  bankName              String?
+  bankAccountNumber     String?
+  bankIban              String?
+  paymentInstructions   String?
 
   users             User[]
   classes           Class[]
@@ -82,33 +91,35 @@ model Academy {
   notifications     Notification[]
   timetableSlots    TimetableSlot[]
   ocrDocuments      OcrDocument[]
+  storedFiles       StoredFile[]
+  assignments       Assignment[]
 
   @@map("academies")
 }
 
 model User {
-  id                String        @id @default(uuid())
-  email             String        @unique
-  passwordHash      String
-  fullName          String
-  studentCode       String?       @unique
-  rollNumber        String?
-  phoneNumber       String?
-  role              Role
-  accountStatus     AccountStatus @default(PENDING)
-  academyId         String
-  assignedSections  String[]      @default([])
-  legacyFirebaseUid String?       @unique
-  subject           String?
-  extraInfo         String?
-  joiningDate       DateTime?
-  securityQuestion  String?
-  securityAnswerHash String?
-  failedLoginAttempts Int     @default(0)
-  lockedUntil       DateTime?
-  deactivatedAt     DateTime?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id                  String        @id @default(uuid())
+  email               String        @unique
+  passwordHash        String
+  fullName            String
+  studentCode         String?       @unique
+  rollNumber          String?
+  phoneNumber         String?
+  role                Role
+  accountStatus       AccountStatus @default(PENDING)
+  academyId           String
+  assignedSections    String[]      @default([])
+  legacyFirebaseUid   String?       @unique
+  subject             String?
+  extraInfo           String?
+  joiningDate         DateTime?
+  securityQuestion    String?
+  securityAnswerHash  String?
+  failedLoginAttempts Int           @default(0)
+  lockedUntil         DateTime?
+  deactivatedAt       DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   academy                Academy                  @relation(fields: [academyId], references: [id], onDelete: Cascade)
   parentLinks            ParentStudent[]          @relation("ParentRelation")
@@ -131,6 +142,11 @@ model User {
   notifications          Notification[]           @relation("RecipientNotifications")
   timetableSlots         TimetableSlot[]          @relation("TeacherTimetable")
   refreshTokens          RefreshToken[]
+  uploadedFiles          StoredFile[]             @relation("FileUploader")
+  createdAssignments     Assignment[]             @relation("AssignmentCreator")
+  assignmentSubmissions  AssignmentSubmission[]   @relation("AssignmentStudent")
+  parentLinkRequests     ParentLinkRequest[]      @relation("LinkRequestParent")
+  studentLinkRequests    ParentLinkRequest[]      @relation("LinkRequestStudent")
 
   @@index([academyId, role])
   @@index([academyId, accountStatus, role])
@@ -148,6 +164,39 @@ model ParentStudent {
 
   @@unique([parentId, studentId])
   @@map("parent_student_relationships")
+}
+
+// A parent's request to be linked to an existing student. A parent submits the
+// child's identifying details; an academy admin verifies and approves, which
+// creates the ParentStudent link. This keeps self-service linking from exposing
+// any student's data to an unrelated parent (see parentPortal security fix).
+enum LinkRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ParentLinkRequest {
+  id          String            @id @default(uuid())
+  academyId   String
+  parentId    String
+  studentId   String? // the matched student, resolved by the backend/admin
+  childName   String
+  childEmail  String?
+  rollNumber  String?
+  status      LinkRequestStatus @default(PENDING)
+  note        String? // admin's reason on reject, or a system note
+  decidedById String? // admin user id who approved/rejected
+  decidedAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  parent  User  @relation("LinkRequestParent", fields: [parentId], references: [id], onDelete: Cascade)
+  student User? @relation("LinkRequestStudent", fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@index([academyId, status])
+  @@index([parentId, status])
+  @@map("parent_link_requests")
 }
 
 model Class {
@@ -172,6 +221,7 @@ model Class {
   sharedResources   SharedResource[]
   studentQueries    StudentQuery[]
   timetableSlots    TimetableSlot[]
+  assignments       Assignment[]
 
   @@unique([academyId, className, section, subject])
   @@index([academyId, classSectionId])
@@ -353,6 +403,10 @@ model Quiz {
   totalMarks   Int
   testDate     DateTime?
   instructions String?
+  // Examination-paper layout + teacher answer key (sections, attempt-any
+  // counts, exam metadata and short/long model answers). Nullable so legacy
+  // quizzes and non-exam quizzes are unaffected.
+  paperMeta    Json?
   createdById  String
   createdAt    DateTime  @default(now())
 
@@ -544,4 +598,74 @@ model LegacyIdMap {
   @@id([collection, legacyId])
   @@index([targetTable, targetId])
   @@map("legacy_id_map")
+}
+
+/// Metadata for every uploaded file. The bytes live in private storage
+/// (Vercel Blob in production, a local folder in development); clients only
+/// ever download through the authenticated /files/:id/content route.
+model StoredFile {
+  id            String   @id @default(uuid())
+  academyId     String
+  /// What the file belongs to: COURSE_MATERIAL, STUDENT_DOCUMENT,
+  /// TEACHER_DOCUMENT, ASSIGNMENT_INSTRUCTION, ASSIGNMENT_SUBMISSION,
+  /// EXAM_DOCUMENT
+  category      String
+  /// Id of the related record (resource, user, assignment, submission, quiz)
+  ownerId       String
+  originalName  String
+  storageKey    String   @unique
+  storageDriver String
+  mimeType      String
+  sizeBytes     Int
+  sha256        String
+  description   String?
+  uploadedById  String
+  createdAt     DateTime @default(now())
+
+  academy    Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation("FileUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([academyId, category, ownerId])
+  @@map("stored_files")
+}
+
+model Assignment {
+  id                String   @id @default(uuid())
+  academyId         String
+  classId           String
+  title             String
+  instructions      String?
+  dueAt             DateTime
+  maxMarks          Int?
+  allowResubmission Boolean  @default(true)
+  createdById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  academy     Academy                @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  class       Class                  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdBy   User                   @relation("AssignmentCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  submissions AssignmentSubmission[]
+
+  @@index([academyId, classId, dueAt])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id           String    @id @default(uuid())
+  assignmentId String
+  studentId    String
+  note         String?
+  submittedAt  DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  marks        Float?
+  feedback     String?
+  gradedAt     DateTime?
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    User       @relation("AssignmentStudent", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@index([studentId])
+  @@map("assignment_submissions")
 }

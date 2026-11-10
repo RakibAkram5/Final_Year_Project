@@ -1,6 +1,6 @@
 {
   "name": "taleemplus-backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Node.js Express REST API backend with PostgreSQL and Prisma ORM for TaleemPlus",
   "main": "src/server.js",
   "scripts": {
@@ -9,6 +9,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
+    "seed:demo": "node prisma/seed-demo-academy.js",
+    "cleanup:demo": "node prisma/cleanup-demo-academy.js",
     "migrate:export": "node scripts/migration/exportFirestore.js",
     "migrate:identity": "node scripts/migration/runIdentityImport.js",
     "migrate:verify": "node scripts/migration/verifyIdentity.js",
@@ -25,9 +27,11 @@
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",
+    "@vercel/blob": "^2.8.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",

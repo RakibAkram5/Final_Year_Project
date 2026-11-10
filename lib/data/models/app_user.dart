@@ -13,6 +13,9 @@ class AppUser {
   final String? academyAddress;
   final String? academyPhone;
   final String? academyLogo; // NEW: URL for branding
+
+  /// Saved academy location (Phase 6); null until an admin sets it.
+  final AcademyLocation? academyLocation;
   final String? academyCode; // NEW: Short code for joining (e.g. SRS-101)
   final DateTime? createdAt;
   final DateTime? joiningDate; // NEW: When the user joined/was added
@@ -37,6 +40,7 @@ class AppUser {
     this.academyAddress,
     this.academyPhone,
     this.academyLogo,
+    this.academyLocation,
     this.academyCode,
     this.createdAt,
     this.joiningDate,
@@ -65,6 +69,9 @@ class AppUser {
       'academy_address': academyAddress,
       'academy_phone': academyPhone,
       'academy_logo': academyLogo,
+      'academy_latitude': academyLocation?.latitude,
+      'academy_longitude': academyLocation?.longitude,
+      'academy_location_label': academyLocation?.label,
       'academy_code': academyCode,
       'sections': assignedSections,
       'linked_children': linkedChildren,
@@ -96,6 +103,8 @@ class AppUser {
       academyAddress: map['academy_address'] as String?,
       academyPhone: map['academy_phone'] as String?,
       academyLogo: map['academy_logo'] as String?,
+      academyLocation: AcademyLocation.tryParse(map['academy_latitude'],
+          map['academy_longitude'], map['academy_location_label']),
       academyCode: map['academy_code'] as String?,
       createdAt: ApiClient.parseDate(ts),
       // Fall back to createdAt when no explicit joining date was recorded.
@@ -128,6 +137,8 @@ class AppUser {
     String? academyAddress,
     String? academyPhone,
     String? academyLogo,
+    AcademyLocation? academyLocation,
+    bool clearAcademyLocation = false,
     String? academyCode,
     DateTime? createdAt,
     DateTime? joiningDate,
@@ -150,6 +161,8 @@ class AppUser {
       academyAddress: academyAddress ?? this.academyAddress,
       academyPhone: academyPhone ?? this.academyPhone,
       academyLogo: academyLogo ?? this.academyLogo,
+      academyLocation:
+          clearAcademyLocation ? null : academyLocation ?? this.academyLocation,
       academyCode: academyCode ?? this.academyCode,
       createdAt: createdAt ?? this.createdAt,
       joiningDate: joiningDate ?? this.joiningDate,
@@ -161,4 +174,30 @@ class AppUser {
       extraInfo: extraInfo ?? this.extraInfo,
     );
   }
+}
+
+/// A point on the map with an optional human-readable label (WGS84).
+class AcademyLocation {
+  final double latitude;
+  final double longitude;
+  final String? label;
+
+  const AcademyLocation(this.latitude, this.longitude, {this.label});
+
+  static AcademyLocation? tryParse(dynamic lat, dynamic lng, [dynamic label]) {
+    final la = lat is num ? lat.toDouble() : double.tryParse('${lat ?? ''}');
+    final lo = lng is num ? lng.toDouble() : double.tryParse('${lng ?? ''}');
+    if (la == null || lo == null) return null;
+    if (la < -90 || la > 90 || lo < -180 || lo > 180) return null;
+    final text = label?.toString().trim();
+    return AcademyLocation(la, lo,
+        label: text == null || text.isEmpty ? null : text);
+  }
+
+  /// Opens turn-by-turn directions in Google Maps (app or web); no API key.
+  Uri get directionsUri => Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude');
+
+  Uri get openStreetMapUri => Uri.parse(
+      'https://www.openstreetmap.org/?mlat=$latitude&mlon=$longitude#map=17/$latitude/$longitude');
 }

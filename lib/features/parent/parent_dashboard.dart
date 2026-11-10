@@ -12,13 +12,13 @@ import '../../logic/session_provider.dart'; // NEW
 import '../../data/models/app_user.dart';
 import '../../data/remote/auth_service.dart';
 import '../../widgets/app_widgets.dart';
+import '../../widgets/dashboard_app_bar_actions.dart';
 import '../../widgets/parent_stats_row.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
 import '../../data/remote/notification_service.dart';
 import '../shared/notifications_screen.dart';
 import '../../widgets/gradient_background.dart';
-import '../../widgets/theme_toggle_widget.dart';
 import '../shared/view_announcements_screen.dart';
 import 'screens/child_overview_screen.dart';
 import 'screens/child_timetable_screen.dart';
@@ -26,6 +26,7 @@ import 'screens/all_challans_screen.dart';
 import 'screens/academy_contact_screen.dart'; // NEW
 import '../../widgets/academy_relink_dialog.dart';
 import '../../widgets/security_question_dialog.dart';
+import 'link_child_request_screen.dart';
 
 class ParentDashboard extends StatelessWidget {
   const ParentDashboard({super.key});
@@ -56,12 +57,12 @@ class ParentDashboard extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.family_restroom_rounded,
-                color: AppColors.accent, size: 22),
-            SizedBox(width: 8),
-            Expanded(
+                color: context.appColors.accentText, size: 22),
+            const SizedBox(width: 8),
+            const Expanded(
               child: Text('Parent Portal',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -69,19 +70,10 @@ class ParentDashboard extends StatelessWidget {
             ),
           ],
         ),
-        actions: [
-          _notificationBell(context, user),
-          IconButton(
-            icon: const Icon(Icons.security_rounded, color: AppColors.accent),
-            onPressed: () => _showSecuritySettings(context),
-          ),
-          const ThemeToggle(),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded,
-                color: AppColors.textSecondary),
-            onPressed: () => _logout(context),
-          ),
-        ],
+        actions: dashboardAppBarActions(context,
+            notificationBell: _notificationBell(context, user),
+            onSecurity: () => _showSecuritySettings(context),
+            onLogout: () => _logout(context)),
       ),
       body: GradientBackground(
         child: SafeArea(
@@ -110,19 +102,17 @@ class ParentDashboard extends StatelessWidget {
       BuildContext context, AppUser? user, ParentProvider parentProv) {
     return RefreshIndicator(
       color: AppColors.accent,
-      onRefresh: () => parentProv.syncWithUser(user),
+      onRefresh: () => parentProv.refresh(),
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [
-          FittedBox(
-            alignment: Alignment.centerLeft,
-            fit: BoxFit.scaleDown,
-            child: Text('Welcome, ${user?.fullName ?? 'Parent'}',
-                style: TextStyle(
-                    color: context.appColors.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800)),
-          ),
+          // Long names wrap instead of being shrunk to an unreadable size.
+          Text('Welcome, ${user?.fullName ?? 'Parent'}',
+              style: TextStyle(
+                  color: context.appColors.textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text('Monitor your child\'s education journey',
               style: TextStyle(color: context.appColors.textSecondary)),
@@ -130,9 +120,9 @@ class ParentDashboard extends StatelessWidget {
           ParentStatsRow(
               children: parentProv.children, academyId: user?.academyId ?? ''),
           const SizedBox(height: 28),
-          const Text('MY CHILDREN',
+          Text('MY CHILDREN',
               style: TextStyle(
-                  color: AppColors.textMuted,
+                  color: context.appColors.textMuted,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2)),
@@ -142,14 +132,16 @@ class ParentDashboard extends StatelessWidget {
                 child: Padding(
                     padding: EdgeInsets.all(40),
                     child: CircularProgressIndicator(color: AppColors.accent)))
+          else if (parentProv.error != null && parentProv.children.isEmpty)
+            _loadErrorCard(context, parentProv)
           else if (parentProv.children.isEmpty)
             _noChildrenPlaceholder(context)
           else
             ...parentProv.children.map((c) => _childCard(context, c)),
           const SizedBox(height: 32),
-          const Text('SERVICES',
+          Text('SERVICES',
               style: TextStyle(
-                  color: AppColors.textMuted,
+                  color: context.appColors.textMuted,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2)),
@@ -210,8 +202,8 @@ class ParentDashboard extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_rounded,
-                  color: AppColors.accent),
+              icon: Icon(Icons.notifications_rounded,
+                  color: context.appColors.accentText),
               onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -250,23 +242,23 @@ class ParentDashboard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text("Security Settings",
+            Text("Security Settings",
                 style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            const Text(
-                "Enhance your account security with biometric authentication.",
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            Text("Enhance your account security with biometric authentication.",
+                style: TextStyle(
+                    color: context.appColors.textSecondary, fontSize: 13)),
             const SizedBox(height: 24),
             StatefulBuilder(
               builder: (context, setInternalState) {
                 final session = context.watch<SessionProvider>();
                 return SwitchListTile(
-                  title: const Text("Biometric / Face Unlock",
+                  title: Text("Biometric / Face Unlock",
                       style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: context.appColors.textPrimary,
                           fontWeight: FontWeight.w600)),
                   subtitle: const Text("Use fingerprints or face ID to log in.",
                       style: TextStyle(fontSize: 12)),
@@ -292,6 +284,24 @@ class ParentDashboard extends StatelessWidget {
               },
             ),
             const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const LinkChildRequestScreen()),
+              ),
+              icon: const Icon(Icons.person_add_alt_1_rounded),
+              label: const Text("Link a Child"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () => _showChangePasswordDialog(context),
               icon: const Icon(Icons.lock_reset_rounded),
@@ -328,11 +338,11 @@ class ParentDashboard extends StatelessWidget {
               icon: const Icon(Icons.sync_problem_rounded),
               label: const Text("Fix Academy Link"),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
+                foregroundColor: context.appColors.textSecondary,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
-                side: const BorderSide(color: AppColors.border),
+                side: BorderSide(color: context.appColors.border),
               ),
             ),
             const SizedBox(height: 24),
@@ -364,9 +374,10 @@ class ParentDashboard extends StatelessWidget {
                         controller: currentPasswordCtrl,
                         obscure: true),
                     const SizedBox(height: 12),
-                    const Text("Enter a new password for your account.",
+                    Text("Enter a new password for your account.",
                         style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 13)),
+                            color: context.appColors.textSecondary,
+                            fontSize: 13)),
                     const SizedBox(height: 20),
                     LabeledField(
                         label: "New Password",
@@ -447,10 +458,9 @@ class ParentDashboard extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                  "Enter your account password to enable biometric login.",
-                  style:
-                      TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text("Enter your account password to enable biometric login.",
+                  style: TextStyle(
+                      fontSize: 13, color: context.appColors.textSecondary)),
               const SizedBox(height: 16),
               LabeledField(
                   label: "Current Password",
@@ -489,8 +499,9 @@ class ParentDashboard extends StatelessWidget {
                       if (ctx.mounted) Navigator.pop(ctx, ctrl.text);
                     },
               child: Text(verifying ? "VERIFYING..." : "VERIFY",
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.accent)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: context.appColors.accentText)),
             ),
           ],
         ),
@@ -507,17 +518,21 @@ class ParentDashboard extends StatelessWidget {
           backgroundColor: AppColors.accent.withValues(alpha: 0.1),
           child: Text(
               child.fullName.isNotEmpty ? child.fullName[0].toUpperCase() : '?',
-              style: const TextStyle(
-                  color: AppColors.accent, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  color: context.appColors.accentText,
+                  fontWeight: FontWeight.bold)),
         ),
         title: Text(child.fullName,
             style: TextStyle(
                 color: context.appColors.textPrimary,
                 fontWeight: FontWeight.bold)),
         subtitle: Text(child.email,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(color: context.appColors.textMuted, fontSize: 12)),
         trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert_rounded, color: AppColors.textMuted),
+          icon:
+              Icon(Icons.more_vert_rounded, color: context.appColors.textMuted),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           onSelected: (val) {
@@ -558,6 +573,37 @@ class ParentDashboard extends StatelessWidget {
     );
   }
 
+  Widget _loadErrorCard(BuildContext context, ParentProvider parentProv) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.danger.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.cloud_off_rounded,
+              size: 40, color: AppColors.danger),
+          const SizedBox(height: 12),
+          Text(parentProv.error!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: context.appColors.textSecondary)),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: parentProv.loading ? null : () => parentProv.refresh(),
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Retry'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.accent,
+              side: const BorderSide(color: AppColors.accent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _noChildrenPlaceholder(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(32),
@@ -574,14 +620,15 @@ class ParentDashboard extends StatelessWidget {
               size: 48,
               color: context.appColors.textMuted.withValues(alpha: 0.4)),
           const SizedBox(height: 16),
-          const Text("No children linked yet",
+          Text("No children linked yet",
               style: TextStyle(
-                  color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                  color: context.appColors.textSecondary,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          const Text(
-              "Your academy will link your child's profile to your account.",
+          Text("Your academy will link your child's profile to your account.",
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              style:
+                  TextStyle(color: context.appColors.textMuted, fontSize: 12)),
         ],
       ),
     );
@@ -604,7 +651,8 @@ class ParentDashboard extends StatelessWidget {
                   color: AppColors.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: AppColors.accentDark, size: 20),
+                child:
+                    Icon(icon, color: context.appColors.accentText, size: 20),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -621,7 +669,7 @@ class ParentDashboard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(Icons.chevron_right, color: context.appColors.textMuted),
             ],
           ),
         ),

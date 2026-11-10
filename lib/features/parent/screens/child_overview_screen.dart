@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../../shared/assignments_screen.dart';
+import '../../shared/documents_screen.dart';
+import '../../../data/remote/file_service.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_extensions.dart';
@@ -70,9 +73,9 @@ class ChildOverviewScreen extends StatelessWidget {
       children: [
         _childProfileHeader(context),
         const SizedBox(height: 24),
-        const Text('LEARNING PROGRESS',
+        Text('LEARNING PROGRESS',
             style: TextStyle(
-                color: AppColors.accent,
+                color: context.appColors.accentText,
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2)),
@@ -87,6 +90,32 @@ class ChildOverviewScreen extends StatelessWidget {
               MaterialPageRoute(
                   builder: (_) =>
                       StudentAttendanceScreen(studentUid: child.uid))),
+        ),
+        const SizedBox(height: 12),
+        _actionTile(
+          context,
+          'Assignments',
+          'Homework, submissions and grades',
+          Icons.assignment_rounded,
+          () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => AssignmentsScreen(
+                      childId: child.uid, childName: child.fullName))),
+        ),
+        const SizedBox(height: 12),
+        _actionTile(
+          context,
+          'Documents',
+          'Admission papers and certificates',
+          Icons.folder_rounded,
+          () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => DocumentsScreen(
+                      title: '${child.fullName} · Documents',
+                      category: FileCategory.studentDocument,
+                      ownerId: child.uid))),
         ),
         const SizedBox(height: 12),
         _actionTile(
@@ -125,9 +154,9 @@ class ChildOverviewScreen extends StatelessWidget {
                       StudentProgressChartScreen(studentUid: child.uid))),
         ),
         const SizedBox(height: 24),
-        const Text('FINANCE',
+        Text('FINANCE',
             style: TextStyle(
-                color: AppColors.accent,
+                color: context.appColors.accentText,
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2)),
@@ -164,8 +193,8 @@ class ChildOverviewScreen extends StatelessWidget {
                 child.fullName.isNotEmpty
                     ? child.fullName[0].toUpperCase()
                     : '?',
-                style: const TextStyle(
-                    color: AppColors.accent,
+                style: TextStyle(
+                    color: context.appColors.accentText,
                     fontSize: 24,
                     fontWeight: FontWeight.bold)),
           ),
@@ -180,6 +209,8 @@ class ChildOverviewScreen extends StatelessWidget {
                         fontSize: 20,
                         fontWeight: FontWeight.w800)),
                 Text(child.email,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                         color: context.appColors.textSecondary, fontSize: 13)),
               ],
@@ -207,7 +238,7 @@ class ChildOverviewScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.accent, size: 22),
+              Icon(icon, color: context.appColors.accentText, size: 22),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -223,7 +254,7 @@ class ChildOverviewScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(Icons.chevron_right, color: context.appColors.textMuted),
             ],
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -128,9 +129,9 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("FILTER BY BILLING MONTH",
+          Text("FILTER BY BILLING MONTH",
               style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1)),
@@ -138,22 +139,22 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: AppColors.surface.withValues(alpha: 0.5),
+              color: context.appColors.surface.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+              border: Border.all(
+                  color: context.appColors.border.withValues(alpha: 0.5)),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedMonth,
                 isExpanded: true,
-                dropdownColor: AppColors.surfaceAlt,
+                dropdownColor: context.appColors.surfaceAlt,
                 items: _months
                     .map((m) => DropdownMenuItem(
                         value: m,
                         child: Text(m,
-                            style:
-                                const TextStyle(color: AppColors.textPrimary))))
+                            style: TextStyle(
+                                color: context.appColors.textPrimary))))
                     .toList(),
                 onChanged: (v) => setState(() => _selectedMonth = v!),
               ),
@@ -165,7 +166,7 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
   }
 
   Widget _studentFeeTile(String sname, FeeChallanModel? challan) {
-    Color statusColor = AppColors.textMuted;
+    Color statusColor = context.appColors.textMuted;
     String statusText = "No Challan";
 
     if (challan != null) {
@@ -184,17 +185,19 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
           CircleAvatar(
             backgroundColor: AppColors.accent.withValues(alpha: 0.1),
             child: Text(sname.isNotEmpty ? sname[0].toUpperCase() : '?',
-                style: const TextStyle(
-                    color: AppColors.accent, fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    color: context.appColors.accentText,
+                    fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -202,13 +205,13 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(sname,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: context.appColors.textPrimary,
                         fontWeight: FontWeight.bold)),
                 if (challan != null)
                   Text("Amount: Rs. ${challan.totalAmount.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                          color: AppColors.textMuted, fontSize: 11)),
+                      style: TextStyle(
+                          color: context.appColors.textMuted, fontSize: 11)),
               ],
             ),
           ),
@@ -226,8 +229,8 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
           ),
           if (challan != null && !challan.isPaid)
             IconButton(
-              icon: const Icon(Icons.check_circle_outline,
-                  color: AppColors.accent, size: 20),
+              icon: Icon(Icons.check_circle_outline,
+                  color: context.appColors.accentText, size: 20),
               onPressed: () => _markPaid(challan),
               tooltip: "Mark as Paid",
             ),
@@ -240,7 +243,7 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
+        backgroundColor: context.appColors.surfaceAlt,
         title: const Text("Confirm Payment"),
         content: Text(
             "Mark Rs. ${challan.totalAmount.toStringAsFixed(0)} as paid for ${challan.studentName}?"),
@@ -267,10 +270,10 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.receipt_long_outlined,
-              size: 48, color: AppColors.textMuted),
+          Icon(Icons.receipt_long_outlined,
+              size: 48, color: context.appColors.textMuted),
           const SizedBox(height: 12),
-          Text(msg, style: const TextStyle(color: AppColors.textSecondary)),
+          Text(msg, style: TextStyle(color: context.appColors.textSecondary)),
         ],
       ),
     );

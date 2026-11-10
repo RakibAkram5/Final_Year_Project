@@ -218,6 +218,49 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  /// Uploads raw bytes (application/octet-stream) and returns the JSON data.
+  /// Used by the file storage API, which avoids base64 overhead.
+  Future<dynamic> sendBytes(String method, String endpoint, List<int> bytes,
+      {Duration timeout = const Duration(seconds: 90)}) async {
+    Future<http.Response> send() async {
+      final headers = await _headers();
+      headers['Content-Type'] = 'application/octet-stream';
+      final uri = Uri.parse('$baseUrl$endpoint');
+      return _send(
+          method == 'PUT'
+              ? http.put(uri, headers: headers, body: bytes)
+              : http.post(uri, headers: headers, body: bytes),
+          timeout: timeout);
+    }
+
+    var response = await send();
+    if (response.statusCode == 401 && await _refreshSession()) {
+      response = await send();
+    }
+    return _handleResponse(response);
+  }
+
+  /// Downloads an authenticated binary resource (e.g. /files/:id/content).
+  Future<Uint8List> getBytes(String endpoint,
+      {Duration timeout = const Duration(seconds: 90)}) async {
+    Future<http.Response> send() async {
+      final headers = await _headers();
+      headers['Accept'] = '*/*';
+      return _send(http.get(Uri.parse('$baseUrl$endpoint'), headers: headers),
+          timeout: timeout);
+    }
+
+    var response = await send();
+    if (response.statusCode == 401 && await _refreshSession()) {
+      response = await send();
+    }
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return response.bodyBytes;
+    }
+    // Error bodies are JSON; reuse the standard error mapping.
+    return _handleResponse(response) as Uint8List;
+  }
+
   Future<bool> _refreshSession() async {
     final pending = _refreshInProgress;
     if (pending != null) return pending;

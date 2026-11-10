@@ -15,6 +15,15 @@ class ClassroomService {
     DataChanges.notify(DataTopics.resources);
   }
 
+  /// Creates a resource whose content is an uploaded file (attached right
+  /// after via FileService) and returns its id.
+  Future<String> createResourceForAttachment(SharedResource res) async {
+    final created = await _api
+        .post('/resources', {...res.toApiBody(), 'withAttachment': true});
+    DataChanges.notify(DataTopics.resources);
+    return (created as Map)['id'].toString();
+  }
+
   Future<void> deleteResource(String id) async {
     await _api.delete('/resources/$id');
     DataChanges.notify(DataTopics.resources);

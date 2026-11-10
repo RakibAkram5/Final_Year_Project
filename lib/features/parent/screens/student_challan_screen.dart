@@ -276,8 +276,8 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
                     c.isPaid
                         ? "Payment received"
                         : "Due Date: ${DateFormat('dd MMM yyyy').format(c.dueDate)}",
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 13)),
+                    style: TextStyle(
+                        color: context.appColors.textMuted, fontSize: 13)),
               ],
             ),
           ),
@@ -298,19 +298,19 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("TOTAL PAYABLE",
+          Text("TOTAL PAYABLE",
               style: TextStyle(
-                  color: AppColors.textMuted,
+                  color: context.appColors.textMuted,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1)),
           const SizedBox(height: 4),
           Text("Rs. ${c.totalAmount.toStringAsFixed(0)}",
-              style: const TextStyle(
-                  color: AppColors.accent,
+              style: TextStyle(
+                  color: context.appColors.accentText,
                   fontSize: 32,
                   fontWeight: FontWeight.w900)),
-          const Divider(height: 32, color: AppColors.border),
+          Divider(height: 32, color: context.appColors.border),
           _previewRow("Student", c.studentName),
           _previewRow("Challan #", c.challanNumber),
           _previewRow("Monthly Fee", "Rs. ${c.monthlyFee}"),
@@ -320,8 +320,8 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
             child: Text(
                 'Use challan reference ${c.challanNumber} when contacting the academy.',
                 textAlign: TextAlign.center,
-                style:
-                    const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                style: TextStyle(
+                    color: context.appColors.textMuted, fontSize: 12)),
           ),
         ],
       ),
@@ -332,16 +332,24 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 14)),
-          Text(val,
-              style: TextStyle(
-                  color: isDanger ? AppColors.danger : AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14)),
+          Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    color: context.appColors.textSecondary, fontSize: 14)),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(val,
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                    color: isDanger
+                        ? AppColors.danger
+                        : context.appColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14)),
+          ),
         ],
       ),
     );
@@ -451,9 +459,9 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text("Payment Instructions",
+              Text("Payment Instructions",
                   style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: context.appColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
@@ -478,6 +486,19 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
                     .isNotEmpty)
                   _instructionRow(Icons.numbers_rounded, 'Account details',
                       _paymentSettings!['accountDetails'].toString()),
+                for (final (key, icon, label) in const [
+                  ('bankName', Icons.account_balance_rounded, 'Bank'),
+                  ('bankAccountNumber', Icons.pin_rounded, 'Account number'),
+                  ('bankIban', Icons.credit_card_rounded, 'IBAN'),
+                  (
+                    'paymentInstructions',
+                    Icons.info_outline_rounded,
+                    'Instructions'
+                  ),
+                ])
+                  if ((_paymentSettings?[key] ?? '').toString().isNotEmpty)
+                    _instructionRow(
+                        icon, label, _paymentSettings![key].toString()),
                 if ((_paymentSettings?['qrImageBase64'] ?? '')
                     .toString()
                     .isNotEmpty)
@@ -490,10 +511,10 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
                       fit: BoxFit.contain,
                     ),
                   ),
-                const Text(
+                Text(
                     'Include the challan reference in your transfer details. Payment is recorded only after academy verification.',
                     style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 12)),
+                        color: context.appColors.textSecondary, fontSize: 12)),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: c.isPaid
@@ -550,20 +571,23 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.accent, size: 20),
+          Icon(icon, color: context.appColors.accentText, size: 20),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: const TextStyle(
-                      color: AppColors.textMuted, fontSize: 11)),
-              Text(val,
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: TextStyle(
+                        color: context.appColors.textMuted, fontSize: 11)),
+                // Selectable so parents can copy the IBAN / account number.
+                SelectableText(val,
+                    style: TextStyle(
+                        color: context.appColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15)),
+              ],
+            ),
           ),
         ],
       ),
@@ -571,15 +595,15 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.receipt_long_rounded,
-              size: 64, color: AppColors.textMuted),
-          SizedBox(height: 16),
+              size: 64, color: context.appColors.textMuted),
+          const SizedBox(height: 16),
           Text("No challans available for this month.",
-              style: TextStyle(color: AppColors.textSecondary)),
+              style: TextStyle(color: context.appColors.textSecondary)),
         ],
       ),
     );

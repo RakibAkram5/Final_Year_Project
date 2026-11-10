@@ -134,12 +134,18 @@ class WebStatCard extends StatelessWidget {
                   ),
               ],
             ),
-            const Spacer(),
-            Text(value,
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: context.appColors.textPrimary)),
+            // A Spacer here broke when the card sits in an unbounded Column
+            // (narrow layouts); the container's minHeight keeps the shape.
+            const SizedBox(height: 18),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(value,
+                  style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: context.appColors.textPrimary)),
+            ),
             const SizedBox(height: 4),
             Text(label,
                 style: TextStyle(
@@ -280,7 +286,7 @@ class WebNavTile extends StatelessWidget {
               color: AppColors.accent.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(icon, color: AppColors.accentDark, size: 20),
+            child: Icon(icon, color: context.appColors.accentText, size: 20),
           ),
           const Spacer(),
           Text(title,

@@ -10,6 +10,10 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   final Color border;
   final Color inputFill;
 
+  /// Accent colour for *text* and small icons. The brand cyan is unreadable
+  /// on white (1.45:1), so light mode uses a darker teal (about 5:1).
+  final Color accentText;
+
   const AppColorsExtension({
     required this.textPrimary,
     required this.textSecondary,
@@ -18,6 +22,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     required this.surfaceAlt,
     required this.border,
     required this.inputFill,
+    required this.accentText,
   });
 
   @override
@@ -29,6 +34,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     Color? surfaceAlt,
     Color? border,
     Color? inputFill,
+    Color? accentText,
   }) {
     return AppColorsExtension(
       textPrimary: textPrimary ?? this.textPrimary,
@@ -38,6 +44,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
       surfaceAlt: surfaceAlt ?? this.surfaceAlt,
       border: border ?? this.border,
       inputFill: inputFill ?? this.inputFill,
+      accentText: accentText ?? this.accentText,
     );
   }
 
@@ -52,6 +59,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
       surfaceAlt: Color.lerp(surfaceAlt, other.surfaceAlt, t)!,
       border: Color.lerp(border, other.border, t)!,
       inputFill: Color.lerp(inputFill, other.inputFill, t)!,
+      accentText: Color.lerp(accentText, other.accentText, t)!,
     );
   }
 
@@ -63,6 +71,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     surfaceAlt: AppColors.surfaceAltDark,
     border: AppColors.borderDark,
     inputFill: AppColors.inputFillDark,
+    accentText: AppColors.accent,
   );
 
   static const light = AppColorsExtension(
@@ -73,6 +82,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     surfaceAlt: AppColors.surfaceAltLight,
     border: AppColors.borderLight,
     inputFill: AppColors.inputFillLight,
+    accentText: Color(0xFF0B7A75),
   );
 }
 

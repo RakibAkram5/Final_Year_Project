@@ -119,8 +119,17 @@ class AdminAiProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
+      // Training runs as a background job on the ML service; poll its status
+      // instead of holding one long HTTP request open.
       await _api.post('/admin/ml/retrain', {});
-      await _loadMlStatus();
+      for (var i = 0; i < 60; i++) {
+        await _loadMlStatus();
+        final busy = _feeModel['status'] == 'TRAINING' ||
+            _performanceModel['status'] == 'TRAINING';
+        if (!busy) break;
+        notifyListeners();
+        await Future<void>.delayed(const Duration(seconds: 3));
+      }
     } catch (e) {
       _error = e.toString();
     } finally {

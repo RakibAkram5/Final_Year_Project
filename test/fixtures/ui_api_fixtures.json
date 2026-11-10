@@ -1,0 +1,2500 @@
+{
+ "admin": {
+  "login": {
+   "user": {
+    "id": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "email": "admin@demo.taleemplus",
+    "fullName": "Demo Admin",
+    "phoneNumber": null,
+    "role": "ADMIN",
+    "accountStatus": "ACTIVE",
+    "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+    "academyCode": "DEMO-ACADEMY",
+    "academyName": "TaleemPlus Demo Academy",
+    "academyAddress": "[TEST] 12-B Main Boulevard, Gulberg III, Lahore",
+    "academyPhone": "+92-000-0000000",
+    "academyLogo": null,
+    "academyLatitude": 31.52037,
+    "academyLongitude": 74.358747,
+    "academyLocationLabel": "[TEST] Gulberg III, Lahore",
+    "assignedSections": [],
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "extraInfo": null,
+    "joiningDate": null,
+    "createdAt": "2026-11-08T18:54:23.847Z",
+    "linkedChildren": []
+   },
+   "tokens": {
+    "accessToken": "redacted",
+    "refreshToken": "redacted"
+   }
+  },
+  "GET /auth/me": {
+   "id": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+   "email": "admin@demo.taleemplus",
+   "fullName": "Demo Admin",
+   "phoneNumber": null,
+   "role": "ADMIN",
+   "accountStatus": "ACTIVE",
+   "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+   "academyCode": "DEMO-ACADEMY",
+   "academyName": "TaleemPlus Demo Academy",
+   "academyAddress": "[TEST] 12-B Main Boulevard, Gulberg III, Lahore",
+   "academyPhone": "+92-000-0000000",
+   "academyLogo": null,
+   "academyLatitude": 31.52037,
+   "academyLongitude": 74.358747,
+   "academyLocationLabel": "[TEST] Gulberg III, Lahore",
+   "assignedSections": [],
+   "studentCode": null,
+   "rollNumber": null,
+   "subject": null,
+   "extraInfo": null,
+   "joiningDate": null,
+   "createdAt": "2026-11-08T18:54:23.847Z",
+   "linkedChildren": [],
+   "linkedParents": []
+  },
+  "GET /classes": [
+   {
+    "enrollment_count": 1,
+    "id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Grade 5",
+    "section": "A",
+    "subject": "Mathematics",
+    "program": "General",
+    "class_section_id": "00000000-0000-4000-8000-000000000010",
+    "primary_teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "primary_teacher_name": "Demo Teacher",
+    "primary_teacher_email": "teacher@demo.taleemplus",
+    "student_ids": [
+     "76fe910d-195d-4822-82da-64183bbea8bd"
+    ],
+    "student_names": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "Demo Student"
+    },
+    "student_roll_numbers": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "5A-01"
+    },
+    "created_at": "2026-11-08T18:54:23.884Z",
+    "updated_at": "2026-11-08T18:54:23.884Z"
+   },
+   {
+    "enrollment_count": 0,
+    "id": "89838098-f55d-4573-84f5-488c8b5a565c",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Intermediate Part-II Pre-Engineering",
+    "section": "Morning Batch A",
+    "subject": "Computer Science and Information Technology",
+    "program": "",
+    "class_section_id": "fcf6f37c-f1cb-4f2a-afcd-a701b6631b68",
+    "primary_teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "primary_teacher_name": "Demo Teacher",
+    "primary_teacher_email": "teacher@demo.taleemplus",
+    "student_ids": [],
+    "student_names": {},
+    "student_roll_numbers": {},
+    "created_at": "2026-11-08T18:56:46.251Z",
+    "updated_at": "2026-11-08T18:56:46.251Z"
+   },
+   {
+    "enrollment_count": 0,
+    "id": "02956132-c6eb-42cf-a433-87fcf575b175",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Matriculation Science Group (Biology)",
+    "section": "Evening",
+    "subject": "Mathematics",
+    "program": "",
+    "class_section_id": "ebda7907-4272-428f-b53f-246bae797b34",
+    "primary_teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "primary_teacher_name": "Demo Teacher",
+    "primary_teacher_email": "teacher@demo.taleemplus",
+    "student_ids": [],
+    "student_names": {},
+    "student_roll_numbers": {},
+    "created_at": "2026-11-08T18:56:46.975Z",
+    "updated_at": "2026-11-08T18:56:46.975Z"
+   }
+  ],
+  "GET /class-sections": [
+   {
+    "id": "00000000-0000-4000-8000-000000000010",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Grade 5",
+    "program": "General",
+    "section": "A",
+    "student_ids": [
+     "76fe910d-195d-4822-82da-64183bbea8bd"
+    ],
+    "student_names": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "Demo Student"
+    },
+    "student_roll_numbers": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "5A-01"
+    },
+    "created_at": "2026-11-08T18:54:23.875Z",
+    "updated_at": "2026-11-08T18:54:23.875Z"
+   },
+   {
+    "id": "fcf6f37c-f1cb-4f2a-afcd-a701b6631b68",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Intermediate Part-II Pre-Engineering",
+    "program": "",
+    "section": "Morning Batch A",
+    "student_ids": [],
+    "student_names": {},
+    "student_roll_numbers": {},
+    "created_at": "2026-11-08T18:56:46.240Z",
+    "updated_at": "2026-11-08T18:56:46.240Z"
+   },
+   {
+    "id": "ebda7907-4272-428f-b53f-246bae797b34",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Matriculation Science Group (Biology)",
+    "program": "",
+    "section": "Evening",
+    "student_ids": [],
+    "student_names": {},
+    "student_roll_numbers": {},
+    "created_at": "2026-11-08T18:56:46.972Z",
+    "updated_at": "2026-11-08T18:56:46.972Z"
+   }
+  ],
+  "GET /academic-structure": {
+   "groups": [],
+   "classes": [
+    {
+     "name": "Grade 5",
+     "sections": [
+      "A"
+     ]
+    }
+   ],
+   "programs": [
+    "General"
+   ]
+  },
+  "GET /class-reports": [
+   {
+    "id": "00000000-0000-4000-8000-000000000080",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_label": "Grade 5 - A",
+    "generated_at": "2026-11-08T18:54:23.992Z",
+    "total_students": 1,
+    "present": 1,
+    "absent": 0,
+    "fee_paid": 0,
+    "fee_pending": 1,
+    "fee_paid_amount": 0,
+    "fee_pending_amount": 5000,
+    "created_at": "2026-11-08T18:54:23.992Z"
+   }
+  ],
+  "GET /announcements": [
+   {
+    "id": "00000000-0000-4000-8000-000000000060",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "title": "Demo announcement",
+    "message": "Classes start at 8:00 AM.",
+    "target_roles": [
+     "all"
+    ],
+    "created_by_uid": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "created_by_name": "Demo Admin",
+    "created_at": "2026-11-08T18:54:23.975Z",
+    "updated_at": "2026-11-08T18:54:23.975Z"
+   }
+  ],
+  "GET /notifications": [],
+  "GET /timetable": [
+   {
+    "id": "00000000-0000-4000-8000-000000000070",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "is_break": false,
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "class_name": "Grade 5",
+    "section": "A",
+    "subject": "Mathematics",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "day_of_week": 1,
+    "start_minutes": 480,
+    "end_minutes": 525,
+    "room": "Room 1",
+    "semester": "2026-2027",
+    "effective_from": null,
+    "effective_to": null,
+    "created_at": "2026-11-08T18:54:23.982Z",
+    "updated_at": "2026-11-08T18:54:23.982Z"
+   }
+  ],
+  "GET /attendance": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z",
+    "class_label": "Grade 5 - A",
+    "subject": "Mathematics"
+   }
+  ],
+  "GET /quizzes": [
+   {
+    "id": "00000000-0000-4000-8000-000000000020",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "class_label": "Grade 5 - A",
+    "title": "Demo Fractions Quiz",
+    "subject": "Mathematics",
+    "month": "November",
+    "session": "2026-2027",
+    "chapter": "",
+    "difficulty": "Medium",
+    "total_marks": 10,
+    "test_date": null,
+    "instructions": "",
+    "created_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "created_by_name": "Demo Teacher",
+    "created_at": "2026-11-08T18:54:23.924Z",
+    "questions": [
+     {
+      "id": "7d4a2578-3f33-4d85-8b79-f68542933dc9",
+      "text": "What is 1/2 + 1/4?",
+      "type": "short",
+      "options": [
+       "3/4",
+       "2/6",
+       "1/6"
+      ],
+      "marks": 10,
+      "correct_index": 0,
+      "grading_keywords": []
+     }
+    ]
+   }
+  ],
+  "GET /resources": [
+   {
+    "id": "00000000-0000-4000-8000-000000000030",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "title": "Fractions notes",
+    "description": "Worked examples for the demo quiz.",
+    "file_url": null,
+    "content_text": "A fraction represents a part of a whole.",
+    "file_name": "",
+    "mime_type": "text/plain",
+    "created_at": "2026-11-08T18:54:23.947Z",
+    "updated_at": "2026-11-08T18:54:23.947Z",
+    "files": [
+     {
+      "id": "7f22fffa-947a-4988-8842-12f5508bdd49",
+      "category": "COURSE_MATERIAL",
+      "ownerId": "00000000-0000-4000-8000-000000000030",
+      "originalName": "Fractions notes chapter 3.pdf",
+      "mimeType": "application/pdf",
+      "sizeBytes": 45,
+      "description": null,
+      "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+      "createdAt": "2026-11-08T19:51:17.471Z",
+      "contentPath": "/files/7f22fffa-947a-4988-8842-12f5508bdd49/content"
+     }
+    ]
+   }
+  ],
+  "GET /queries": [
+   {
+    "id": "00000000-0000-4000-8000-000000000040",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "question": "Why do we need a common denominator?",
+    "answer": "",
+    "is_resolved": false,
+    "created_at": "2026-11-08T18:54:23.956Z",
+    "answered_at": null
+   }
+  ],
+  "GET /ocr": [],
+  "GET /fees/payment-settings": {
+   "academyName": "TaleemPlus Demo Academy",
+   "qrImageBase64": null,
+   "qrMimeType": null,
+   "provider": "Bank transfer",
+   "accountTitle": "[TEST] TaleemPlus Demo Academy",
+   "accountDetails": null,
+   "enabled": true,
+   "bankName": "[TEST] Demo Bank",
+   "bankAccountNumber": "0011-2345-6702",
+   "bankIban": "PK36SCBL0000001123456702",
+   "paymentInstructions": "Use your challan number as the payment reference."
+  },
+  "GET /fees/challans": [
+   {
+    "id": "5a85b02d-19d7-4cb2-89ac-207e3bd75f7a",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "challan_number": "DEMO-CHALLAN-2026-11",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_code": "f40eab89f5236e03",
+    "student_name": "Demo Student",
+    "father_name": "Demo Parent",
+    "billing_period": "2026-11",
+    "class_label": "Grade 5 - A",
+    "roll_number": "5A-01",
+    "issue_date": "2026-11-08T18:54:23.912Z",
+    "due_date": "2026-11-15T00:00:00.000Z",
+    "paid_at": null,
+    "monthly_fee": 5000,
+    "admission_fee": 0,
+    "exam_fee": 0,
+    "transport_fee": 0,
+    "fine": 0,
+    "total_amount": 5000,
+    "status": "pending",
+    "created_at": "2026-11-08T18:54:23.912Z",
+    "updated_at": "2026-11-08T18:54:23.912Z"
+   }
+  ],
+  "GET /fees/ledger/stats": {
+   "total_billed": 5000,
+   "total_collected": 0,
+   "total_pending": 5000,
+   "collection_percentage": 0,
+   "paid_count": 0,
+   "pending_count": 1,
+   "overdue_count": 0,
+   "total_overdue": 0,
+   "monthly": [
+    {
+     "billing_period": "2026-11",
+     "billed": 5000,
+     "collected": 0,
+     "overdue": 0,
+     "pending": 5000
+    }
+   ]
+  },
+  "GET /fees/payment-proofs/pending": [],
+  "GET /users/pending": [],
+  "GET /users/directory": [
+   {
+    "id": "f39b531f-d117-4deb-a13f-96b00da75fb8",
+    "fullName": "[TEST] Ayesha Fatima Noor-ul-Ain Khan",
+    "email": "ayeshafatimanoorulai@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "b784c3faf0ee7246",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "b0be6c4e-ed03-422c-9881-d77a58328a54",
+    "fullName": "[TEST] Hafiz Muhammad Usman Ghani",
+    "email": "hafizmuhammadusmangh@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "e28c626590bc7c76",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "7ccc44d9-8148-49aa-92b5-594fa46ea145",
+    "fullName": "[TEST] Muhammad Abdul Rehman Siddiqui Chaudhry",
+    "email": "muhammadabdulrehmans@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "3deb73f6b334d2f2",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "fullName": "Demo Admin",
+    "email": "admin@demo.taleemplus",
+    "role": "ADMIN",
+    "phoneNumber": null,
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "6ed5cc9e-e293-4578-9308-35eb131a01e5",
+    "fullName": "Demo Parent",
+    "email": "parent@demo.taleemplus",
+    "role": "PARENT",
+    "phoneNumber": null,
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "fullName": "Demo Student",
+    "email": "student@demo.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "f40eab89f5236e03",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "fullName": "Demo Teacher",
+    "email": "teacher@demo.taleemplus",
+    "role": "TEACHER",
+    "phoneNumber": null,
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   }
+  ],
+  "GET /users/by-role": [
+   {
+    "id": "f39b531f-d117-4deb-a13f-96b00da75fb8",
+    "fullName": "[TEST] Ayesha Fatima Noor-ul-Ain Khan",
+    "email": "ayeshafatimanoorulai@test.taleemplus",
+    "phoneNumber": null,
+    "role": "STUDENT",
+    "accountStatus": "ACTIVE",
+    "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+    "studentCode": "b784c3faf0ee7246",
+    "rollNumber": null,
+    "subject": null,
+    "extraInfo": null,
+    "joiningDate": null,
+    "assignedSections": [],
+    "createdAt": "2026-11-08T18:56:45.602Z",
+    "updatedAt": "2026-11-08T18:56:45.602Z"
+   },
+   {
+    "id": "b0be6c4e-ed03-422c-9881-d77a58328a54",
+    "fullName": "[TEST] Hafiz Muhammad Usman Ghani",
+    "email": "hafizmuhammadusmangh@test.taleemplus",
+    "phoneNumber": null,
+    "role": "STUDENT",
+    "accountStatus": "ACTIVE",
+    "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+    "studentCode": "e28c626590bc7c76",
+    "rollNumber": null,
+    "subject": null,
+    "extraInfo": null,
+    "joiningDate": null,
+    "assignedSections": [],
+    "createdAt": "2026-11-08T18:56:45.993Z",
+    "updatedAt": "2026-11-08T18:56:45.993Z"
+   },
+   {
+    "id": "7ccc44d9-8148-49aa-92b5-594fa46ea145",
+    "fullName": "[TEST] Muhammad Abdul Rehman Siddiqui Chaudhry",
+    "email": "muhammadabdulrehmans@test.taleemplus",
+    "phoneNumber": null,
+    "role": "STUDENT",
+    "accountStatus": "ACTIVE",
+    "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+    "studentCode": "3deb73f6b334d2f2",
+    "rollNumber": null,
+    "subject": null,
+    "extraInfo": null,
+    "joiningDate": null,
+    "assignedSections": [],
+    "createdAt": "2026-11-08T18:56:45.199Z",
+    "updatedAt": "2026-11-08T18:56:45.199Z"
+   },
+   {
+    "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "fullName": "Demo Student",
+    "email": "student@demo.taleemplus",
+    "phoneNumber": null,
+    "role": "STUDENT",
+    "accountStatus": "ACTIVE",
+    "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+    "studentCode": "f40eab89f5236e03",
+    "rollNumber": null,
+    "subject": null,
+    "extraInfo": null,
+    "joiningDate": null,
+    "assignedSections": [],
+    "createdAt": "2026-11-08T18:54:23.857Z",
+    "updatedAt": "2026-11-08T18:54:23.857Z"
+   }
+  ],
+  "GET /attendance/student/:id": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z"
+   }
+  ],
+  "GET /fees/challans/student/:id": [
+   {
+    "id": "5a85b02d-19d7-4cb2-89ac-207e3bd75f7a",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "challan_number": "DEMO-CHALLAN-2026-11",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_code": "f40eab89f5236e03",
+    "student_name": "Demo Student",
+    "father_name": "Demo Parent",
+    "billing_period": "2026-11",
+    "class_label": "Grade 5 - A",
+    "roll_number": "5A-01",
+    "issue_date": "2026-11-08T18:54:23.912Z",
+    "due_date": "2026-11-15T00:00:00.000Z",
+    "paid_at": null,
+    "monthly_fee": 5000,
+    "admission_fee": 0,
+    "exam_fee": 0,
+    "transport_fee": 0,
+    "fine": 0,
+    "total_amount": 5000,
+    "status": "pending",
+    "created_at": "2026-11-08T18:54:23.912Z",
+    "updated_at": "2026-11-08T18:54:23.912Z"
+   }
+  ],
+  "GET /quizzes/marks/student/:id": [
+   {
+    "id": "e3a91a0c-8d1f-429c-9f8a-53b53106d14e",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "quiz_id": "00000000-0000-4000-8000-000000000020",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "subject": "Mathematics",
+    "month": "November",
+    "marks_obtained": 8,
+    "total_marks": 10,
+    "percentage": 80,
+    "grade_letter": "A",
+    "teacher_feedback": "",
+    "updated_at": "2026-11-08T18:54:23.936Z"
+   }
+  ],
+  "GET /quizzes/marks/class/:id": [
+   {
+    "id": "e3a91a0c-8d1f-429c-9f8a-53b53106d14e",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "quiz_id": "00000000-0000-4000-8000-000000000020",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "subject": "Mathematics",
+    "month": "November",
+    "marks_obtained": 8,
+    "total_marks": 10,
+    "percentage": 80,
+    "grade_letter": "A",
+    "teacher_feedback": "",
+    "updated_at": "2026-11-08T18:54:23.936Z"
+   }
+  ],
+  "GET /attendance/class": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z"
+   }
+  ],
+  "GET /quizzes/:id": {
+   "id": "00000000-0000-4000-8000-000000000020",
+   "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+   "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+   "class_label": "Grade 5 - A",
+   "title": "Demo Fractions Quiz",
+   "subject": "Mathematics",
+   "month": "November",
+   "session": "2026-2027",
+   "chapter": "",
+   "difficulty": "Medium",
+   "total_marks": 10,
+   "test_date": null,
+   "instructions": "",
+   "created_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+   "created_by_name": "Demo Teacher",
+   "created_at": "2026-11-08T18:54:23.924Z",
+   "questions": [
+    {
+     "id": "7d4a2578-3f33-4d85-8b79-f68542933dc9",
+     "text": "What is 1/2 + 1/4?",
+     "type": "short",
+     "options": [
+      "3/4",
+      "2/6",
+      "1/6"
+     ],
+     "marks": 10,
+     "correct_index": 0,
+     "grading_keywords": []
+    }
+   ]
+  },
+  "GET /quizzes/marks/quiz/:id": [
+   {
+    "id": "e3a91a0c-8d1f-429c-9f8a-53b53106d14e",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "quiz_id": "00000000-0000-4000-8000-000000000020",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "subject": "Mathematics",
+    "month": "November",
+    "marks_obtained": 8,
+    "total_marks": 10,
+    "percentage": 80,
+    "grade_letter": "A",
+    "teacher_feedback": "",
+    "updated_at": "2026-11-08T18:54:23.936Z"
+   }
+  ],
+  "GET /assignments": [
+   {
+    "id": "ec96e818-fc52-4fc9-b641-fe7724e34ac4",
+    "classId": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "classLabel": "Grade 5 - A (Mathematics)",
+    "title": "Fractions worksheet: adding and subtracting unlike denominators",
+    "instructions": "Solve all 20 questions. Show your working.",
+    "dueAt": "2026-11-13T19:51:16.484Z",
+    "isOpen": true,
+    "maxMarks": 20,
+    "allowResubmission": true,
+    "createdByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:16.621Z",
+    "instructionFileCount": 1,
+    "submissionCount": 1
+   }
+  ],
+  "GET /assignments/:id/submissions": {
+   "enrolledCount": 1,
+   "submissions": [
+    {
+     "id": "dc8a18e2-8229-4018-9fd7-db2dfbe9ef54",
+     "studentId": "76fe910d-195d-4822-82da-64183bbea8bd",
+     "studentName": "Demo Student",
+     "note": "Done",
+     "submittedAt": "2026-11-08T19:51:16.929Z",
+     "updatedAt": "2026-11-08T19:51:16.929Z",
+     "marks": null,
+     "feedback": null,
+     "gradedAt": null,
+     "fileCount": 1,
+     "late": false
+    }
+   ]
+  },
+  "GET /files#COURSE_MATERIAL": [
+   {
+    "id": "7f22fffa-947a-4988-8842-12f5508bdd49",
+    "category": "COURSE_MATERIAL",
+    "ownerId": "00000000-0000-4000-8000-000000000030",
+    "originalName": "Fractions notes chapter 3.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "uploadedByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:17.471Z",
+    "contentPath": "/files/7f22fffa-947a-4988-8842-12f5508bdd49/content"
+   }
+  ],
+  "GET /files#ASSIGNMENT_INSTRUCTION": [
+   {
+    "id": "bc2d9f3b-b942-4ffa-ac28-9cce3e6c5cef",
+    "category": "ASSIGNMENT_INSTRUCTION",
+    "ownerId": "ec96e818-fc52-4fc9-b641-fe7724e34ac4",
+    "originalName": "Fractions worksheet (unlike denominators) - Grade 5.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "uploadedByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:16.772Z",
+    "contentPath": "/files/bc2d9f3b-b942-4ffa-ac28-9cce3e6c5cef/content"
+   }
+  ],
+  "GET /files#STUDENT_DOCUMENT": [
+   {
+    "id": "d0e18346-e14b-4e9b-a58b-a7a23a4b0259",
+    "category": "STUDENT_DOCUMENT",
+    "ownerId": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "originalName": "Admission form 2026.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "uploadedByName": "Demo Admin",
+    "createdAt": "2026-11-08T19:51:17.764Z",
+    "contentPath": "/files/d0e18346-e14b-4e9b-a58b-a7a23a4b0259/content"
+   }
+  ]
+ },
+ "teacher": {
+  "login": {
+   "user": {
+    "id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "email": "teacher@demo.taleemplus",
+    "fullName": "Demo Teacher",
+    "phoneNumber": null,
+    "role": "TEACHER",
+    "accountStatus": "ACTIVE",
+    "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+    "academyCode": "DEMO-ACADEMY",
+    "academyName": "TaleemPlus Demo Academy",
+    "academyAddress": "[TEST] 12-B Main Boulevard, Gulberg III, Lahore",
+    "academyPhone": "+92-000-0000000",
+    "academyLogo": null,
+    "academyLatitude": 31.52037,
+    "academyLongitude": 74.358747,
+    "academyLocationLabel": "[TEST] Gulberg III, Lahore",
+    "assignedSections": [],
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "extraInfo": null,
+    "joiningDate": null,
+    "createdAt": "2026-11-08T18:54:23.853Z",
+    "linkedChildren": []
+   },
+   "tokens": {
+    "accessToken": "redacted",
+    "refreshToken": "redacted"
+   }
+  },
+  "GET /auth/me": {
+   "id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+   "email": "teacher@demo.taleemplus",
+   "fullName": "Demo Teacher",
+   "phoneNumber": null,
+   "role": "TEACHER",
+   "accountStatus": "ACTIVE",
+   "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+   "academyCode": "DEMO-ACADEMY",
+   "academyName": "TaleemPlus Demo Academy",
+   "academyAddress": "[TEST] 12-B Main Boulevard, Gulberg III, Lahore",
+   "academyPhone": "+92-000-0000000",
+   "academyLogo": null,
+   "academyLatitude": 31.52037,
+   "academyLongitude": 74.358747,
+   "academyLocationLabel": "[TEST] Gulberg III, Lahore",
+   "assignedSections": [],
+   "studentCode": null,
+   "rollNumber": null,
+   "subject": null,
+   "extraInfo": null,
+   "joiningDate": null,
+   "createdAt": "2026-11-08T18:54:23.853Z",
+   "linkedChildren": [],
+   "linkedParents": []
+  },
+  "GET /classes": [
+   {
+    "enrollment_count": 1,
+    "id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Grade 5",
+    "section": "A",
+    "subject": "Mathematics",
+    "program": "General",
+    "class_section_id": "00000000-0000-4000-8000-000000000010",
+    "primary_teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "primary_teacher_name": "Demo Teacher",
+    "primary_teacher_email": "teacher@demo.taleemplus",
+    "student_ids": [
+     "76fe910d-195d-4822-82da-64183bbea8bd"
+    ],
+    "student_names": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "Demo Student"
+    },
+    "student_roll_numbers": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "5A-01"
+    },
+    "created_at": "2026-11-08T18:54:23.884Z",
+    "updated_at": "2026-11-08T18:54:23.884Z"
+   },
+   {
+    "enrollment_count": 0,
+    "id": "89838098-f55d-4573-84f5-488c8b5a565c",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Intermediate Part-II Pre-Engineering",
+    "section": "Morning Batch A",
+    "subject": "Computer Science and Information Technology",
+    "program": "",
+    "class_section_id": "fcf6f37c-f1cb-4f2a-afcd-a701b6631b68",
+    "primary_teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "primary_teacher_name": "Demo Teacher",
+    "primary_teacher_email": "teacher@demo.taleemplus",
+    "student_ids": [],
+    "student_names": {},
+    "student_roll_numbers": {},
+    "created_at": "2026-11-08T18:56:46.251Z",
+    "updated_at": "2026-11-08T18:56:46.251Z"
+   },
+   {
+    "enrollment_count": 0,
+    "id": "02956132-c6eb-42cf-a433-87fcf575b175",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Matriculation Science Group (Biology)",
+    "section": "Evening",
+    "subject": "Mathematics",
+    "program": "",
+    "class_section_id": "ebda7907-4272-428f-b53f-246bae797b34",
+    "primary_teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "primary_teacher_name": "Demo Teacher",
+    "primary_teacher_email": "teacher@demo.taleemplus",
+    "student_ids": [],
+    "student_names": {},
+    "student_roll_numbers": {},
+    "created_at": "2026-11-08T18:56:46.975Z",
+    "updated_at": "2026-11-08T18:56:46.975Z"
+   }
+  ],
+  "GET /class-sections": [
+   {
+    "id": "00000000-0000-4000-8000-000000000010",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Grade 5",
+    "program": "General",
+    "section": "A",
+    "student_ids": [
+     "76fe910d-195d-4822-82da-64183bbea8bd"
+    ],
+    "student_names": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "Demo Student"
+    },
+    "student_roll_numbers": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "5A-01"
+    },
+    "created_at": "2026-11-08T18:54:23.875Z",
+    "updated_at": "2026-11-08T18:54:23.875Z"
+   },
+   {
+    "id": "fcf6f37c-f1cb-4f2a-afcd-a701b6631b68",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Intermediate Part-II Pre-Engineering",
+    "program": "",
+    "section": "Morning Batch A",
+    "student_ids": [],
+    "student_names": {},
+    "student_roll_numbers": {},
+    "created_at": "2026-11-08T18:56:46.240Z",
+    "updated_at": "2026-11-08T18:56:46.240Z"
+   },
+   {
+    "id": "ebda7907-4272-428f-b53f-246bae797b34",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Matriculation Science Group (Biology)",
+    "program": "",
+    "section": "Evening",
+    "student_ids": [],
+    "student_names": {},
+    "student_roll_numbers": {},
+    "created_at": "2026-11-08T18:56:46.972Z",
+    "updated_at": "2026-11-08T18:56:46.972Z"
+   }
+  ],
+  "GET /academic-structure": {
+   "groups": [],
+   "classes": [
+    {
+     "name": "Grade 5",
+     "sections": [
+      "A"
+     ]
+    }
+   ],
+   "programs": [
+    "General"
+   ]
+  },
+  "GET /class-reports": [
+   {
+    "id": "00000000-0000-4000-8000-000000000080",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_label": "Grade 5 - A",
+    "generated_at": "2026-11-08T18:54:23.992Z",
+    "total_students": 1,
+    "present": 1,
+    "absent": 0,
+    "fee_paid": 0,
+    "fee_pending": 1,
+    "fee_paid_amount": 0,
+    "fee_pending_amount": 5000,
+    "created_at": "2026-11-08T18:54:23.992Z"
+   }
+  ],
+  "GET /announcements": [
+   {
+    "id": "00000000-0000-4000-8000-000000000060",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "title": "Demo announcement",
+    "message": "Classes start at 8:00 AM.",
+    "target_roles": [
+     "all"
+    ],
+    "created_by_uid": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "created_by_name": "Demo Admin",
+    "created_at": "2026-11-08T18:54:23.975Z",
+    "updated_at": "2026-11-08T18:54:23.975Z"
+   }
+  ],
+  "GET /notifications": [],
+  "GET /timetable": [
+   {
+    "id": "00000000-0000-4000-8000-000000000070",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "is_break": false,
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "class_name": "Grade 5",
+    "section": "A",
+    "subject": "Mathematics",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "day_of_week": 1,
+    "start_minutes": 480,
+    "end_minutes": 525,
+    "room": "Room 1",
+    "semester": "2026-2027",
+    "effective_from": null,
+    "effective_to": null,
+    "created_at": "2026-11-08T18:54:23.982Z",
+    "updated_at": "2026-11-08T18:54:23.982Z"
+   }
+  ],
+  "GET /attendance": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z",
+    "class_label": "Grade 5 - A",
+    "subject": "Mathematics"
+   }
+  ],
+  "GET /quizzes": [
+   {
+    "id": "00000000-0000-4000-8000-000000000020",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "class_label": "Grade 5 - A",
+    "title": "Demo Fractions Quiz",
+    "subject": "Mathematics",
+    "month": "November",
+    "session": "2026-2027",
+    "chapter": "",
+    "difficulty": "Medium",
+    "total_marks": 10,
+    "test_date": null,
+    "instructions": "",
+    "created_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "created_by_name": "Demo Teacher",
+    "created_at": "2026-11-08T18:54:23.924Z",
+    "questions": [
+     {
+      "id": "7d4a2578-3f33-4d85-8b79-f68542933dc9",
+      "text": "What is 1/2 + 1/4?",
+      "type": "short",
+      "options": [
+       "3/4",
+       "2/6",
+       "1/6"
+      ],
+      "marks": 10,
+      "correct_index": 0,
+      "grading_keywords": []
+     }
+    ]
+   }
+  ],
+  "GET /resources": [
+   {
+    "id": "00000000-0000-4000-8000-000000000030",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "title": "Fractions notes",
+    "description": "Worked examples for the demo quiz.",
+    "file_url": null,
+    "content_text": "A fraction represents a part of a whole.",
+    "file_name": "",
+    "mime_type": "text/plain",
+    "created_at": "2026-11-08T18:54:23.947Z",
+    "updated_at": "2026-11-08T18:54:23.947Z",
+    "files": [
+     {
+      "id": "7f22fffa-947a-4988-8842-12f5508bdd49",
+      "category": "COURSE_MATERIAL",
+      "ownerId": "00000000-0000-4000-8000-000000000030",
+      "originalName": "Fractions notes chapter 3.pdf",
+      "mimeType": "application/pdf",
+      "sizeBytes": 45,
+      "description": null,
+      "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+      "createdAt": "2026-11-08T19:51:17.471Z",
+      "contentPath": "/files/7f22fffa-947a-4988-8842-12f5508bdd49/content"
+     }
+    ]
+   }
+  ],
+  "GET /queries": [
+   {
+    "id": "00000000-0000-4000-8000-000000000040",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "question": "Why do we need a common denominator?",
+    "answer": "",
+    "is_resolved": false,
+    "created_at": "2026-11-08T18:54:23.956Z",
+    "answered_at": null
+   }
+  ],
+  "GET /ocr": [
+   {
+    "id": "00000000-0000-4000-8000-000000000090",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "title": "Demo OCR note",
+    "extracted_text": "Sample extracted text for the demo academy.",
+    "created_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "created_by_name": "Demo Teacher",
+    "created_at": "2026-11-08T18:54:23.999Z",
+    "updated_at": "2026-11-08T18:54:23.999Z"
+   }
+  ],
+  "GET /fees/payment-settings": {
+   "academyName": "TaleemPlus Demo Academy",
+   "qrImageBase64": null,
+   "qrMimeType": null,
+   "provider": "Bank transfer",
+   "accountTitle": "[TEST] TaleemPlus Demo Academy",
+   "accountDetails": null,
+   "enabled": true,
+   "bankName": "[TEST] Demo Bank",
+   "bankAccountNumber": "0011-2345-6702",
+   "bankIban": "PK36SCBL0000001123456702",
+   "paymentInstructions": "Use your challan number as the payment reference."
+  },
+  "GET /users/directory": [
+   {
+    "id": "f39b531f-d117-4deb-a13f-96b00da75fb8",
+    "fullName": "[TEST] Ayesha Fatima Noor-ul-Ain Khan",
+    "email": "ayeshafatimanoorulai@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "b784c3faf0ee7246",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "b0be6c4e-ed03-422c-9881-d77a58328a54",
+    "fullName": "[TEST] Hafiz Muhammad Usman Ghani",
+    "email": "hafizmuhammadusmangh@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "e28c626590bc7c76",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "7ccc44d9-8148-49aa-92b5-594fa46ea145",
+    "fullName": "[TEST] Muhammad Abdul Rehman Siddiqui Chaudhry",
+    "email": "muhammadabdulrehmans@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "3deb73f6b334d2f2",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "fullName": "Demo Admin",
+    "email": "admin@demo.taleemplus",
+    "role": "ADMIN",
+    "phoneNumber": null,
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "6ed5cc9e-e293-4578-9308-35eb131a01e5",
+    "fullName": "Demo Parent",
+    "email": "parent@demo.taleemplus",
+    "role": "PARENT",
+    "phoneNumber": null,
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "fullName": "Demo Student",
+    "email": "student@demo.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "f40eab89f5236e03",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "fullName": "Demo Teacher",
+    "email": "teacher@demo.taleemplus",
+    "role": "TEACHER",
+    "phoneNumber": null,
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   }
+  ],
+  "GET /users/by-role": [
+   {
+    "id": "f39b531f-d117-4deb-a13f-96b00da75fb8",
+    "fullName": "[TEST] Ayesha Fatima Noor-ul-Ain Khan",
+    "email": "ayeshafatimanoorulai@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "b784c3faf0ee7246",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "b0be6c4e-ed03-422c-9881-d77a58328a54",
+    "fullName": "[TEST] Hafiz Muhammad Usman Ghani",
+    "email": "hafizmuhammadusmangh@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "e28c626590bc7c76",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "7ccc44d9-8148-49aa-92b5-594fa46ea145",
+    "fullName": "[TEST] Muhammad Abdul Rehman Siddiqui Chaudhry",
+    "email": "muhammadabdulrehmans@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "3deb73f6b334d2f2",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "fullName": "Demo Student",
+    "email": "student@demo.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "f40eab89f5236e03",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   }
+  ],
+  "GET /attendance/student/:id": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z"
+   }
+  ],
+  "GET /fees/challans/student/:id": [
+   {
+    "id": "5a85b02d-19d7-4cb2-89ac-207e3bd75f7a",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "challan_number": "DEMO-CHALLAN-2026-11",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_code": "f40eab89f5236e03",
+    "student_name": "Demo Student",
+    "father_name": "Demo Parent",
+    "billing_period": "2026-11",
+    "class_label": "Grade 5 - A",
+    "roll_number": "5A-01",
+    "issue_date": "2026-11-08T18:54:23.912Z",
+    "due_date": "2026-11-15T00:00:00.000Z",
+    "paid_at": null,
+    "monthly_fee": 5000,
+    "admission_fee": 0,
+    "exam_fee": 0,
+    "transport_fee": 0,
+    "fine": 0,
+    "total_amount": 5000,
+    "status": "pending",
+    "created_at": "2026-11-08T18:54:23.912Z",
+    "updated_at": "2026-11-08T18:54:23.912Z"
+   }
+  ],
+  "GET /quizzes/marks/student/:id": [
+   {
+    "id": "e3a91a0c-8d1f-429c-9f8a-53b53106d14e",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "quiz_id": "00000000-0000-4000-8000-000000000020",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "subject": "Mathematics",
+    "month": "November",
+    "marks_obtained": 8,
+    "total_marks": 10,
+    "percentage": 80,
+    "grade_letter": "A",
+    "teacher_feedback": "",
+    "updated_at": "2026-11-08T18:54:23.936Z"
+   }
+  ],
+  "GET /quizzes/marks/class/:id": [
+   {
+    "id": "e3a91a0c-8d1f-429c-9f8a-53b53106d14e",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "quiz_id": "00000000-0000-4000-8000-000000000020",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "subject": "Mathematics",
+    "month": "November",
+    "marks_obtained": 8,
+    "total_marks": 10,
+    "percentage": 80,
+    "grade_letter": "A",
+    "teacher_feedback": "",
+    "updated_at": "2026-11-08T18:54:23.936Z"
+   }
+  ],
+  "GET /attendance/class": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z"
+   }
+  ],
+  "GET /quizzes/:id": {
+   "id": "00000000-0000-4000-8000-000000000020",
+   "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+   "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+   "class_label": "Grade 5 - A",
+   "title": "Demo Fractions Quiz",
+   "subject": "Mathematics",
+   "month": "November",
+   "session": "2026-2027",
+   "chapter": "",
+   "difficulty": "Medium",
+   "total_marks": 10,
+   "test_date": null,
+   "instructions": "",
+   "created_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+   "created_by_name": "Demo Teacher",
+   "created_at": "2026-11-08T18:54:23.924Z",
+   "questions": [
+    {
+     "id": "7d4a2578-3f33-4d85-8b79-f68542933dc9",
+     "text": "What is 1/2 + 1/4?",
+     "type": "short",
+     "options": [
+      "3/4",
+      "2/6",
+      "1/6"
+     ],
+     "marks": 10,
+     "correct_index": 0,
+     "grading_keywords": []
+    }
+   ]
+  },
+  "GET /quizzes/marks/quiz/:id": [
+   {
+    "id": "e3a91a0c-8d1f-429c-9f8a-53b53106d14e",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "quiz_id": "00000000-0000-4000-8000-000000000020",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "subject": "Mathematics",
+    "month": "November",
+    "marks_obtained": 8,
+    "total_marks": 10,
+    "percentage": 80,
+    "grade_letter": "A",
+    "teacher_feedback": "",
+    "updated_at": "2026-11-08T18:54:23.936Z"
+   }
+  ],
+  "GET /assignments": [
+   {
+    "id": "ec96e818-fc52-4fc9-b641-fe7724e34ac4",
+    "classId": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "classLabel": "Grade 5 - A (Mathematics)",
+    "title": "Fractions worksheet: adding and subtracting unlike denominators",
+    "instructions": "Solve all 20 questions. Show your working.",
+    "dueAt": "2026-11-13T19:51:16.484Z",
+    "isOpen": true,
+    "maxMarks": 20,
+    "allowResubmission": true,
+    "createdByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:16.621Z",
+    "instructionFileCount": 1,
+    "submissionCount": 1
+   }
+  ],
+  "GET /assignments/:id/submissions": {
+   "enrolledCount": 1,
+   "submissions": [
+    {
+     "id": "dc8a18e2-8229-4018-9fd7-db2dfbe9ef54",
+     "studentId": "76fe910d-195d-4822-82da-64183bbea8bd",
+     "studentName": "Demo Student",
+     "note": "Done",
+     "submittedAt": "2026-11-08T19:51:16.929Z",
+     "updatedAt": "2026-11-08T19:51:16.929Z",
+     "marks": null,
+     "feedback": null,
+     "gradedAt": null,
+     "fileCount": 1,
+     "late": false
+    }
+   ]
+  },
+  "GET /files#COURSE_MATERIAL": [
+   {
+    "id": "7f22fffa-947a-4988-8842-12f5508bdd49",
+    "category": "COURSE_MATERIAL",
+    "ownerId": "00000000-0000-4000-8000-000000000030",
+    "originalName": "Fractions notes chapter 3.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "uploadedByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:17.471Z",
+    "contentPath": "/files/7f22fffa-947a-4988-8842-12f5508bdd49/content"
+   }
+  ],
+  "GET /files#ASSIGNMENT_INSTRUCTION": [
+   {
+    "id": "bc2d9f3b-b942-4ffa-ac28-9cce3e6c5cef",
+    "category": "ASSIGNMENT_INSTRUCTION",
+    "ownerId": "ec96e818-fc52-4fc9-b641-fe7724e34ac4",
+    "originalName": "Fractions worksheet (unlike denominators) - Grade 5.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "uploadedByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:16.772Z",
+    "contentPath": "/files/bc2d9f3b-b942-4ffa-ac28-9cce3e6c5cef/content"
+   }
+  ]
+ },
+ "student": {
+  "login": {
+   "user": {
+    "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "email": "student@demo.taleemplus",
+    "fullName": "Demo Student",
+    "phoneNumber": null,
+    "role": "STUDENT",
+    "accountStatus": "ACTIVE",
+    "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+    "academyCode": "DEMO-ACADEMY",
+    "academyName": "TaleemPlus Demo Academy",
+    "academyAddress": "[TEST] 12-B Main Boulevard, Gulberg III, Lahore",
+    "academyPhone": "+92-000-0000000",
+    "academyLogo": null,
+    "academyLatitude": 31.52037,
+    "academyLongitude": 74.358747,
+    "academyLocationLabel": "[TEST] Gulberg III, Lahore",
+    "assignedSections": [],
+    "studentCode": "f40eab89f5236e03",
+    "rollNumber": null,
+    "subject": null,
+    "extraInfo": null,
+    "joiningDate": null,
+    "createdAt": "2026-11-08T18:54:23.857Z",
+    "linkedChildren": []
+   },
+   "tokens": {
+    "accessToken": "redacted",
+    "refreshToken": "redacted"
+   }
+  },
+  "GET /auth/me": {
+   "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+   "email": "student@demo.taleemplus",
+   "fullName": "Demo Student",
+   "phoneNumber": null,
+   "role": "STUDENT",
+   "accountStatus": "ACTIVE",
+   "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+   "academyCode": "DEMO-ACADEMY",
+   "academyName": "TaleemPlus Demo Academy",
+   "academyAddress": "[TEST] 12-B Main Boulevard, Gulberg III, Lahore",
+   "academyPhone": "+92-000-0000000",
+   "academyLogo": null,
+   "academyLatitude": 31.52037,
+   "academyLongitude": 74.358747,
+   "academyLocationLabel": "[TEST] Gulberg III, Lahore",
+   "assignedSections": [],
+   "studentCode": "f40eab89f5236e03",
+   "rollNumber": null,
+   "subject": null,
+   "extraInfo": null,
+   "joiningDate": null,
+   "createdAt": "2026-11-08T18:54:23.857Z",
+   "linkedChildren": [],
+   "linkedParents": [
+    {
+     "id": "6ed5cc9e-e293-4578-9308-35eb131a01e5",
+     "fullName": "Demo Parent",
+     "email": "parent@demo.taleemplus"
+    }
+   ]
+  },
+  "GET /classes": [
+   {
+    "enrollment_count": 1,
+    "id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Grade 5",
+    "section": "A",
+    "subject": "Mathematics",
+    "program": "General",
+    "class_section_id": "00000000-0000-4000-8000-000000000010",
+    "primary_teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "primary_teacher_name": "Demo Teacher",
+    "primary_teacher_email": "teacher@demo.taleemplus",
+    "student_ids": [
+     "76fe910d-195d-4822-82da-64183bbea8bd"
+    ],
+    "student_names": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "Demo Student"
+    },
+    "student_roll_numbers": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "5A-01"
+    },
+    "created_at": "2026-11-08T18:54:23.884Z",
+    "updated_at": "2026-11-08T18:54:23.884Z"
+   }
+  ],
+  "GET /class-sections": [
+   {
+    "id": "00000000-0000-4000-8000-000000000010",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Grade 5",
+    "program": "General",
+    "section": "A",
+    "student_ids": [
+     "76fe910d-195d-4822-82da-64183bbea8bd"
+    ],
+    "student_names": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "Demo Student"
+    },
+    "student_roll_numbers": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "5A-01"
+    },
+    "created_at": "2026-11-08T18:54:23.875Z",
+    "updated_at": "2026-11-08T18:54:23.875Z"
+   }
+  ],
+  "GET /academic-structure": {
+   "groups": [],
+   "classes": [
+    {
+     "name": "Grade 5",
+     "sections": [
+      "A"
+     ]
+    }
+   ],
+   "programs": [
+    "General"
+   ]
+  },
+  "GET /class-reports": [
+   {
+    "id": "00000000-0000-4000-8000-000000000080",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_label": "Grade 5 - A",
+    "generated_at": "2026-11-08T18:54:23.992Z",
+    "total_students": 1,
+    "present": 1,
+    "absent": 0,
+    "fee_paid": 0,
+    "fee_pending": 1,
+    "fee_paid_amount": 0,
+    "fee_pending_amount": 5000,
+    "created_at": "2026-11-08T18:54:23.992Z"
+   }
+  ],
+  "GET /announcements": [
+   {
+    "id": "00000000-0000-4000-8000-000000000060",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "title": "Demo announcement",
+    "message": "Classes start at 8:00 AM.",
+    "target_roles": [
+     "all"
+    ],
+    "created_by_uid": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "created_by_name": "Demo Admin",
+    "created_at": "2026-11-08T18:54:23.975Z",
+    "updated_at": "2026-11-08T18:54:23.975Z"
+   }
+  ],
+  "GET /notifications": [
+   {
+    "id": "00000000-0000-4000-8000-000000000050",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "recipient_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "title": "Welcome",
+    "message": "Your demo academy is ready.",
+    "type": "general",
+    "is_read": false,
+    "created_at": "2026-11-08T18:54:23.966Z"
+   }
+  ],
+  "GET /timetable": [
+   {
+    "id": "00000000-0000-4000-8000-000000000070",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "is_break": false,
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "class_name": "Grade 5",
+    "section": "A",
+    "subject": "Mathematics",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "day_of_week": 1,
+    "start_minutes": 480,
+    "end_minutes": 525,
+    "room": "Room 1",
+    "semester": "2026-2027",
+    "effective_from": null,
+    "effective_to": null,
+    "created_at": "2026-11-08T18:54:23.982Z",
+    "updated_at": "2026-11-08T18:54:23.982Z"
+   }
+  ],
+  "GET /attendance": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z",
+    "class_label": "Grade 5 - A",
+    "subject": "Mathematics"
+   }
+  ],
+  "GET /quizzes": [
+   {
+    "id": "00000000-0000-4000-8000-000000000020",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "class_label": "Grade 5 - A",
+    "title": "Demo Fractions Quiz",
+    "subject": "Mathematics",
+    "month": "November",
+    "session": "2026-2027",
+    "chapter": "",
+    "difficulty": "Medium",
+    "total_marks": 10,
+    "test_date": null,
+    "instructions": "",
+    "created_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "created_by_name": "Demo Teacher",
+    "created_at": "2026-11-08T18:54:23.924Z",
+    "questions": [
+     {
+      "id": "7d4a2578-3f33-4d85-8b79-f68542933dc9",
+      "text": "What is 1/2 + 1/4?",
+      "type": "short",
+      "options": [
+       "3/4",
+       "2/6",
+       "1/6"
+      ],
+      "marks": 10
+     }
+    ]
+   }
+  ],
+  "GET /resources": [
+   {
+    "id": "00000000-0000-4000-8000-000000000030",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "title": "Fractions notes",
+    "description": "Worked examples for the demo quiz.",
+    "file_url": null,
+    "content_text": "A fraction represents a part of a whole.",
+    "file_name": "",
+    "mime_type": "text/plain",
+    "created_at": "2026-11-08T18:54:23.947Z",
+    "updated_at": "2026-11-08T18:54:23.947Z",
+    "files": [
+     {
+      "id": "7f22fffa-947a-4988-8842-12f5508bdd49",
+      "category": "COURSE_MATERIAL",
+      "ownerId": "00000000-0000-4000-8000-000000000030",
+      "originalName": "Fractions notes chapter 3.pdf",
+      "mimeType": "application/pdf",
+      "sizeBytes": 45,
+      "description": null,
+      "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+      "createdAt": "2026-11-08T19:51:17.471Z",
+      "contentPath": "/files/7f22fffa-947a-4988-8842-12f5508bdd49/content"
+     }
+    ]
+   }
+  ],
+  "GET /queries": [
+   {
+    "id": "00000000-0000-4000-8000-000000000040",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "question": "Why do we need a common denominator?",
+    "answer": "",
+    "is_resolved": false,
+    "created_at": "2026-11-08T18:54:23.956Z",
+    "answered_at": null
+   }
+  ],
+  "GET /ocr": [],
+  "GET /fees/payment-settings": {
+   "academyName": "TaleemPlus Demo Academy",
+   "qrImageBase64": null,
+   "qrMimeType": null,
+   "provider": "Bank transfer",
+   "accountTitle": "[TEST] TaleemPlus Demo Academy",
+   "accountDetails": null,
+   "enabled": true,
+   "bankName": "[TEST] Demo Bank",
+   "bankAccountNumber": "0011-2345-6702",
+   "bankIban": "PK36SCBL0000001123456702",
+   "paymentInstructions": "Use your challan number as the payment reference."
+  },
+  "GET /attendance/student/:id": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z"
+   }
+  ],
+  "GET /fees/challans/student/:id": [
+   {
+    "id": "5a85b02d-19d7-4cb2-89ac-207e3bd75f7a",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "challan_number": "DEMO-CHALLAN-2026-11",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_code": "f40eab89f5236e03",
+    "student_name": "Demo Student",
+    "father_name": "Demo Parent",
+    "billing_period": "2026-11",
+    "class_label": "Grade 5 - A",
+    "roll_number": "5A-01",
+    "issue_date": "2026-11-08T18:54:23.912Z",
+    "due_date": "2026-11-15T00:00:00.000Z",
+    "paid_at": null,
+    "monthly_fee": 5000,
+    "admission_fee": 0,
+    "exam_fee": 0,
+    "transport_fee": 0,
+    "fine": 0,
+    "total_amount": 5000,
+    "status": "pending",
+    "created_at": "2026-11-08T18:54:23.912Z",
+    "updated_at": "2026-11-08T18:54:23.912Z"
+   }
+  ],
+  "GET /quizzes/marks/student/:id": [
+   {
+    "id": "e3a91a0c-8d1f-429c-9f8a-53b53106d14e",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "quiz_id": "00000000-0000-4000-8000-000000000020",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "subject": "Mathematics",
+    "month": "November",
+    "marks_obtained": 8,
+    "total_marks": 10,
+    "percentage": 80,
+    "grade_letter": "A",
+    "teacher_feedback": "",
+    "updated_at": "2026-11-08T18:54:23.936Z"
+   }
+  ],
+  "GET /quizzes/:id": {
+   "id": "00000000-0000-4000-8000-000000000020",
+   "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+   "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+   "class_label": "Grade 5 - A",
+   "title": "Demo Fractions Quiz",
+   "subject": "Mathematics",
+   "month": "November",
+   "session": "2026-2027",
+   "chapter": "",
+   "difficulty": "Medium",
+   "total_marks": 10,
+   "test_date": null,
+   "instructions": "",
+   "created_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+   "created_by_name": "Demo Teacher",
+   "created_at": "2026-11-08T18:54:23.924Z",
+   "questions": [
+    {
+     "id": "7d4a2578-3f33-4d85-8b79-f68542933dc9",
+     "text": "What is 1/2 + 1/4?",
+     "type": "short",
+     "options": [
+      "3/4",
+      "2/6",
+      "1/6"
+     ],
+     "marks": 10
+    }
+   ]
+  },
+  "GET /assignments": [
+   {
+    "id": "ec96e818-fc52-4fc9-b641-fe7724e34ac4",
+    "classId": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "classLabel": "Grade 5 - A (Mathematics)",
+    "title": "Fractions worksheet: adding and subtracting unlike denominators",
+    "instructions": "Solve all 20 questions. Show your working.",
+    "dueAt": "2026-11-13T19:51:16.484Z",
+    "isOpen": true,
+    "maxMarks": 20,
+    "allowResubmission": true,
+    "createdByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:16.621Z",
+    "instructionFileCount": 1,
+    "mySubmissions": [
+     {
+      "id": "dc8a18e2-8229-4018-9fd7-db2dfbe9ef54",
+      "studentId": "76fe910d-195d-4822-82da-64183bbea8bd",
+      "studentName": "Demo Student",
+      "note": "Done",
+      "submittedAt": "2026-11-08T19:51:16.929Z",
+      "updatedAt": "2026-11-08T19:51:16.929Z",
+      "marks": null,
+      "feedback": null,
+      "gradedAt": null,
+      "fileCount": 1
+     }
+    ]
+   }
+  ],
+  "GET /files#COURSE_MATERIAL": [
+   {
+    "id": "7f22fffa-947a-4988-8842-12f5508bdd49",
+    "category": "COURSE_MATERIAL",
+    "ownerId": "00000000-0000-4000-8000-000000000030",
+    "originalName": "Fractions notes chapter 3.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "uploadedByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:17.471Z",
+    "contentPath": "/files/7f22fffa-947a-4988-8842-12f5508bdd49/content"
+   }
+  ],
+  "GET /files#ASSIGNMENT_INSTRUCTION": [
+   {
+    "id": "bc2d9f3b-b942-4ffa-ac28-9cce3e6c5cef",
+    "category": "ASSIGNMENT_INSTRUCTION",
+    "ownerId": "ec96e818-fc52-4fc9-b641-fe7724e34ac4",
+    "originalName": "Fractions worksheet (unlike denominators) - Grade 5.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "uploadedByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:16.772Z",
+    "contentPath": "/files/bc2d9f3b-b942-4ffa-ac28-9cce3e6c5cef/content"
+   }
+  ],
+  "GET /files#ASSIGNMENT_SUBMISSION": [
+   {
+    "id": "bfa7d830-54bd-400d-b65f-f9d8e7687764",
+    "category": "ASSIGNMENT_SUBMISSION",
+    "ownerId": "dc8a18e2-8229-4018-9fd7-db2dfbe9ef54",
+    "originalName": "my-answers.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "uploadedByName": "Demo Student",
+    "createdAt": "2026-11-08T19:51:17.085Z",
+    "contentPath": "/files/bfa7d830-54bd-400d-b65f-f9d8e7687764/content"
+   }
+  ],
+  "GET /files#STUDENT_DOCUMENT": [
+   {
+    "id": "d0e18346-e14b-4e9b-a58b-a7a23a4b0259",
+    "category": "STUDENT_DOCUMENT",
+    "ownerId": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "originalName": "Admission form 2026.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "uploadedByName": "Demo Admin",
+    "createdAt": "2026-11-08T19:51:17.764Z",
+    "contentPath": "/files/d0e18346-e14b-4e9b-a58b-a7a23a4b0259/content"
+   }
+  ]
+ },
+ "parent": {
+  "login": {
+   "user": {
+    "id": "6ed5cc9e-e293-4578-9308-35eb131a01e5",
+    "email": "parent@demo.taleemplus",
+    "fullName": "Demo Parent",
+    "phoneNumber": null,
+    "role": "PARENT",
+    "accountStatus": "ACTIVE",
+    "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+    "academyCode": "DEMO-ACADEMY",
+    "academyName": "TaleemPlus Demo Academy",
+    "academyAddress": "[TEST] 12-B Main Boulevard, Gulberg III, Lahore",
+    "academyPhone": "+92-000-0000000",
+    "academyLogo": null,
+    "academyLatitude": 31.52037,
+    "academyLongitude": 74.358747,
+    "academyLocationLabel": "[TEST] Gulberg III, Lahore",
+    "assignedSections": [],
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "extraInfo": null,
+    "joiningDate": null,
+    "createdAt": "2026-11-08T18:54:23.862Z",
+    "linkedChildren": [
+     {
+      "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+      "fullName": "Demo Student",
+      "email": "student@demo.taleemplus"
+     }
+    ]
+   },
+   "tokens": {
+    "accessToken": "redacted",
+    "refreshToken": "redacted"
+   }
+  },
+  "GET /auth/me": {
+   "id": "6ed5cc9e-e293-4578-9308-35eb131a01e5",
+   "email": "parent@demo.taleemplus",
+   "fullName": "Demo Parent",
+   "phoneNumber": null,
+   "role": "PARENT",
+   "accountStatus": "ACTIVE",
+   "academyId": "3d32fef8-7eac-411f-95df-9335873de383",
+   "academyCode": "DEMO-ACADEMY",
+   "academyName": "TaleemPlus Demo Academy",
+   "academyAddress": "[TEST] 12-B Main Boulevard, Gulberg III, Lahore",
+   "academyPhone": "+92-000-0000000",
+   "academyLogo": null,
+   "academyLatitude": 31.52037,
+   "academyLongitude": 74.358747,
+   "academyLocationLabel": "[TEST] Gulberg III, Lahore",
+   "assignedSections": [],
+   "studentCode": null,
+   "rollNumber": null,
+   "subject": null,
+   "extraInfo": null,
+   "joiningDate": null,
+   "createdAt": "2026-11-08T18:54:23.862Z",
+   "linkedChildren": [
+    {
+     "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+     "fullName": "Demo Student",
+     "email": "student@demo.taleemplus"
+    }
+   ],
+   "linkedParents": []
+  },
+  "GET /classes": [
+   {
+    "enrollment_count": 1,
+    "id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Grade 5",
+    "section": "A",
+    "subject": "Mathematics",
+    "program": "General",
+    "class_section_id": "00000000-0000-4000-8000-000000000010",
+    "primary_teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "primary_teacher_name": "Demo Teacher",
+    "primary_teacher_email": "teacher@demo.taleemplus",
+    "student_ids": [
+     "76fe910d-195d-4822-82da-64183bbea8bd"
+    ],
+    "student_names": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "Demo Student"
+    },
+    "student_roll_numbers": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "5A-01"
+    },
+    "created_at": "2026-11-08T18:54:23.884Z",
+    "updated_at": "2026-11-08T18:54:23.884Z"
+   }
+  ],
+  "GET /class-sections": [
+   {
+    "id": "00000000-0000-4000-8000-000000000010",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_name": "Grade 5",
+    "program": "General",
+    "section": "A",
+    "student_ids": [
+     "76fe910d-195d-4822-82da-64183bbea8bd"
+    ],
+    "student_names": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "Demo Student"
+    },
+    "student_roll_numbers": {
+     "76fe910d-195d-4822-82da-64183bbea8bd": "5A-01"
+    },
+    "created_at": "2026-11-08T18:54:23.875Z",
+    "updated_at": "2026-11-08T18:54:23.875Z"
+   }
+  ],
+  "GET /academic-structure": {
+   "groups": [],
+   "classes": [
+    {
+     "name": "Grade 5",
+     "sections": [
+      "A"
+     ]
+    }
+   ],
+   "programs": [
+    "General"
+   ]
+  },
+  "GET /class-reports": [
+   {
+    "id": "00000000-0000-4000-8000-000000000080",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_label": "Grade 5 - A",
+    "generated_at": "2026-11-08T18:54:23.992Z",
+    "total_students": 1,
+    "present": 1,
+    "absent": 0,
+    "fee_paid": 0,
+    "fee_pending": 1,
+    "fee_paid_amount": 0,
+    "fee_pending_amount": 5000,
+    "created_at": "2026-11-08T18:54:23.992Z"
+   }
+  ],
+  "GET /announcements": [
+   {
+    "id": "00000000-0000-4000-8000-000000000060",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "title": "Demo announcement",
+    "message": "Classes start at 8:00 AM.",
+    "target_roles": [
+     "all"
+    ],
+    "created_by_uid": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "created_by_name": "Demo Admin",
+    "created_at": "2026-11-08T18:54:23.975Z",
+    "updated_at": "2026-11-08T18:54:23.975Z"
+   }
+  ],
+  "GET /notifications": [],
+  "GET /timetable": [
+   {
+    "id": "00000000-0000-4000-8000-000000000070",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "is_break": false,
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "class_name": "Grade 5",
+    "section": "A",
+    "subject": "Mathematics",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "day_of_week": 1,
+    "start_minutes": 480,
+    "end_minutes": 525,
+    "room": "Room 1",
+    "semester": "2026-2027",
+    "effective_from": null,
+    "effective_to": null,
+    "created_at": "2026-11-08T18:54:23.982Z",
+    "updated_at": "2026-11-08T18:54:23.982Z"
+   }
+  ],
+  "GET /attendance": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z",
+    "class_label": "Grade 5 - A",
+    "subject": "Mathematics"
+   }
+  ],
+  "GET /quizzes": [
+   {
+    "id": "00000000-0000-4000-8000-000000000020",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "class_label": "Grade 5 - A",
+    "title": "Demo Fractions Quiz",
+    "subject": "Mathematics",
+    "month": "November",
+    "session": "2026-2027",
+    "chapter": "",
+    "difficulty": "Medium",
+    "total_marks": 10,
+    "test_date": null,
+    "instructions": "",
+    "created_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "created_by_name": "Demo Teacher",
+    "created_at": "2026-11-08T18:54:23.924Z",
+    "questions": [
+     {
+      "id": "7d4a2578-3f33-4d85-8b79-f68542933dc9",
+      "text": "What is 1/2 + 1/4?",
+      "type": "short",
+      "options": [
+       "3/4",
+       "2/6",
+       "1/6"
+      ],
+      "marks": 10
+     }
+    ]
+   }
+  ],
+  "GET /resources": [
+   {
+    "id": "00000000-0000-4000-8000-000000000030",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "title": "Fractions notes",
+    "description": "Worked examples for the demo quiz.",
+    "file_url": null,
+    "content_text": "A fraction represents a part of a whole.",
+    "file_name": "",
+    "mime_type": "text/plain",
+    "created_at": "2026-11-08T18:54:23.947Z",
+    "updated_at": "2026-11-08T18:54:23.947Z",
+    "files": [
+     {
+      "id": "7f22fffa-947a-4988-8842-12f5508bdd49",
+      "category": "COURSE_MATERIAL",
+      "ownerId": "00000000-0000-4000-8000-000000000030",
+      "originalName": "Fractions notes chapter 3.pdf",
+      "mimeType": "application/pdf",
+      "sizeBytes": 45,
+      "description": null,
+      "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+      "createdAt": "2026-11-08T19:51:17.471Z",
+      "contentPath": "/files/7f22fffa-947a-4988-8842-12f5508bdd49/content"
+     }
+    ]
+   }
+  ],
+  "GET /queries": [
+   {
+    "id": "00000000-0000-4000-8000-000000000040",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "teacher_id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "teacher_name": "Demo Teacher",
+    "question": "Why do we need a common denominator?",
+    "answer": "",
+    "is_resolved": false,
+    "created_at": "2026-11-08T18:54:23.956Z",
+    "answered_at": null
+   }
+  ],
+  "GET /ocr": [],
+  "GET /fees/payment-settings": {
+   "academyName": "TaleemPlus Demo Academy",
+   "qrImageBase64": null,
+   "qrMimeType": null,
+   "provider": "Bank transfer",
+   "accountTitle": "[TEST] TaleemPlus Demo Academy",
+   "accountDetails": null,
+   "enabled": true,
+   "bankName": "[TEST] Demo Bank",
+   "bankAccountNumber": "0011-2345-6702",
+   "bankIban": "PK36SCBL0000001123456702",
+   "paymentInstructions": "Use your challan number as the payment reference."
+  },
+  "GET /users/directory": [
+   {
+    "id": "f39b531f-d117-4deb-a13f-96b00da75fb8",
+    "fullName": "[TEST] Ayesha Fatima Noor-ul-Ain Khan",
+    "email": "ayeshafatimanoorulai@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "b784c3faf0ee7246",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "b0be6c4e-ed03-422c-9881-d77a58328a54",
+    "fullName": "[TEST] Hafiz Muhammad Usman Ghani",
+    "email": "hafizmuhammadusmangh@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "e28c626590bc7c76",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "7ccc44d9-8148-49aa-92b5-594fa46ea145",
+    "fullName": "[TEST] Muhammad Abdul Rehman Siddiqui Chaudhry",
+    "email": "muhammadabdulrehmans@test.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "3deb73f6b334d2f2",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "fullName": "Demo Admin",
+    "email": "admin@demo.taleemplus",
+    "role": "ADMIN",
+    "phoneNumber": null,
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "6ed5cc9e-e293-4578-9308-35eb131a01e5",
+    "fullName": "Demo Parent",
+    "email": "parent@demo.taleemplus",
+    "role": "PARENT",
+    "phoneNumber": null,
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "fullName": "Demo Student",
+    "email": "student@demo.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "f40eab89f5236e03",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   },
+   {
+    "id": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "fullName": "Demo Teacher",
+    "email": "teacher@demo.taleemplus",
+    "role": "TEACHER",
+    "phoneNumber": null,
+    "studentCode": null,
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   }
+  ],
+  "GET /users/by-role": [
+   {
+    "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "fullName": "Demo Student",
+    "email": "student@demo.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "f40eab89f5236e03",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null
+   }
+  ],
+  "GET /attendance/student/:id": [
+   {
+    "id": "1df5bcf5-1d76-4c51-805b-1bd615ba81d3",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "log_date": "2026-11-08",
+    "status": "present",
+    "marked_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "recorded_at": "2026-11-08T18:54:23.906Z"
+   }
+  ],
+  "GET /fees/challans/student/:id": [
+   {
+    "id": "5a85b02d-19d7-4cb2-89ac-207e3bd75f7a",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "challan_number": "DEMO-CHALLAN-2026-11",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_code": "f40eab89f5236e03",
+    "student_name": "Demo Student",
+    "father_name": "Demo Parent",
+    "billing_period": "2026-11",
+    "class_label": "Grade 5 - A",
+    "roll_number": "5A-01",
+    "issue_date": "2026-11-08T18:54:23.912Z",
+    "due_date": "2026-11-15T00:00:00.000Z",
+    "paid_at": null,
+    "monthly_fee": 5000,
+    "admission_fee": 0,
+    "exam_fee": 0,
+    "transport_fee": 0,
+    "fine": 0,
+    "total_amount": 5000,
+    "status": "pending",
+    "created_at": "2026-11-08T18:54:23.912Z",
+    "updated_at": "2026-11-08T18:54:23.912Z"
+   }
+  ],
+  "GET /quizzes/marks/student/:id": [
+   {
+    "id": "e3a91a0c-8d1f-429c-9f8a-53b53106d14e",
+    "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+    "quiz_id": "00000000-0000-4000-8000-000000000020",
+    "student_id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "student_name": "Demo Student",
+    "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "subject": "Mathematics",
+    "month": "November",
+    "marks_obtained": 8,
+    "total_marks": 10,
+    "percentage": 80,
+    "grade_letter": "A",
+    "teacher_feedback": "",
+    "updated_at": "2026-11-08T18:54:23.936Z"
+   }
+  ],
+  "GET /quizzes/:id": {
+   "id": "00000000-0000-4000-8000-000000000020",
+   "academy_id": "3d32fef8-7eac-411f-95df-9335873de383",
+   "class_id": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+   "class_label": "Grade 5 - A",
+   "title": "Demo Fractions Quiz",
+   "subject": "Mathematics",
+   "month": "November",
+   "session": "2026-2027",
+   "chapter": "",
+   "difficulty": "Medium",
+   "total_marks": 10,
+   "test_date": null,
+   "instructions": "",
+   "created_by_uid": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+   "created_by_name": "Demo Teacher",
+   "created_at": "2026-11-08T18:54:23.924Z",
+   "questions": [
+    {
+     "id": "7d4a2578-3f33-4d85-8b79-f68542933dc9",
+     "text": "What is 1/2 + 1/4?",
+     "type": "short",
+     "options": [
+      "3/4",
+      "2/6",
+      "1/6"
+     ],
+     "marks": 10
+    }
+   ]
+  },
+  "GET /assignments": [
+   {
+    "id": "ec96e818-fc52-4fc9-b641-fe7724e34ac4",
+    "classId": "3c225110-95eb-4ec7-aa9b-d3281e2ee827",
+    "classLabel": "Grade 5 - A (Mathematics)",
+    "title": "Fractions worksheet: adding and subtracting unlike denominators",
+    "instructions": "Solve all 20 questions. Show your working.",
+    "dueAt": "2026-11-13T19:51:16.484Z",
+    "isOpen": true,
+    "maxMarks": 20,
+    "allowResubmission": true,
+    "createdByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:16.621Z",
+    "instructionFileCount": 1,
+    "mySubmissions": [
+     {
+      "id": "dc8a18e2-8229-4018-9fd7-db2dfbe9ef54",
+      "studentId": "76fe910d-195d-4822-82da-64183bbea8bd",
+      "studentName": "Demo Student",
+      "note": "Done",
+      "submittedAt": "2026-11-08T19:51:16.929Z",
+      "updatedAt": "2026-11-08T19:51:16.929Z",
+      "marks": null,
+      "feedback": null,
+      "gradedAt": null,
+      "fileCount": 1
+     }
+    ]
+   }
+  ],
+  "GET /files#COURSE_MATERIAL": [
+   {
+    "id": "7f22fffa-947a-4988-8842-12f5508bdd49",
+    "category": "COURSE_MATERIAL",
+    "ownerId": "00000000-0000-4000-8000-000000000030",
+    "originalName": "Fractions notes chapter 3.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "uploadedByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:17.471Z",
+    "contentPath": "/files/7f22fffa-947a-4988-8842-12f5508bdd49/content"
+   }
+  ],
+  "GET /files#ASSIGNMENT_INSTRUCTION": [
+   {
+    "id": "bc2d9f3b-b942-4ffa-ac28-9cce3e6c5cef",
+    "category": "ASSIGNMENT_INSTRUCTION",
+    "ownerId": "ec96e818-fc52-4fc9-b641-fe7724e34ac4",
+    "originalName": "Fractions worksheet (unlike denominators) - Grade 5.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "7c104626-c52f-46ed-83d6-d4d65dd1e9e0",
+    "uploadedByName": "Demo Teacher",
+    "createdAt": "2026-11-08T19:51:16.772Z",
+    "contentPath": "/files/bc2d9f3b-b942-4ffa-ac28-9cce3e6c5cef/content"
+   }
+  ],
+  "GET /files#ASSIGNMENT_SUBMISSION": [
+   {
+    "id": "bfa7d830-54bd-400d-b65f-f9d8e7687764",
+    "category": "ASSIGNMENT_SUBMISSION",
+    "ownerId": "dc8a18e2-8229-4018-9fd7-db2dfbe9ef54",
+    "originalName": "my-answers.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "uploadedByName": "Demo Student",
+    "createdAt": "2026-11-08T19:51:17.085Z",
+    "contentPath": "/files/bfa7d830-54bd-400d-b65f-f9d8e7687764/content"
+   }
+  ],
+  "GET /files#STUDENT_DOCUMENT": [
+   {
+    "id": "d0e18346-e14b-4e9b-a58b-a7a23a4b0259",
+    "category": "STUDENT_DOCUMENT",
+    "ownerId": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "originalName": "Admission form 2026.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 45,
+    "description": null,
+    "uploadedById": "092d8e4e-6c12-4ded-a22a-e551f0bc97bd",
+    "uploadedByName": "Demo Admin",
+    "createdAt": "2026-11-08T19:51:17.764Z",
+    "contentPath": "/files/d0e18346-e14b-4e9b-a58b-a7a23a4b0259/content"
+   }
+  ],
+  "POST /users/profiles": [
+   {
+    "id": "76fe910d-195d-4822-82da-64183bbea8bd",
+    "fullName": "Demo Student",
+    "email": "student@demo.taleemplus",
+    "role": "STUDENT",
+    "phoneNumber": null,
+    "studentCode": "f40eab89f5236e03",
+    "rollNumber": null,
+    "subject": null,
+    "joiningDate": null,
+    "accountStatus": "ACTIVE"
+   }
+  ]
+ }
+}

@@ -1,0 +1,74 @@
+TaleemPlus — Proprietary Software License
+Copyright (c) 2026 The TaleemPlus Project Team. All rights reserved.
+
+IMPORTANT — READ CAREFULLY. This is a proprietary license, not an open-source
+license. TaleemPlus ("the Software") is a university final-year project. Rights
+in the Software may be shared between the student authors and the degree-awarding
+institution under that institution's intellectual-property policy (see
+OWNERSHIP.md). "Rights Holders" means those parties as finally determined by that
+policy.
+
+1. GRANT
+   No license or right is granted to any person or entity except by separate
+   written authorization from the Rights Holders. Absent such authorization, you
+   have NO right to use, run, copy, reproduce, store, distribute, publish,
+   sublicense, sell, rent, lease, modify, adapt, translate, create derivative
+   works from, reverse engineer, or make any commercial use of the Software or
+   any part of it.
+
+2. PERMITTED INTERNAL/ACADEMIC USE
+   The Rights Holders and persons they authorize in writing (for example, team
+   members and course examiners) may use the Software for development, grading,
+   demonstration and academic evaluation connected with the project.
+
+3. RESTRICTIONS
+   Except as expressly authorized in writing, you must not:
+   (a) copy or redistribute the Software, in source or binary form;
+   (b) modify the Software or create derivative works;
+   (c) use the Software, in whole or in part, in any product or service;
+   (d) make any commercial use of the Software;
+   (e) remove or alter any copyright, trademark or proprietary notices.
+   These restrictions apply to the fullest extent permitted by applicable law.
+
+4. THIRD-PARTY COMPONENTS
+   The Software depends on third-party open-source libraries and services, each
+   licensed under its own terms (see the "THIRD-PARTY NOTICE" below and the
+   dependency manifests: pubspec.yaml, taleemplus_backend/package.json,
+   ml_service/requirements.txt). This license governs only the TaleemPlus
+   original code and does NOT override the licenses of those components. You must
+   comply with each third-party license separately.
+
+5. NO WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+6. LIMITATION OF LIABILITY
+   IN NO EVENT SHALL THE RIGHTS HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY ARISING FROM OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
+
+7. TRADEMARKS
+   "TaleemPlus" and associated logos are used as project identifiers and are not
+   licensed to you by this document.
+
+8. LIMITATIONS OF THIS LICENSE (IMPORTANT, HONEST NOTICE)
+   This license is a statement of terms. It does NOT by itself technically
+   prevent copying, nor does a private repository guarantee legal protection:
+   - Anyone granted access (collaborators, examiners) can still copy the code;
+     access control is not the same as a transfer of rights.
+   - This document is not legal advice and has not been reviewed by a lawyer.
+   - Enforceability depends on applicable law and on the ownership being validly
+     established (see OWNERSHIP.md), which may still be PENDING.
+   For real protection, combine this license with access control, secret rotation,
+   and — if commercialization is intended — professional legal advice.
+
+----------------------------------------------------------------------
+THIRD-PARTY NOTICE (non-exhaustive)
+  - Flutter / Dart (BSD-3-Clause)
+  - Node.js, Express, Prisma, bcryptjs (MIT / Apache-2.0)
+  - FastAPI, Uvicorn, scikit-learn, pandas, numpy, psycopg (MIT / BSD / LGPL etc.)
+  - huggingface_hub (Apache-2.0)
+  Full terms ship with each package; see the dependency manifests listed above.
+----------------------------------------------------------------------
+
+Contact for authorization requests: see OWNERSHIP.md.

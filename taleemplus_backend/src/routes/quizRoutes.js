@@ -29,6 +29,11 @@ router.delete(
   authorizeRoles('ADMIN', 'TEACHER'),
   quizController.deleteMark
 );
+router.post(
+  '/ai-generate',
+  authorizeRoles('ADMIN', 'TEACHER'),
+  quizController.aiGenerate
+);
 router.get('/:id', quizController.getQuizById);
 router.post('/', authorizeRoles('ADMIN', 'TEACHER'), quizController.createQuiz);
 router.put('/:id', authorizeRoles('ADMIN', 'TEACHER'), quizController.updateQuiz);

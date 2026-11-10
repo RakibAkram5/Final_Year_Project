@@ -1,7 +1,7 @@
 name: taleemplus_app
 description: "TaleemPlus - Offline-first AI-powered academy management app"
 publish_to: 'none'
-version: 1.0.0+2
+version: 1.1.1+5
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -26,10 +26,12 @@ dependencies:
   # OCR
   google_mlkit_text_recognition: ^0.13.0
   image_picker: ^1.1.2
+  # Web OCR engine (Tesseract.js) is reached through JS interop; `web` provides
+  # the browser bindings. Harmless on mobile (only imported in the web engine).
+  web: ^1.1.0
 
-  # On-device ML inference for the fee-delay risk predictor (Week 6):
-  # a scikit-learn LogisticRegression trained in ml_training/, ported to
-  # plain Dart in lib/logic/fee_risk_model.dart — no tflite_flutter needed.
+  # Machine learning runs in ml_service/ (Python, FastAPI) and is reached
+  # through the backend's /admin/ml endpoints; nothing runs on-device.
 
   # Charts for Admin/Parent dashboards
   fl_chart: ^0.68.0
@@ -49,7 +51,11 @@ dependencies:
   printing: ^5.13.0
   url_launcher: ^6.3.2
   crypto: ^3.0.7
-
+  file_picker: 13.2.0
+  share_plus: 13.3.1
+  flutter_map: 8.3.2
+  latlong2: 0.10.1
+  geolocator: 14.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -64,6 +70,7 @@ flutter:
   assets:
     - assets/images/
     - assets/ml_models/
+    - assets/fonts/
 
 flutter_launcher_icons:
   android: true

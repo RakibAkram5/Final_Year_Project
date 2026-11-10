@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -117,7 +118,7 @@ class _StudentFeeScreenState extends State<StudentFeeScreen> {
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
         boxShadow: [
@@ -134,16 +135,16 @@ class _StudentFeeScreenState extends State<StudentFeeScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("TOTAL PAYABLE",
+              Text("TOTAL PAYABLE",
                   style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1)),
               const SizedBox(height: 4),
               Text("Rs. ${pending.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                      color: AppColors.accent,
+                  style: TextStyle(
+                      color: context.appColors.accentText,
                       fontSize: 28,
                       fontWeight: FontWeight.w900)),
             ],
@@ -154,8 +155,8 @@ class _StudentFeeScreenState extends State<StudentFeeScreen> {
               color: AppColors.accent.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.account_balance_wallet_rounded,
-                color: AppColors.accent, size: 32),
+            child: Icon(Icons.account_balance_wallet_rounded,
+                color: context.appColors.accentText, size: 32),
           ),
         ],
       ),
@@ -171,9 +172,10 @@ class _StudentFeeScreenState extends State<StudentFeeScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
@@ -183,8 +185,8 @@ class _StudentFeeScreenState extends State<StudentFeeScreen> {
               children: [
                 Text(
                   c.challanNumber,
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 16),
                 ),
@@ -193,8 +195,8 @@ class _StudentFeeScreenState extends State<StudentFeeScreen> {
                   c.isPaid
                       ? "Paid"
                       : "Due Date: ${DateFormat('MMM d, yyyy').format(c.dueDate)}",
-                  style:
-                      const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  style: TextStyle(
+                      color: context.appColors.textMuted, fontSize: 12),
                 ),
               ],
             ),
@@ -204,8 +206,8 @@ class _StudentFeeScreenState extends State<StudentFeeScreen> {
             children: [
               Text(
                 "Rs. ${c.totalAmount.toStringAsFixed(0)}",
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: context.appColors.textPrimary,
                     fontWeight: FontWeight.w800,
                     fontSize: 16),
               ),
@@ -233,14 +235,15 @@ class _StudentFeeScreenState extends State<StudentFeeScreen> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.receipt_outlined, size: 64, color: AppColors.textMuted),
-          SizedBox(height: 16),
+          Icon(Icons.receipt_outlined,
+              size: 64, color: context.appColors.textMuted),
+          const SizedBox(height: 16),
           Text("No fee records found.",
-              style: TextStyle(color: AppColors.textSecondary)),
+              style: TextStyle(color: context.appColors.textSecondary)),
         ],
       ),
     );
@@ -256,8 +259,8 @@ class _StudentFeeScreenState extends State<StudentFeeScreen> {
             const Icon(Icons.error_outline_rounded,
                 size: 64, color: AppColors.danger),
             const SizedBox(height: 16),
-            const Text("Could not load your fee records.",
-                style: TextStyle(color: AppColors.textSecondary)),
+            Text("Could not load your fee records.",
+                style: TextStyle(color: context.appColors.textSecondary)),
             const SizedBox(height: 8),
             ElevatedButton(
               onPressed: () => setState(() => _future = _loadChallans()),

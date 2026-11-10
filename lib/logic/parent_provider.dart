@@ -1,156 +1,127 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../core/constants/app_constants.dart';
 import '../data/models/app_user.dart';
 import '../data/remote/auth_service.dart';
+import '../data/remote/live_query.dart';
 
+/// Linked children of the signed-in parent.
+///
+/// Source of truth is the server: `GET /auth/me` returns the parent's
+/// `linkedChildren` (from the parent_student_relationships table) and
+/// `POST /users/profiles` returns those students' profiles. The server only
+/// ever returns students linked to *this* parent in *this* academy, so the
+/// client never filters or guesses ids itself.
+///
+/// Fixes (Phase 5):
+/// * [refresh] really re-fetches. Previously pull-to-refresh returned early
+///   because a subscription already existed, so a child linked by the admin
+///   after the parent signed in never appeared until the app restarted.
+/// * Load failures are exposed through [error] instead of looking like
+///   "no children linked".
+/// * The profile is re-checked periodically while the app is open.
 class ParentProvider extends ChangeNotifier {
-  final AuthService _authService = AuthService();
+  final AuthService _authService;
+  ParentProvider({AuthService? authService})
+      : _authService = authService ?? AuthService();
+
+  static const Duration pollInterval = Duration(minutes: 2);
+
   List<AppUser> _children = [];
   bool _loading = false;
+  String? _error;
   String? _parentUid;
-  String? _academyId;
-  List<String> _lastChildUids = [];
-  StreamSubscription<AppUser?>? _profileSub;
+  int _generation = 0;
+  Timer? _poller;
+  StreamSubscription<String>? _changes;
 
   List<AppUser> get children => _children;
   bool get loading => _loading;
 
-  /// Binds this provider to the given logged-in parent. Subscribes to a
-  /// real-time listener on the parent's own profile document so that
-  /// `linked_children` writes (from this device or any other) are reflected
-  /// immediately, and survive refreshes/app restarts without depending on a
-  /// stale cached [AppUser] snapshot taken at login.
+  /// User-facing message of the last failed load, or null.
+  String? get error => _error;
+
+  /// Binds this provider to the logged-in parent (called by the provider
+  /// proxy on every auth change).
   Future<void> syncWithUser(AppUser? parent) async {
     if (parent == null || parent.role != UserRole.parent) {
-      await _profileSub?.cancel();
-      _profileSub = null;
-      _parentUid = null;
-      _academyId = null;
-      _lastChildUids = [];
-      _children = [];
-      notifyListeners();
+      _unbind();
       return;
     }
-
-    _academyId = parent.academyId;
-
-    // Already listening for this parent: the live subscription already has
-    // the latest data, nothing further to do on refresh/rebuild.
-    if (_parentUid == parent.uid && _profileSub != null) return;
-
-    await _profileSub?.cancel();
+    if (_parentUid == parent.uid) return;
+    _unbind(notify: false);
     _parentUid = parent.uid;
-    _loading = true;
-    notifyListeners();
+    _poller = Timer.periodic(pollInterval, (_) => refresh(silent: true));
+    // Local link/unlink writes notify the users topic.
+    _changes =
+        DataChanges.on(DataTopics.users).listen((_) => refresh(silent: true));
+    await refresh();
+  }
 
-    final completer = Completer<void>();
-    _profileSub = _authService.watchProfile(parent.uid).listen(
-      (profile) {
-        _onProfileUpdate(profile);
-        if (!completer.isCompleted) completer.complete();
-      },
-      onError: (e) {
-        debugPrint("Error watching parent profile: $e");
+  /// Re-fetches the parent's profile and linked children from the server.
+  /// [silent] keeps the current list on screen while refreshing.
+  Future<void> refresh({bool silent = false}) async {
+    final parentUid = _parentUid;
+    if (parentUid == null) return;
+    final generation = ++_generation;
+    if (!silent || _children.isEmpty) {
+      _loading = true;
+      notifyListeners();
+    }
+    try {
+      final profile = await _authService.getCurrentUserProfile();
+      if (generation != _generation || _parentUid != parentUid) return;
+      if (profile == null || profile.uid != parentUid) {
+        throw StateError('Signed-in profile does not match this parent.');
+      }
+      final ids = profile.linkedChildren;
+      final kids =
+          ids.isEmpty ? <AppUser>[] : await _authService.getProfilesByIds(ids);
+      if (generation != _generation || _parentUid != parentUid) return;
+      // Keep the server's link order (stable child switching).
+      kids.sort((a, b) => ids.indexOf(a.uid).compareTo(ids.indexOf(b.uid)));
+      _children = kids;
+      _error = null;
+    } catch (e) {
+      if (generation != _generation) return;
+      debugPrint('ParentProvider: failed to load linked children: $e');
+      _error = 'Could not load your linked children. '
+          'Check your connection and try again.';
+    } finally {
+      if (generation == _generation) {
         _loading = false;
         notifyListeners();
-        if (!completer.isCompleted) completer.complete();
-      },
-    );
-
-    // Let the dashboard's RefreshIndicator resolve once the first snapshot
-    // (cache or server) has been applied.
-    await completer.future;
-  }
-
-  Future<void> _onProfileUpdate(AppUser? profile) async {
-    if (profile == null) {
-      _children = [];
-      _lastChildUids = [];
-      _loading = false;
-      notifyListeners();
-      return;
-    }
-
-    _academyId = profile.academyId;
-    final childUids = profile.linkedChildren;
-
-    // Avoid refetching every linked child's profile when an unrelated field
-    // on the parent's own document changes (e.g. updated_at).
-    if (_listEquals(childUids, _lastChildUids)) {
-      _loading = false;
-      notifyListeners();
-      return;
-    }
-    _lastChildUids = List<String>.from(childUids);
-
-    _loading = true;
-    notifyListeners();
-    try {
-      if (childUids.isEmpty) {
-        _children = [];
-      } else {
-        _children = await _authService.getProfilesByIds(childUids);
       }
-    } catch (e) {
-      debugPrint("Error loading children: $e");
-    } finally {
-      _loading = false;
-      notifyListeners();
     }
   }
 
-  bool _listEquals(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
+  void _unbind({bool notify = true}) {
+    _generation++;
+    _poller?.cancel();
+    _poller = null;
+    _changes?.cancel();
+    _changes = null;
+    _parentUid = null;
+    _children = [];
+    _error = null;
+    _loading = false;
+    if (notify) notifyListeners();
   }
 
-  Future<String?> linkChild(String email) async {
-    if (_parentUid == null || _academyId == null) {
-      return "User session expired.";
-    }
-
-    try {
-      final student = await _authService.findStudentByEmail(email, _academyId!);
-      if (student == null) {
-        return "No student found with this email in your academy.";
-      }
-
-      if (_children.any((c) => c.uid == student.uid)) {
-        return "This child is already linked.";
-      }
-
-      // The live profile listener will pick this write up and refresh
-      // `_children`; no need to mutate local state here.
-      await _authService.addLinkedChild(_parentUid!, student.uid);
-      return null; // Success
-    } catch (e) {
-      return "Linking failed: $e";
-    }
-  }
-
-  Future<void> addChild(AppUser student) async {
-    if (_parentUid == null) return;
-    if (_children.any((c) => c.uid == student.uid)) return;
-
-    // The live profile listener will pick this write up and refresh
-    // `_children`; no need to mutate local state here.
-    await _authService.addLinkedChild(_parentUid!, student.uid);
-  }
+  // Linking a child is an academy-admin action (User Management). The API
+  // rejects parent self-linking, so the client has no method for it.
 
   Future<void> unlinkChild(String uid) async {
     if (_parentUid == null) return;
-    // The live profile listener will pick this write up and refresh
-    // `_children`; no need to mutate local state here.
     await _authService.removeLinkedChild(_parentUid!, uid);
+    await refresh(silent: true);
   }
 
   @override
   void dispose() {
-    _profileSub?.cancel();
+    _unbind(notify: false);
     super.dispose();
   }
 }

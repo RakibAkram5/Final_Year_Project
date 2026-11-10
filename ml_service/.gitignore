@@ -1,0 +1,10 @@
+# Secrets — never commit
+.env
+
+# Trained model artifacts (persisted via Hugging Face Hub in production)
+artifacts/
+
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/

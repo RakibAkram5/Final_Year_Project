@@ -61,13 +61,15 @@ class WebTopBar extends StatelessWidget {
           _NotificationBell(user: user),
           if (onAcademyInfo != null)
             IconButton(
-              icon: const Icon(Icons.business_rounded, color: AppColors.accent),
+              icon: Icon(Icons.business_rounded,
+                  color: context.appColors.accentText),
               tooltip: 'Academy Info',
               onPressed: onAcademyInfo,
             ),
           if (onSecuritySettings != null)
             IconButton(
-              icon: const Icon(Icons.security_rounded, color: AppColors.accent),
+              icon: Icon(Icons.security_rounded,
+                  color: context.appColors.accentText),
               tooltip: 'Security Settings',
               onPressed: onSecuritySettings,
             ),
@@ -97,8 +99,8 @@ class _NotificationBell extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_rounded,
-                  color: AppColors.accent),
+              icon: Icon(Icons.notifications_rounded,
+                  color: context.appColors.accentText),
               tooltip: 'Notifications',
               onPressed: () => Navigator.push(
                   context,
@@ -177,8 +179,9 @@ class _ProfileMenu extends StatelessWidget {
         radius: 18,
         backgroundColor: AppColors.accent.withValues(alpha: 0.15),
         child: Text(initial,
-            style: const TextStyle(
-                color: AppColors.accentDark, fontWeight: FontWeight.w800)),
+            style: TextStyle(
+                color: context.appColors.accentText,
+                fontWeight: FontWeight.w800)),
       ),
     );
   }

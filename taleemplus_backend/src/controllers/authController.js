@@ -51,6 +51,10 @@ const formatUser = (user, academy) => ({
   academyAddress: academy?.address,
   academyPhone: academy?.phone,
   academyLogo: academy?.logo,
+  // Phase 6: saved academy location (null until an admin sets it).
+  academyLatitude: academy?.latitude == null ? null : Number(academy.latitude),
+  academyLongitude: academy?.longitude == null ? null : Number(academy.longitude),
+  academyLocationLabel: academy?.locationLabel ?? null,
   assignedSections: user.assignedSections,
   studentCode: user.studentCode,
   rollNumber: user.rollNumber,
@@ -118,11 +122,38 @@ const updateAcademyProfile = async (req, res, next) => {
       }
       data[column] = typeof value === 'string' ? value.trim() || null : null;
     }
+    // Location: latitude and longitude are set (or cleared) together.
+    const { latitude, longitude, locationLabel } = req.body;
+    if (latitude !== undefined || longitude !== undefined) {
+      if (latitude === null && longitude === null) {
+        data.latitude = null;
+        data.longitude = null;
+        data.locationLabel = null;
+      } else {
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+            lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          return res.status(400).json({ success: false, message: 'Latitude must be between -90 and 90 and longitude between -180 and 180.' });
+        }
+        data.latitude = Math.round(lat * 1e6) / 1e6;
+        data.longitude = Math.round(lng * 1e6) / 1e6;
+      }
+    }
+    if (locationLabel !== undefined && data.locationLabel === undefined) {
+      if (locationLabel !== null && (typeof locationLabel !== 'string' || locationLabel.length > 300)) {
+        return res.status(400).json({ success: false, message: 'Invalid location label.' });
+      }
+      data.locationLabel = typeof locationLabel === 'string' ? locationLabel.trim() || null : null;
+    }
     if (!Object.keys(data).length) return res.status(400).json({ success: false, message: 'No academy profile fields provided.' });
     const academy = await prisma.academy.update({ where: { id: req.academyId }, data });
     res.json({ success: true, data: {
       academyName: academy.name, academyAddress: academy.address,
       academyPhone: academy.phone, academyLogo: academy.logo,
+      academyLatitude: academy.latitude == null ? null : Number(academy.latitude),
+      academyLongitude: academy.longitude == null ? null : Number(academy.longitude),
+      academyLocationLabel: academy.locationLabel,
     } });
   } catch (err) { next(err); }
 };
@@ -149,6 +180,15 @@ const generateTokens = (userId, academyId, role) => {
   });
   return { accessToken, refreshToken };
 };
+
+// Refresh tokens are persisted hashed, never raw: a database disclosure then
+// exposes only SHA-256 digests, which are not usable as tokens. The token is
+// already high-entropy (a signed JWT with a random jti), so a single fast
+// digest is sufficient here and keeps the unique-column lookup O(1) — unlike a
+// password, which needs a slow salted hash. Rows written before this change
+// (raw tokens) simply stop matching and expire; affected users re-authenticate.
+const hashToken = (token) =>
+  crypto.createHash('sha256').update(String(token)).digest('hex');
 
 const registerAdmin = async (req, res, next) => {
   try {
@@ -196,7 +236,7 @@ const registerAdmin = async (req, res, next) => {
     await prisma.refreshToken.create({
       data: {
         userId: result.user.id,
-        token: tokens.refreshToken,
+        token: hashToken(tokens.refreshToken),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       }
     });
@@ -379,7 +419,7 @@ const login = async (req, res, next) => {
     await prisma.refreshToken.create({
       data: {
         userId: user.id,
-        token: tokens.refreshToken,
+        token: hashToken(tokens.refreshToken),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       }
     });
@@ -404,7 +444,7 @@ const refreshToken = async (req, res, next) => {
     }
 
     const savedToken = await prisma.refreshToken.findUnique({
-      where: { token },
+      where: { token: hashToken(token) },
       include: { user: true }
     });
 
@@ -426,7 +466,7 @@ const refreshToken = async (req, res, next) => {
 
     await prisma.refreshToken.update({
       where: { id: savedToken.id },
-      data: { token: newTokens.refreshToken, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }
+      data: { token: hashToken(newTokens.refreshToken), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }
     });
 
     res.json({ success: true, data: newTokens });
@@ -440,7 +480,7 @@ const logout = async (req, res, next) => {
     const { refreshToken: token } = req.body;
     if (token) {
       await prisma.refreshToken.updateMany({
-        where: { token },
+        where: { token: hashToken(token) },
         data: { revoked: true }
       });
     }
@@ -599,5 +639,7 @@ module.exports = {
   changePassword,
   updateAcademyProfile,
   getSecurityQuestion,
-  resetPassword
+  resetPassword,
+  // Exported for unit testing of the at-rest refresh-token hashing.
+  hashToken
 };

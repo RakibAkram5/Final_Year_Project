@@ -20,6 +20,21 @@ const errorHandler = (err, req, res, next) => {
     );
   }
 
+  // Client errors raised by body parsers (oversized or malformed bodies) and
+  // by controllers that set an explicit 4xx status.
+  const clientStatus = err && (err.status || err.statusCode);
+  if (clientStatus >= 400 && clientStatus < 500) {
+    const message = err.type === 'entity.too.large'
+      ? 'The request body is too large.'
+      : err.type === 'entity.parse.failed'
+        ? 'The request body is not valid JSON.'
+        : err.expose === false ? 'Bad request.' : err.message;
+    const code = clientStatus === 413
+      ? 'PAYLOAD_TOO_LARGE'
+      : ERROR_CODES.VALIDATION_ERROR || 'BAD_REQUEST';
+    return sendError(res, clientStatus, code, message);
+  }
+
   if (err && err.code && PRISMA_ERRORS[err.code]) {
     const [status, code, message] = PRISMA_ERRORS[err.code];
     return sendError(res, status, code, message);

@@ -31,6 +31,19 @@ const markAttendance = async (req, res, next) => {
   try {
     const { classId, records, logDate } = req.body;
 
+    // Attendance cannot be recorded for days that have not happened yet.
+    // One day of tolerance covers time-zone differences (Pakistan is UTC+5).
+    const latestAllowed = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    if (logDate > latestAllowed) {
+      return res.status(400).json({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: 'Attendance cannot be marked for a future date.'
+      });
+    }
+
     const classEntity = await assertClassInAcademy(classId, req.academyId);
     assertTeacherOwnsClass(req, classEntity);
 

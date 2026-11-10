@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -97,7 +98,7 @@ class TeacherClassesScreen extends StatelessWidget {
                 return const _EmptyMessage(text: 'Could not load classes.');
               }
               final list = snap.data ?? const [];
-              if (list.isEmpty) return _emptyState();
+              if (list.isEmpty) return _emptyState(context);
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: list.length,
@@ -108,20 +109,22 @@ class TeacherClassesScreen extends StatelessWidget {
           );
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(BuildContext context) {
     return ListView(
-      children: const [
-        SizedBox(height: 120),
+      children: [
+        const SizedBox(height: 120),
         Center(
           child: Column(
             children: [
-              Icon(Icons.class_outlined, size: 56, color: AppColors.textMuted),
-              SizedBox(height: 12),
+              Icon(Icons.class_outlined,
+                  size: 56, color: context.appColors.textMuted),
+              const SizedBox(height: 12),
               Text('No classes assigned yet',
-                  style: TextStyle(color: AppColors.textSecondary)),
-              SizedBox(height: 4),
+                  style: TextStyle(color: context.appColors.textSecondary)),
+              const SizedBox(height: 4),
               Text('Ask your admin to assign you a class',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  style: TextStyle(
+                      color: context.appColors.textMuted, fontSize: 12)),
             ],
           ),
         ),
@@ -138,9 +141,10 @@ class TeacherClassesScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.55),
+            color: context.appColors.surface.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            border: Border.all(
+                color: context.appColors.border.withValues(alpha: 0.5)),
           ),
           child: Row(
             children: [
@@ -151,7 +155,8 @@ class TeacherClassesScreen extends StatelessWidget {
                   color: AppColors.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.class_rounded, color: AppColors.accent),
+                child: Icon(Icons.class_rounded,
+                    color: context.appColors.accentText),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -159,20 +164,21 @@ class TeacherClassesScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(c.displayLabel,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
+                        style: TextStyle(
+                            color: context.appColors.textPrimary,
                             fontWeight: FontWeight.w700,
                             fontSize: 15)),
                     const SizedBox(height: 2),
                     Text(
                         '${c.enrollmentCount} students'
                         '${jumpTo == null ? ' · Tap to mark attendance' : ''}',
-                        style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: 12)),
+                        style: TextStyle(
+                            color: context.appColors.textSecondary,
+                            fontSize: 12)),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(Icons.chevron_right, color: context.appColors.textMuted),
             ],
           ),
         ),
@@ -209,7 +215,8 @@ class _EmptyMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(text, style: const TextStyle(color: AppColors.textSecondary)),
+      child:
+          Text(text, style: TextStyle(color: context.appColors.textSecondary)),
     );
   }
 }

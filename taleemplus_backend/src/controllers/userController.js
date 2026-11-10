@@ -614,6 +614,210 @@ const getProfileById = async (req, res, next) => {
   }
 };
 
+// ---------------------------------------------------------------------------
+// Parent → child link requests (admin-approved).
+//
+// A parent submits the child's identifying details; the backend tries to match
+// exactly one STUDENT in the parent's academy, but the link is created ONLY
+// after an academy admin approves. This prevents a parent from reading an
+// unrelated student's data by self-linking, while still letting a parent start
+// the process. All queries are scoped to req.academyId (no cross-academy).
+// ---------------------------------------------------------------------------
+
+const { conflict, badRequest } = require('../utils/apiError');
+
+const LINK_REQUEST_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'];
+
+const publicLinkRequest = (reqRow) => ({
+  id: reqRow.id,
+  childName: reqRow.childName,
+  childEmail: reqRow.childEmail,
+  rollNumber: reqRow.rollNumber,
+  status: reqRow.status,
+  note: reqRow.note,
+  createdAt: toIso(reqRow.createdAt),
+  decidedAt: toIso(reqRow.decidedAt)
+});
+
+// Resolve at most one matching STUDENT in the academy from the submitted
+// details. A match needs the name plus at least one of email / roll number.
+const findStudentCandidate = async (academyId, { childName, childEmail, rollNumber }) => {
+  const or = [];
+  if (childEmail) or.push({ email: { equals: childEmail, mode: 'insensitive' } });
+  if (rollNumber) or.push({ rollNumber: { equals: rollNumber, mode: 'insensitive' } });
+  if (!or.length) return null;
+  const candidates = await prisma.user.findMany({
+    where: {
+      academyId,
+      role: 'STUDENT',
+      fullName: { equals: childName, mode: 'insensitive' },
+      OR: or
+    },
+    take: 2
+  });
+  // Exactly one unambiguous match; otherwise leave it for the admin to resolve.
+  return candidates.length === 1 ? candidates[0] : null;
+};
+
+const createLinkRequest = async (req, res, next) => {
+  try {
+    const childName = String(req.body.childName || '').trim();
+    const childEmail = req.body.childEmail ? String(req.body.childEmail).trim().toLowerCase() : null;
+    const rollNumber = req.body.rollNumber ? String(req.body.rollNumber).trim() : null;
+    if (!childName) throw badRequest('Child name is required.');
+    if (!childEmail && !rollNumber) {
+      throw badRequest('Provide the child\'s email or roll number.');
+    }
+
+    const parentId = req.user.id;
+    const candidate = await findStudentCandidate(req.academyId, { childName, childEmail, rollNumber });
+
+    // Already linked to this (resolved) child → nothing to request.
+    if (candidate) {
+      const existingLink = await prisma.parentStudent.findUnique({
+        where: { parentId_studentId: { parentId, studentId: candidate.id } }
+      });
+      if (existingLink) throw conflict('This child is already linked to your account.');
+    }
+
+    // Prevent a duplicate PENDING request for the same child details.
+    const duplicate = await prisma.parentLinkRequest.findFirst({
+      where: {
+        parentId,
+        status: 'PENDING',
+        childName: { equals: childName, mode: 'insensitive' },
+        childEmail: childEmail || undefined,
+        rollNumber: rollNumber || undefined
+      }
+    });
+    if (duplicate) {
+      throw conflict('You already have a pending request for this child.');
+    }
+
+    const created = await prisma.parentLinkRequest.create({
+      data: {
+        academyId: req.academyId,
+        parentId,
+        studentId: candidate ? candidate.id : null,
+        childName,
+        childEmail,
+        rollNumber,
+        status: 'PENDING'
+      }
+    });
+    return sendSuccess(res, publicLinkRequest(created), {
+      status: 201,
+      message: 'Link request submitted. An academy admin will review it.'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getMyLinkRequests = async (req, res, next) => {
+  try {
+    const rows = await prisma.parentLinkRequest.findMany({
+      where: { parentId: req.user.id },
+      orderBy: { createdAt: 'desc' }
+    });
+    return sendSuccess(res, rows.map(publicLinkRequest));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const listLinkRequests = async (req, res, next) => {
+  try {
+    const status = req.query.status ? String(req.query.status).toUpperCase() : 'PENDING';
+    if (!LINK_REQUEST_STATUSES.includes(status)) {
+      throw badRequest('Invalid status filter.');
+    }
+    const rows = await prisma.parentLinkRequest.findMany({
+      where: { academyId: req.academyId, status },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        parent: { select: { id: true, fullName: true, email: true, phoneNumber: true } },
+        student: { select: { id: true, fullName: true, email: true, rollNumber: true, studentCode: true } }
+      }
+    });
+    const data = rows.map((row) => ({
+      ...publicLinkRequest(row),
+      parent: row.parent,
+      // The admin sees the auto-matched student (if any) to verify before approving.
+      matchedStudent: row.student || null
+    }));
+    return sendSuccess(res, data);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const approveLinkRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const request = await prisma.parentLinkRequest.findFirst({
+      where: { id, academyId: req.academyId }
+    });
+    if (!request) throw notFound('Link request not found.');
+    if (request.status !== 'PENDING') {
+      throw conflict('This request has already been decided.');
+    }
+
+    // Admin may confirm/override which student to link (academy-scoped).
+    const studentId = (req.body && req.body.studentId) || request.studentId;
+    if (!studentId) {
+      throw badRequest('No matching student. Specify the student to link.');
+    }
+    const student = await prisma.user.findFirst({
+      where: { id: studentId, academyId: req.academyId, role: 'STUDENT' }
+    });
+    if (!student) throw notFound('Student not found in this academy.');
+
+    const [, updated] = await prisma.$transaction([
+      prisma.parentStudent.upsert({
+        where: { parentId_studentId: { parentId: request.parentId, studentId } },
+        create: { parentId: request.parentId, studentId },
+        update: {}
+      }),
+      prisma.parentLinkRequest.update({
+        where: { id: request.id },
+        data: {
+          status: 'APPROVED',
+          studentId,
+          decidedById: req.user.id,
+          decidedAt: new Date()
+        }
+      })
+    ]);
+    return sendSuccess(res, publicLinkRequest(updated), {
+      message: 'Request approved and child linked to the parent.'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const rejectLinkRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const note = req.body && req.body.note ? String(req.body.note).trim().slice(0, 500) : null;
+    const request = await prisma.parentLinkRequest.findFirst({
+      where: { id, academyId: req.academyId }
+    });
+    if (!request) throw notFound('Link request not found.');
+    if (request.status !== 'PENDING') {
+      throw conflict('This request has already been decided.');
+    }
+    const updated = await prisma.parentLinkRequest.update({
+      where: { id: request.id },
+      data: { status: 'REJECTED', note, decidedById: req.user.id, decidedAt: new Date() }
+    });
+    return sendSuccess(res, publicLinkRequest(updated), { message: 'Request rejected.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   adminResetPassword,
   deactivateUser,
@@ -631,5 +835,10 @@ module.exports = {
   getProfilesByIds,
   searchUsers,
   getDirectory,
-  getProfileById
+  getProfileById,
+  createLinkRequest,
+  getMyLinkRequests,
+  listLinkRequests,
+  approveLinkRequest,
+  rejectLinkRequest
 };

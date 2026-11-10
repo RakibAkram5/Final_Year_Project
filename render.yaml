@@ -1,0 +1,44 @@
+# Render Blueprint for the TaleemPlus ML service (FastAPI).
+# Native Python runtime — NO Docker. Deploy: push this repo to a Render
+# Blueprint, or create a Free Web Service pointing at ml_service/.
+#
+# Secrets (sync: false) are NEVER stored in this file — set them in the Render
+# dashboard (Environment) or Blueprint prompt. Nothing here is committed with a
+# real value.
+services:
+  - type: web
+    name: taleemplus-ml
+    runtime: python
+    plan: free                      # 512 MB RAM, sleeps after ~15 min idle
+    region: singapore               # closest to Neon ap-southeast-1
+    rootDir: ml_service             # build/start run here (app/, requirements.txt)
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health        # returns 200 even when DB is absent
+    autoDeploy: false               # deploy on demand; flip to true for push-deploys
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.4"             # pinned; wheels exist for all deps on 3.13
+      # Durable artifact store lives on the HF Hub; Render's disk is ephemeral.
+      - key: ML_ARTIFACT_DIR
+        value: /tmp/ml_artifacts
+      - key: HF_REPO_TYPE
+        value: model
+      - key: HF_MAX_RETRIES
+        value: "3"
+      - key: HF_BACKOFF_SECONDS
+        value: "2"
+      # ---- Secrets: set these in the Render dashboard (never in git) ----
+      - key: ML_INTERNAL_TOKEN      # same value as the Vercel backend
+        sync: false
+      - key: DATABASE_URL           # taleemplus_ml_reader (READ-ONLY) connection
+        sync: false
+      - key: HF_TOKEN               # Hugging Face WRITE token
+        sync: false
+      - key: HF_REPO_ID             # e.g. your-name/taleemplus-ml-artifacts (PRIVATE)
+        sync: false
+      # Optional training-cadence overrides (safe defaults in app/config.py):
+      # - key: ML_CHECK_INTERVAL_HOURS
+      #   value: "6"
+      # - key: ML_RETRAIN_NEW_RECORDS
+      #   value: "50"

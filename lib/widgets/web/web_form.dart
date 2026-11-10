@@ -153,7 +153,8 @@ class WebDropdownField<T> extends StatelessWidget {
                             children: [
                               if (icon != null) ...[
                                 Icon(icon,
-                                    size: 17, color: AppColors.accentDark),
+                                    size: 17,
+                                    color: context.appColors.accentText),
                                 const SizedBox(width: 10),
                               ],
                               Flexible(

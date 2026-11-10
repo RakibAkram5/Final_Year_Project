@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
+import '../core/theme/theme_extensions.dart';
 
 /// Read-only roster listing for a class/section — shows each enrolled
 /// student's name (and roll number, once known) instead of just a count.
@@ -15,28 +15,30 @@ Future<void> showStudentRosterDialog(
   return showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.surface,
-      title: Text(title, style: const TextStyle(color: AppColors.textPrimary)),
+      backgroundColor: context.appColors.surface,
+      title:
+          Text(title, style: TextStyle(color: context.appColors.textPrimary)),
       content: SizedBox(
         width: double.maxFinite,
         child: entries.isEmpty
-            ? const Text('No students enrolled yet.',
-                style: TextStyle(color: AppColors.textSecondary))
+            ? Text('No students enrolled yet.',
+                style: TextStyle(color: context.appColors.textSecondary))
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: entries
                     .map((e) => ListTile(
                           dense: true,
-                          leading:
-                              const Icon(Icons.person, color: AppColors.accent),
+                          leading: Icon(Icons.person,
+                              color: context.appColors.accentText),
                           title: Text(e.value,
-                              style: const TextStyle(
-                                  color: AppColors.textPrimary)),
+                              style: TextStyle(
+                                  color: context.appColors.textPrimary)),
                           trailing: rollNumbers[e.key] != null &&
                                   rollNumbers[e.key]!.isNotEmpty
                               ? Text('Roll: ${rollNumbers[e.key]}',
-                                  style: const TextStyle(
-                                      color: AppColors.textMuted, fontSize: 12))
+                                  style: TextStyle(
+                                      color: context.appColors.textMuted,
+                                      fontSize: 12))
                               : null,
                         ))
                     .toList(),

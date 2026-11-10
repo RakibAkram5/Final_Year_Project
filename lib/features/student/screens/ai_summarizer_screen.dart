@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -211,7 +212,7 @@ class _AiSummarizerScreenState extends State<AiSummarizerScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
       ),
@@ -220,17 +221,18 @@ class _AiSummarizerScreenState extends State<AiSummarizerScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome, color: AppColors.accent, size: 20),
+              Icon(Icons.auto_awesome,
+                  color: context.appColors.accentText, size: 20),
               const SizedBox(width: 8),
-              const Text("AI INSIGHTS",
+              Text("AI INSIGHTS",
                   style: TextStyle(
-                      color: AppColors.accent,
+                      color: context.appColors.accentText,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1)),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.copy_rounded,
-                    color: AppColors.textMuted, size: 20),
+                icon: Icon(Icons.copy_rounded,
+                    color: context.appColors.textMuted, size: 20),
                 onPressed: () {
                   // Copy to clipboard logic
                   _showSnackBar("Summary copied to clipboard!");
@@ -238,10 +240,12 @@ class _AiSummarizerScreenState extends State<AiSummarizerScreen> {
               ),
             ],
           ),
-          const Divider(color: AppColors.border, height: 32),
+          Divider(color: context.appColors.border, height: 32),
           Text(_summary,
-              style: const TextStyle(
-                  color: AppColors.textPrimary, fontSize: 14, height: 1.6)),
+              style: TextStyle(
+                  color: context.appColors.textPrimary,
+                  fontSize: 14,
+                  height: 1.6)),
         ],
       ),
     );
@@ -253,18 +257,20 @@ class _AiSummarizerScreenState extends State<AiSummarizerScreen> {
         children: [
           const SizedBox(height: 60),
           Icon(Icons.description_outlined,
-              size: 80, color: AppColors.textMuted.withValues(alpha: 0.2)),
+              size: 80,
+              color: context.appColors.textMuted.withValues(alpha: 0.2)),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             "Scan your handwritten or printed\nnotes to get an instant AI summary.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+            style:
+                TextStyle(color: context.appColors.textSecondary, fontSize: 15),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             "100% OFFLINE. NO INTERNET REQUIRED.",
             style: TextStyle(
-                color: AppColors.accent,
+                color: context.appColors.accentText,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1),

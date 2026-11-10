@@ -136,53 +136,58 @@ class _AcademicStructureScreenState extends State<AcademicStructureScreen> {
         border:
             Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: true,
-          title: Text(level.name,
-              style: TextStyle(
-                  color: context.appColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16)),
-          subtitle: Text(
-              '${level.groups.length} group${level.groups.length == 1 ? '' : 's'}',
-              style: TextStyle(
-                  color: context.appColors.textSecondary, fontSize: 12)),
-          trailing: PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded,
-                color: context.appColors.textMuted),
-            onSelected: (v) {
-              if (v == 'add_group') _addGroup(provider, index, level);
-              if (v == 'delete_level') _deleteLevel(provider, index);
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'add_group', child: Text('Add Group')),
-              PopupMenuItem(value: 'delete_level', child: Text('Delete Level')),
-            ],
-          ),
-          children: [
-            if (level.groups.isEmpty)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Text('No groups yet. Use the menu to add one.',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+      child: Material(
+          type: MaterialType.transparency,
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              initiallyExpanded: true,
+              title: Text(level.name,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16)),
+              subtitle: Text(
+                  '${level.groups.length} group${level.groups.length == 1 ? '' : 's'}',
+                  style: TextStyle(
+                      color: context.appColors.textSecondary, fontSize: 12)),
+              trailing: PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert_rounded,
+                    color: context.appColors.textMuted),
+                onSelected: (v) {
+                  if (v == 'add_group') _addGroup(provider, index, level);
+                  if (v == 'delete_level') _deleteLevel(provider, index);
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'add_group', child: Text('Add Group')),
+                  PopupMenuItem(
+                      value: 'delete_level', child: Text('Delete Level')),
+                ],
               ),
-            for (final group in level.groups)
-              ListTile(
-                leading:
-                    const Icon(Icons.class_rounded, color: AppColors.accent),
-                title: Text(group,
-                    style: TextStyle(color: context.appColors.textPrimary)),
-                trailing: IconButton(
-                  icon:
-                      const Icon(Icons.delete_outline, color: AppColors.danger),
-                  onPressed: () => _deleteGroup(provider, index, level, group),
-                ),
-              ),
-          ],
-        ),
-      ),
+              children: [
+                if (level.groups.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Text('No groups yet. Use the menu to add one.',
+                        style: TextStyle(
+                            color: context.appColors.textMuted, fontSize: 12)),
+                  ),
+                for (final group in level.groups)
+                  ListTile(
+                    leading: Icon(Icons.class_rounded,
+                        color: context.appColors.accentText),
+                    title: Text(group,
+                        style: TextStyle(color: context.appColors.textPrimary)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline,
+                          color: AppColors.danger),
+                      onPressed: () =>
+                          _deleteGroup(provider, index, level, group),
+                    ),
+                  ),
+              ],
+            ),
+          )),
     );
   }
 

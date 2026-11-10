@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -106,11 +107,13 @@ class StudentTestReportScreen extends StatelessWidget {
                     children: [
                       Icon(Icons.analytics_outlined,
                           size: 64,
-                          color: AppColors.textMuted.withValues(alpha: 0.3)),
+                          color: context.appColors.textMuted
+                              .withValues(alpha: 0.3)),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         "No test records found for this student.",
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style:
+                            TextStyle(color: context.appColors.textSecondary),
                       ),
                     ],
                   ),
@@ -119,7 +122,7 @@ class StudentTestReportScreen extends StatelessWidget {
 
               return Column(
                 children: [
-                  _buildSummaryHeader(results),
+                  _buildSummaryHeader(context, results),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                     child: Align(
@@ -155,7 +158,7 @@ class StudentTestReportScreen extends StatelessWidget {
                       itemCount: results.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, index) =>
-                          _resultTile(results[index]),
+                          _resultTile(context, results[index]),
                     ),
                   ),
                 ],
@@ -164,7 +167,8 @@ class StudentTestReportScreen extends StatelessWidget {
           );
   }
 
-  Widget _buildSummaryHeader(List<TestMarkModel> results) {
+  Widget _buildSummaryHeader(
+      BuildContext context, List<TestMarkModel> results) {
     final double avgPercentage =
         results.map((r) => r.percentage).reduce((a, b) => a + b) /
             results.length;
@@ -177,7 +181,7 @@ class StudentTestReportScreen extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             AppColors.accent.withValues(alpha: 0.2),
-            AppColors.surface,
+            context.appColors.surface,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -191,20 +195,21 @@ class StudentTestReportScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("OVERALL PROGRESS",
+              Text("OVERALL PROGRESS",
                   style: TextStyle(
-                      color: AppColors.accent,
+                      color: context.appColors.accentText,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1)),
               const SizedBox(height: 8),
               Text("${avgPercentage.toStringAsFixed(1)}%",
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontSize: 32,
                       fontWeight: FontWeight.w900)),
-              const Text("Average Percentage",
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text("Average Percentage",
+                  style: TextStyle(
+                      color: context.appColors.textMuted, fontSize: 12)),
             ],
           ),
           Container(
@@ -233,13 +238,14 @@ class StudentTestReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _resultTile(TestMarkModel res) {
+  Widget _resultTile(BuildContext context, TestMarkModel res) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
@@ -265,15 +271,15 @@ class StudentTestReportScreen extends StatelessWidget {
               children: [
                 Text(
                   res.subject,
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontWeight: FontWeight.w700,
                       fontSize: 15),
                 ),
                 Text(
                   DateFormat('MMM d, yyyy').format(res.updatedAt),
-                  style:
-                      const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  style: TextStyle(
+                      color: context.appColors.textMuted, fontSize: 12),
                 ),
               ],
             ),
@@ -283,15 +289,15 @@ class StudentTestReportScreen extends StatelessWidget {
             children: [
               Text(
                 "${res.marksObtained.toStringAsAlpha(0)} / ${res.totalMarks.toStringAsAlpha(0)}",
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: context.appColors.textPrimary,
                     fontWeight: FontWeight.w800,
                     fontSize: 16),
               ),
               Text(
                 "${res.percentage.toStringAsFixed(0)}%",
-                style: const TextStyle(
-                    color: AppColors.accent,
+                style: TextStyle(
+                    color: context.appColors.accentText,
                     fontSize: 12,
                     fontWeight: FontWeight.bold),
               ),

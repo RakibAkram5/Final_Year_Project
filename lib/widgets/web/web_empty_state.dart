@@ -42,7 +42,7 @@ class WebEmptyState extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: Icon(icon, size: 36, color: AppColors.accentDark),
+            child: Icon(icon, size: 36, color: context.appColors.accentText),
           ),
           const SizedBox(height: 20),
           Text(title,

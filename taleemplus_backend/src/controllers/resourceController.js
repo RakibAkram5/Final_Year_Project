@@ -1,6 +1,8 @@
 const prisma = require('../config/db');
 const { toIso } = require('../utils/dto');
-const { notFound } = require('../utils/apiError');
+const { notFound, forbidden } = require('../utils/apiError');
+const { canManageClass } = require('../services/fileAccess');
+const { deleteFilesForOwner, toDto: fileDto } = require('./fileController');
 const { sendSuccess } = require('../utils/response');
 const {
   assertClassInAcademy,
@@ -66,6 +68,10 @@ const getResources = async (req, res, next) => {
     const whereClause = { academyId: req.academyId };
     if (classId) {
       await assertClassInAcademy(classId, req.academyId);
+      const scoped = await visibleClassIds(req);
+      if (scoped && !scoped.includes(classId)) {
+        throw forbidden('You cannot view materials for this class.');
+      }
       whereClause.classId = classId;
     } else {
       const scoped = await visibleClassIds(req);
@@ -80,7 +86,22 @@ const getResources = async (req, res, next) => {
       take: 500
     });
 
-    return sendSuccess(res, resources.map(formatResource));
+    // Attach uploaded files (metadata only; bytes are fetched through the
+    // authorised /files/:id/content route).
+    const files = resources.length
+      ? await prisma.storedFile.findMany({
+          where: {
+            academyId: req.academyId,
+            category: 'COURSE_MATERIAL',
+            ownerId: { in: resources.map((r) => r.id) }
+          },
+          orderBy: { createdAt: 'asc'}
+        })
+      : [];
+    return sendSuccess(res, resources.map((r) => ({
+      ...formatResource(r),
+      files: files.filter((f) => f.ownerId === r.id).map(fileDto)
+    })));
   } catch (err) {
     next(err);
   }
@@ -89,12 +110,9 @@ const getResources = async (req, res, next) => {
 const createResource = async (req, res, next) => {
   try {
     const { classId, title, description, fileUrl, contentText, fileName, mimeType } = req.body;
-    await assertClassInAcademy(classId, req.academyId);
-    if (!fileUrl && !contentText) {
-      return res.status(400).json({
-        success: false,
-        message: 'A file URL or text content is required.'
-      });
+    const cls = await assertClassInAcademy(classId, req.academyId);
+    if (!canManageClass(req, cls)) {
+      throw forbidden('You can only share materials with classes you teach.');
     }
 
     const resource = await prisma.sharedResource.create({
@@ -121,12 +139,23 @@ const createResource = async (req, res, next) => {
   }
 };
 
+/** Admin, the uploading teacher, or the class's teacher may change it. */
+const loadManagedResource = async (req) => {
+  const existing = await prisma.sharedResource.findFirst({
+    where: { id: req.params.id, academyId: req.academyId },
+    include: { class: true }
+  });
+  if (!existing) throw notFound('Resource not found in this academy.');
+  const owner = req.user.role === 'TEACHER' && existing.teacherId === req.user.id;
+  if (!owner && !canManageClass(req, existing.class)) {
+    throw forbidden('You can only change materials you shared or for classes you teach.');
+  }
+  return existing;
+};
+
 const updateResource = async (req, res, next) => {
   try {
-    const existing = await prisma.sharedResource.findFirst({
-      where: { id: req.params.id, academyId: req.academyId }
-    });
-    if (!existing) throw notFound('Resource not found in this academy.');
+    const existing = await loadManagedResource(req);
     const data = {};
     for (const field of ['title', 'description', 'fileUrl', 'contentText', 'fileName', 'mimeType']) {
       if (req.body[field] !== undefined) {
@@ -151,10 +180,9 @@ const updateResource = async (req, res, next) => {
 
 const deleteResource = async (req, res, next) => {
   try {
-    const deleted = await prisma.sharedResource.deleteMany({
-      where: { id: req.params.id, academyId: req.academyId }
-    });
-    if (!deleted.count) throw notFound('Resource not found in this academy.');
+    const existing = await loadManagedResource(req);
+    await deleteFilesForOwner(req.academyId, 'COURSE_MATERIAL', existing.id);
+    await prisma.sharedResource.delete({ where: { id: existing.id } });
     return sendSuccess(res, { deleted: true }, {
       message: 'Resource deleted successfully.'
     });

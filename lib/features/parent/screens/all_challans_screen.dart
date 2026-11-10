@@ -55,7 +55,7 @@ class AllChallansScreen extends StatelessWidget {
   Widget _body(BuildContext context) {
     final children = context.watch<ParentProvider>().children;
     return children.isEmpty
-        ? _buildNoChildrenState()
+        ? _buildNoChildrenState(context)
         : ListView.separated(
             padding: const EdgeInsets.all(20),
             itemCount: children.length,
@@ -87,8 +87,9 @@ class AllChallansScreen extends StatelessWidget {
                   child.fullName.isNotEmpty
                       ? child.fullName[0].toUpperCase()
                       : '?',
-                  style: const TextStyle(
-                      color: AppColors.accent, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: context.appColors.accentText,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(width: 14),
@@ -101,9 +102,9 @@ class AllChallansScreen extends StatelessWidget {
                             color: context.appColors.textPrimary,
                             fontWeight: FontWeight.bold,
                             fontSize: 16)),
-                    const Text("Student Profile",
+                    Text("Student Profile",
                         style: TextStyle(
-                            color: AppColors.textMuted, fontSize: 12)),
+                            color: context.appColors.textMuted, fontSize: 12)),
                   ],
                 ),
               ),
@@ -132,23 +133,24 @@ class AllChallansScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNoChildrenState() {
-    return const Center(
+  Widget _buildNoChildrenState(BuildContext context) {
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(40),
+        padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.child_care_rounded,
-                size: 64, color: AppColors.textMuted),
-            SizedBox(height: 16),
+                size: 64, color: context.appColors.textMuted),
+            const SizedBox(height: 16),
             Text("No children linked",
                 style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                     fontWeight: FontWeight.bold)),
             Text("Please link a child first to see their fee challans.",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                style: TextStyle(
+                    color: context.appColors.textMuted, fontSize: 12)),
           ],
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_extensions.dart';
 import '../../core/web/web_breakpoints.dart';
 import '../../data/models/app_user.dart';
 import '../../data/models/class_entity.dart';
@@ -17,8 +18,10 @@ import 'class_sections_screen.dart';
 import 'screens/class_fee_status_screen.dart';
 import '../../widgets/app_widgets.dart';
 import '../../widgets/gradient_background.dart';
+import '../../widgets/responsive/responsive_action_tile.dart';
 import '../../widgets/student_roster_dialog.dart';
 import '../../widgets/web/web_nav_items.dart';
+import '../../widgets/responsive/responsive_row.dart';
 import '../../widgets/web/web_shell.dart';
 
 class ClassManagementScreen extends StatefulWidget {
@@ -165,92 +168,78 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
   }
 
   Widget _emptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.class_outlined, size: 56, color: AppColors.textMuted),
-          SizedBox(height: 12),
+          Icon(Icons.class_outlined,
+              size: 56, color: context.appColors.textMuted),
+          const SizedBox(height: 12),
           Text('No classes yet',
-              style: TextStyle(color: AppColors.textSecondary)),
-          SizedBox(height: 4),
+              style: TextStyle(color: context.appColors.textSecondary)),
+          const SizedBox(height: 4),
           Text('Tap "New Class" to create one',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              style:
+                  TextStyle(color: context.appColors.textMuted, fontSize: 12)),
         ],
       ),
     );
   }
 
   Widget _classTile(ClassEntity c) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+    final colors = context.appColors;
+    return ResponsiveActionTile(
+      key: ValueKey('class-tile-${c.id}'),
+      leading: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: AppColors.accent.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(Icons.class_rounded, color: context.appColors.accentText),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.class_rounded, color: AppColors.accent),
+      title: c.displayLabel,
+      subtitles: [
+        if (c.primaryTeacherName.isNotEmpty)
+          Text('Teacher: ${c.primaryTeacherName}',
+              style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+        Text(
+            '${c.enrollmentCount} student${c.enrollmentCount == 1 ? '' : 's'} enrolled',
+            style:
+                TextStyle(color: context.appColors.accentText, fontSize: 12)),
+      ],
+      actions: [
+        TileAction(
+          icon: Icons.visibility_rounded,
+          label: 'View students',
+          onPressed: () => showStudentRosterDialog(
+            context,
+            title: c.displayLabel,
+            studentNames: c.studentNames,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(c.displayLabel,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15)),
-                const SizedBox(height: 2),
-                if (c.primaryTeacherName.isNotEmpty)
-                  Text('Teacher: ${c.primaryTeacherName}',
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 12)),
-                Text(
-                    '${c.enrollmentCount} student${c.enrollmentCount == 1 ? '' : 's'} enrolled',
-                    style:
-                        const TextStyle(color: AppColors.accent, fontSize: 12)),
-              ],
-            ),
+        ),
+        TileAction(
+          icon: Icons.edit_note_rounded,
+          label: 'Edit details',
+          onPressed: () => _openEditClassSheet(c),
+        ),
+        TileAction(
+          icon: Icons.payments_rounded,
+          label: 'Fee status',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => ClassFeeStatusScreen(classEntity: c)),
           ),
-          IconButton(
-            icon: const Icon(Icons.visibility_rounded, color: AppColors.accent),
-            tooltip: 'View Students',
-            onPressed: () => showStudentRosterDialog(
-              context,
-              title: c.displayLabel,
-              studentNames: c.studentNames,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_note_rounded, color: AppColors.accent),
-            tooltip: 'Edit Details',
-            onPressed: () => _openEditClassSheet(c),
-          ),
-          IconButton(
-            icon: const Icon(Icons.payments_rounded, color: AppColors.accent),
-            tooltip: 'Fee Status',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => ClassFeeStatusScreen(classEntity: c)),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-            onPressed: () => _confirmDelete(c),
-          ),
-        ],
-      ),
+        ),
+        TileAction(
+          icon: Icons.delete_outline,
+          label: 'Delete class',
+          destructive: true,
+          onPressed: () => _confirmDelete(c),
+        ),
+      ],
     );
   }
 
@@ -258,17 +247,17 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
-        title: const Text('Delete class?',
-            style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: context.appColors.surfaceAlt,
+        title: Text('Delete class?',
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: Text(
             'Remove ${c.displayLabel} and all its attendance records?',
-            style: const TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: context.appColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('Cancel',
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -468,9 +457,9 @@ class _EditClassSheetState extends State<_EditClassSheet> {
           const Text('Edit Class Details',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 24),
-          const Text('CLASS & SECTION',
+          Text('CLASS & SECTION',
               style: TextStyle(
-                  color: AppColors.textMuted,
+                  color: context.appColors.textMuted,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1)),
@@ -479,23 +468,24 @@ class _EditClassSheetState extends State<_EditClassSheet> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
-                color: AppColors.inputFill,
+                color: context.appColors.inputFill,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border)),
+                border: Border.all(color: context.appColors.border)),
             child: Text(
                 '${widget.classEntity.className} - ${widget.classEntity.section}',
-                style: const TextStyle(color: AppColors.textPrimary)),
+                style: TextStyle(color: context.appColors.textPrimary)),
           ),
-          const Text(
+          Text(
               'Change the section from Classes & Sections instead — '
               'this only edits the subject/teacher assigned here.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              style:
+                  TextStyle(color: context.appColors.textMuted, fontSize: 11)),
           const SizedBox(height: 16),
           LabeledField(
               label: 'Subject', hint: 'e.g. Maths', controller: _subjectCtrl),
-          const Text('ASSIGNED TEACHER',
+          Text('ASSIGNED TEACHER',
               style: TextStyle(
-                  color: AppColors.textMuted,
+                  color: context.appColors.textMuted,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1)),
@@ -503,18 +493,18 @@ class _EditClassSheetState extends State<_EditClassSheet> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-                color: AppColors.inputFill,
+                color: context.appColors.inputFill,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border)),
+                border: Border.all(color: context.appColors.border)),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<AppUser>(
                 value: _selectedTeacher,
                 isExpanded: true,
-                dropdownColor: AppColors.surfaceAlt,
+                dropdownColor: context.appColors.surfaceAlt,
                 hint: const Text('Select a teacher'),
                 items: widget.teachers
-                    .map((t) =>
-                        DropdownMenuItem(value: t, child: Text(t.fullName)))
+                    .map((t) => DropdownMenuItem(
+                        value: t, child: DropdownLabel(t.fullName)))
                     .toList(),
                 onChanged: (t) => setState(() => _selectedTeacher = t),
               ),
@@ -640,21 +630,21 @@ class _AddClassSheetState extends State<_AddClassSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: context.appColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              const Text('Create Class',
+              Text('Create Class',
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   )),
               const SizedBox(height: 20),
-              const Text('CLASS',
+              Text('CLASS',
                   style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1)),
@@ -662,22 +652,23 @@ class _AddClassSheetState extends State<_AddClassSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.inputFill,
+                  color: context.appColors.inputFill,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.appColors.border),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedClassName,
                     isExpanded: true,
-                    dropdownColor: AppColors.surfaceAlt,
-                    hint: const Text('Select a class',
-                        style: TextStyle(color: AppColors.textMuted)),
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    dropdownColor: context.appColors.surfaceAlt,
+                    hint: Text('Select a class',
+                        style: TextStyle(color: context.appColors.textMuted)),
+                    style: TextStyle(color: context.appColors.textPrimary),
                     items: context
                         .watch<AcademicStructureProvider>()
                         .flatClassNames
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .map((c) =>
+                            DropdownMenuItem(value: c, child: DropdownLabel(c)))
                         .toList(),
                     onChanged: (c) => setState(() {
                       _selectedClassName = c;
@@ -687,9 +678,9 @@ class _AddClassSheetState extends State<_AddClassSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('SECTION',
+              Text('SECTION',
                   style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1)),
@@ -697,23 +688,23 @@ class _AddClassSheetState extends State<_AddClassSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.inputFill,
+                  color: context.appColors.inputFill,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.appColors.border),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<ClassSectionEntity>(
                     value: _selectedSection,
                     isExpanded: true,
-                    dropdownColor: AppColors.surfaceAlt,
+                    dropdownColor: context.appColors.surfaceAlt,
                     hint: Text(
                         _selectedClassName == null
                             ? 'Pick a class first'
                             : _sectionsForSelectedClass.isEmpty
                                 ? 'No sections yet — add one in Classes & Sections'
                                 : 'Select a section',
-                        style: const TextStyle(color: AppColors.textMuted)),
-                    style: const TextStyle(color: AppColors.textPrimary),
+                        style: TextStyle(color: context.appColors.textMuted)),
+                    style: TextStyle(color: context.appColors.textPrimary),
                     items: _sectionsForSelectedClass
                         .map((s) => DropdownMenuItem(
                               value: s,
@@ -732,9 +723,9 @@ class _AddClassSheetState extends State<_AddClassSheet> {
                 hint: 'e.g. Physics, Mathematics',
                 controller: _subjectCtrl,
               ),
-              const Text('PRIMARY TEACHER',
+              Text('PRIMARY TEACHER',
                   style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1)),
@@ -742,22 +733,22 @@ class _AddClassSheetState extends State<_AddClassSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.inputFill,
+                  color: context.appColors.inputFill,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.appColors.border),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<AppUser>(
                     value: _selectedTeacher,
                     isExpanded: true,
-                    dropdownColor: AppColors.surfaceAlt,
-                    hint: const Text('Select a teacher',
-                        style: TextStyle(color: AppColors.textMuted)),
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    dropdownColor: context.appColors.surfaceAlt,
+                    hint: Text('Select a teacher',
+                        style: TextStyle(color: context.appColors.textMuted)),
+                    style: TextStyle(color: context.appColors.textPrimary),
                     items: widget.teachers
                         .map((t) => DropdownMenuItem(
                               value: t,
-                              child: Text(t.fullName),
+                              child: DropdownLabel(t.fullName),
                             ))
                         .toList(),
                     onChanged: (t) => setState(() => _selectedTeacher = t),
@@ -770,8 +761,8 @@ class _AddClassSheetState extends State<_AddClassSheet> {
                       ? 'Students are enrolled once per section, from Classes & Sections.'
                       : '${_selectedSection!.enrollmentCount} student(s) from '
                           '${_selectedSection!.displayLabel} will be enrolled automatically.',
-                  style: const TextStyle(
-                      color: AppColors.textMuted, fontSize: 11)),
+                  style: TextStyle(
+                      color: context.appColors.textMuted, fontSize: 11)),
               const SizedBox(height: 20),
               PrimaryButton(
                 label: 'Create Class',

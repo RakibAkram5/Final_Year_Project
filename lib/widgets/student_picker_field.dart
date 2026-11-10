@@ -57,7 +57,7 @@ class _StudentPickerFieldState extends State<StudentPickerField> {
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       setState(() => _searching = true);
       final results =
-          await AuthService().searchStudentsByName(q, widget.academyId);
+          await AuthService().searchStudentsByName(widget.academyId, q);
       if (!mounted) return;
       setState(() {
         _searching = false;
@@ -120,8 +120,8 @@ class _StudentPickerFieldState extends State<StudentPickerField> {
           style: TextStyle(color: context.appColors.textPrimary),
           decoration: InputDecoration(
             hintText: 'Search student by name or email...',
-            prefixIcon: const Icon(Icons.search_rounded,
-                color: AppColors.accent, size: 20),
+            prefixIcon: Icon(Icons.search_rounded,
+                color: context.appColors.accentText, size: 20),
             suffixIcon: _searching
                 ? const Padding(
                     padding: EdgeInsets.all(14),

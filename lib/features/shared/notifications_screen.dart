@@ -53,8 +53,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 if (!hasUnread) return const SizedBox.shrink();
                 return TextButton(
                   onPressed: () => _markAllAsRead(uid, academyId),
-                  child: const Text("Mark all as read",
-                      style: TextStyle(color: AppColors.accent)),
+                  child: Text("Mark all as read",
+                      style: TextStyle(color: context.appColors.accentText)),
                 );
               },
             ),
@@ -117,8 +117,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         if (!hasUnread) return const SizedBox.shrink();
                         return TextButton(
                           onPressed: () => _markAllAsRead(uid, academyId),
-                          child: const Text("Mark all as read",
-                              style: TextStyle(color: AppColors.accent)),
+                          child: Text("Mark all as read",
+                              style: TextStyle(
+                                  color: context.appColors.accentText)),
                         );
                       },
                     ),
@@ -199,10 +200,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.notifications_none_rounded,
-              size: 64, color: AppColors.textMuted),
+          Icon(Icons.notifications_none_rounded,
+              size: 64, color: context.appColors.textMuted),
           const SizedBox(height: 16),
-          Text(message, style: const TextStyle(color: AppColors.textSecondary)),
+          Text(message,
+              style: TextStyle(color: context.appColors.textSecondary)),
         ],
       ),
     );
@@ -222,7 +224,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
               color: n.isRead
-                  ? AppColors.border.withValues(alpha: 0.5)
+                  ? context.appColors.border.withValues(alpha: 0.5)
                   : AppColors.accent.withValues(alpha: 0.3)),
         ),
         child: Row(
@@ -254,8 +256,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           height: 1.4)),
                   const SizedBox(height: 8),
                   Text(DateFormat('d MMM, h:mm a').format(n.createdAt),
-                      style: const TextStyle(
-                          color: AppColors.textMuted,
+                      style: TextStyle(
+                          color: context.appColors.textMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.bold)),
                 ],
@@ -299,7 +301,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'announcement':
         return AppColors.accent;
       default:
-        return AppColors.textSecondary;
+        return context.appColors.textSecondary;
     }
   }
 }

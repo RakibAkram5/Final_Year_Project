@@ -16,6 +16,10 @@ class ClassEntity {
   final String primaryTeacherEmail;
   final List<String> studentIds;
   final Map<String, String> studentNames;
+
+  /// Total enrolled students reported by the server. Students and parents
+  /// only receive their own roster rows, so [studentIds] can be shorter.
+  final int? totalEnrolled;
   final DateTime createdAt;
 
   const ClassEntity({
@@ -29,10 +33,11 @@ class ClassEntity {
     this.primaryTeacherEmail = '',
     this.studentIds = const [],
     this.studentNames = const {},
+    this.totalEnrolled,
     required this.createdAt,
   });
 
-  int get enrollmentCount => studentIds.length;
+  int get enrollmentCount => totalEnrolled ?? studentIds.length;
 
   /// Display label like "Class 10 - A (Physics)"
   String get displayLabel {
@@ -77,6 +82,7 @@ class ClassEntity {
       studentNames: (rawNames is Map)
           ? rawNames.map((k, v) => MapEntry(k.toString(), (v ?? '').toString()))
           : const {},
+      totalEnrolled: (map['enrollment_count'] as num?)?.toInt(),
       createdAt: ApiClient.parseDate(ts) ?? DateTime.now(),
     );
   }

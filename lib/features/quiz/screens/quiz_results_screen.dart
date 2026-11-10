@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -83,12 +84,12 @@ class QuizResultsScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _quizHeader(),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        _quizHeader(context),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Text('STUDENT RECORDS',
               style: TextStyle(
-                  color: AppColors.textMuted,
+                  color: context.appColors.textMuted,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1)),
@@ -110,9 +111,10 @@ class QuizResultsScreen extends StatelessWidget {
               }
               final list = snap.data ?? [];
               if (list.isEmpty) {
-                return const Center(
+                return Center(
                     child: Text('No marks uploaded yet',
-                        style: TextStyle(color: AppColors.textSecondary)));
+                        style:
+                            TextStyle(color: context.appColors.textSecondary)));
               }
               return ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -127,7 +129,7 @@ class QuizResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _quizHeader() {
+  Widget _quizHeader(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(16),
@@ -140,23 +142,23 @@ class QuizResultsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(quiz.title,
-              style: const TextStyle(
-                  color: AppColors.accent,
+              style: TextStyle(
+                  color: context.appColors.accentText,
                   fontSize: 18,
                   fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text("${quiz.subject} • Total Marks: ${quiz.totalMarks}",
-              style:
-                  const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+              style: TextStyle(
+                  color: context.appColors.textPrimary, fontSize: 14)),
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.calendar_today_rounded,
-                  size: 14, color: AppColors.textMuted),
+              Icon(Icons.calendar_today_rounded,
+                  size: 14, color: context.appColors.textMuted),
               const SizedBox(width: 6),
               Text("Date: ${DateFormat('MMM d, yyyy').format(quiz.testDate)}",
-                  style: const TextStyle(
-                      color: AppColors.textMuted, fontSize: 12)),
+                  style: TextStyle(
+                      color: context.appColors.textMuted, fontSize: 12)),
             ],
           ),
         ],
@@ -173,9 +175,10 @@ class QuizResultsScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.6),
+            color: context.appColors.surface.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            border: Border.all(
+                color: context.appColors.border.withValues(alpha: 0.5)),
           ),
           child: Row(
             children: [
@@ -184,8 +187,8 @@ class QuizResultsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(mark.studentName,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
+                        style: TextStyle(
+                            color: context.appColors.textPrimary,
                             fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Text("Grade: ${mark.gradeLetter}",
@@ -200,13 +203,13 @@ class QuizResultsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text("${mark.marksObtained} / ${mark.totalMarks}",
-                      style: const TextStyle(
-                          color: AppColors.accent,
+                      style: TextStyle(
+                          color: context.appColors.accentText,
                           fontWeight: FontWeight.bold,
                           fontSize: 16)),
                   Text("${mark.percentage.toStringAsFixed(1)}%",
-                      style: const TextStyle(
-                          color: AppColors.textMuted, fontSize: 11)),
+                      style: TextStyle(
+                          color: context.appColors.textMuted, fontSize: 11)),
                 ],
               ),
               IconButton(
@@ -229,9 +232,9 @@ class QuizResultsScreen extends StatelessWidget {
     final result = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
+        backgroundColor: context.appColors.surfaceAlt,
         title: Text("Edit ${mark.studentName}'s Marks",
-            style: const TextStyle(color: AppColors.textPrimary)),
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -294,11 +297,11 @@ class QuizResultsScreen extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
-        title: const Text('Delete this mark?',
-            style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: context.appColors.surfaceAlt,
+        title: Text('Delete this mark?',
+            style: TextStyle(color: context.appColors.textPrimary)),
         content: Text("Remove ${mark.studentName}'s mark for this test?",
-            style: const TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: context.appColors.textSecondary)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -333,12 +336,12 @@ class QuizResultsScreen extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
-        title: const Text('Delete Records?',
-            style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text(
+        backgroundColor: context.appColors.surfaceAlt,
+        title: Text('Delete Records?',
+            style: TextStyle(color: context.appColors.textPrimary)),
+        content: Text(
             'This will remove the test and all associated marks permanently.',
-            style: TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: context.appColors.textSecondary)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),

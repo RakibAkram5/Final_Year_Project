@@ -42,8 +42,8 @@ class LatestAnnouncementCard extends StatelessWidget {
                       color: AppColors.accent.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.campaign_rounded,
-                        color: AppColors.accent, size: 18),
+                    child: Icon(Icons.campaign_rounded,
+                        color: context.appColors.accentText, size: 18),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -79,7 +79,8 @@ class LatestAnnouncementCard extends StatelessWidget {
                     ),
                   ),
                   if (onTap != null)
-                    const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                    Icon(Icons.chevron_right,
+                        color: context.appColors.textMuted),
                 ],
               ),
             ),

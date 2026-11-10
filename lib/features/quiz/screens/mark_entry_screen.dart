@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/theme_extensions.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../logic/quiz_provider.dart';
@@ -183,13 +184,13 @@ class _MarkEntryScreenState extends State<MarkEntryScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(widget.quiz.title,
-              style: const TextStyle(
-                  color: AppColors.accent,
+              style: TextStyle(
+                  color: context.appColors.accentText,
                   fontWeight: FontWeight.bold,
                   fontSize: 16)),
           Text("${widget.quiz.subject} • Total: ${widget.quiz.totalMarks}",
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12)),
+              style: TextStyle(
+                  color: context.appColors.textSecondary, fontSize: 12)),
         ],
       ),
     );
@@ -199,16 +200,17 @@ class _MarkEntryScreenState extends State<MarkEntryScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
           Expanded(
               child: Text(name,
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontWeight: FontWeight.w600))),
           SizedBox(
             width: 80,
@@ -216,8 +218,9 @@ class _MarkEntryScreenState extends State<MarkEntryScreen> {
               controller: _markControllers[uid],
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: AppColors.accent, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: context.appColors.accentText,
+                  fontWeight: FontWeight.bold),
               decoration: const InputDecoration(
                 hintText: "0.0",
                 contentPadding: EdgeInsets.zero,

@@ -3,7 +3,22 @@ const { forbidden, notFound } = require('../utils/apiError');
 const { sendSuccess } = require('../utils/response');
 const { toIso } = require('../utils/dto');
 
-const formatClass = (entity) => ({
+/**
+ * Serialises a class. [visibleStudentIds] limits the roster (ids, names, roll
+ * numbers) to the students the caller may see: students and parents only get
+ * themselves / their linked children, never the whole class list. The total
+ * size is still exposed as enrollment_count.
+ */
+const formatClass = (entity, visibleStudentIds = null) => {
+  const all = entity.enrollments || [];
+  const enrollments = visibleStudentIds
+    ? all.filter((e) => visibleStudentIds.has(e.studentId))
+    : all;
+  return formatClassRows(entity, enrollments, all.length);
+};
+
+const formatClassRows = (entity, enrollments, enrollmentCount) => ({
+  enrollment_count: enrollmentCount,
   id: entity.id,
   academy_id: entity.academyId,
   class_name: entity.className,
@@ -14,15 +29,15 @@ const formatClass = (entity) => ({
   primary_teacher_id: entity.primaryTeacherId,
   primary_teacher_name: entity.primaryTeacher?.fullName || '',
   primary_teacher_email: entity.primaryTeacher?.email || '',
-  student_ids: (entity.enrollments || []).map((enrollment) => enrollment.studentId),
+  student_ids: enrollments.map((enrollment) => enrollment.studentId),
   student_names: Object.fromEntries(
-    (entity.enrollments || []).map((enrollment) => [
+    enrollments.map((enrollment) => [
       enrollment.studentId,
       enrollment.student?.fullName || ''
     ])
   ),
   student_roll_numbers: Object.fromEntries(
-    (entity.enrollments || []).map((enrollment) => [
+    enrollments.map((enrollment) => [
       enrollment.studentId,
       enrollment.rollNumber || enrollment.student?.rollNumber || ''
     ])
@@ -57,6 +72,19 @@ const getTenantFilter = async (req) => {
   return {};
 };
 
+/** Students whose roster rows the caller may see; null = everyone. */
+const visibleStudentIdsFor = async (req) => {
+  if (req.user.role === 'STUDENT') return new Set([req.user.id]);
+  if (req.user.role === 'PARENT') {
+    const links = await prisma.parentStudent.findMany({
+      where: { parentId: req.user.id },
+      select: { studentId: true }
+    });
+    return new Set(links.map((l) => l.studentId));
+  }
+  return null;
+};
+
 const getClasses = async (req, res, next) => {
   try {
     const classes = await prisma.class.findMany({
@@ -64,7 +92,8 @@ const getClasses = async (req, res, next) => {
       include: classInclude,
       orderBy: [{ className: 'asc' }, { section: 'asc' }, { subject: 'asc' }]
     });
-    return sendSuccess(res, classes.map(formatClass));
+    const visible = await visibleStudentIdsFor(req);
+    return sendSuccess(res, classes.map((c) => formatClass(c, visible)));
   } catch (err) {
     next(err);
   }
@@ -217,6 +246,20 @@ const deleteClass = async (req, res, next) => {
       where: { id, academyId: req.academyId }
     });
     if (!existing) throw notFound('Class not found in academy.');
+    // Uploaded files are keyed by owner id (no FK), so remove them first.
+    const { deleteFilesForOwner } = require('./fileController');
+    const [resources, assignments] = await Promise.all([
+      prisma.sharedResource.findMany({ where: { classId: id }, select: { id: true } }),
+      prisma.assignment.findMany({
+        where: { classId: id },
+        select: { id: true, submissions: { select: { id: true } } }
+      })
+    ]);
+    for (const r of resources) await deleteFilesForOwner(req.academyId, 'COURSE_MATERIAL', r.id);
+    for (const a of assignments) {
+      await deleteFilesForOwner(req.academyId, 'ASSIGNMENT_INSTRUCTION', a.id);
+      for (const s of a.submissions) await deleteFilesForOwner(req.academyId, 'ASSIGNMENT_SUBMISSION', s.id);
+    }
     await prisma.class.delete({ where: { id } });
     return sendSuccess(res, { deleted: true }, { message: 'Class deleted successfully.' });
   } catch (err) {

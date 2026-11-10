@@ -43,7 +43,10 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.taleem_plus"
+        // Play-Store-valid application identity. Kept separate from `namespace`
+        // (which stays com.example.taleem_plus for the generated R/BuildConfig
+        // and MainActivity) so no Kotlin sources need to move.
+        applicationId = "com.taleemplus.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

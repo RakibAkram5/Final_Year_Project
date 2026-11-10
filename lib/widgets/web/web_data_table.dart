@@ -225,7 +225,7 @@ class _WebDataTableState<T> extends State<WebDataTable<T>> {
                               ? Icons.arrow_upward_rounded
                               : Icons.arrow_downward_rounded,
                           size: 13,
-                          color: AppColors.accentDark),
+                          color: context.appColors.accentText),
                     ],
                   ],
                 ),

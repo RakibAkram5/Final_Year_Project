@@ -6,6 +6,10 @@ class ThemeProvider extends ChangeNotifier {
 
   ThemeMode _themeMode = ThemeMode.system;
 
+  /// Set once the user picks a theme, so a slower initial load of the saved
+  /// preference can never overwrite that choice.
+  bool _userChoseTheme = false;
+
   ThemeMode get themeMode => _themeMode;
 
   bool get isDarkMode {
@@ -24,7 +28,7 @@ class ThemeProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final savedTheme = prefs.getString(_themeKey);
 
-    if (savedTheme != null) {
+    if (savedTheme != null && !_userChoseTheme) {
       final mode = ThemeMode.values.firstWhere(
         (e) => e.name == savedTheme,
         orElse: () => ThemeMode.system,
@@ -37,6 +41,7 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
+    _userChoseTheme = true;
     if (_themeMode == mode) return;
 
     _themeMode = mode;

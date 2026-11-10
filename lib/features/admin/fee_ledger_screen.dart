@@ -267,9 +267,9 @@ class _FeeLedgerScreenState extends State<FeeLedgerScreen> {
                 ]);
         }),
         const SizedBox(height: 24),
-        const Text('BY CLASS & SECTION',
+        Text('BY CLASS & SECTION',
             style: TextStyle(
-                color: AppColors.textMuted,
+                color: context.appColors.textMuted,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1)),
@@ -293,20 +293,21 @@ class _FeeLedgerScreenState extends State<FeeLedgerScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.5),
+        color: context.appColors.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedMonth,
           isExpanded: true,
-          dropdownColor: AppColors.surfaceAlt,
+          dropdownColor: context.appColors.surfaceAlt,
           items: _availableMonths
               .map((m) => DropdownMenuItem(
                   value: m,
                   child: Text(m,
-                      style: const TextStyle(color: AppColors.textPrimary))))
+                      style: TextStyle(color: context.appColors.textPrimary))))
               .toList(),
           onChanged: (v) => setState(() => _selectedMonth = v!),
         ),
@@ -378,9 +379,10 @@ class _FeeLedgerScreenState extends State<FeeLedgerScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.55),
+          color: context.appColors.surface.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          border: Border.all(
+              color: context.appColors.border.withValues(alpha: 0.5)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,8 +391,8 @@ class _FeeLedgerScreenState extends State<FeeLedgerScreen> {
               children: [
                 Expanded(
                   child: Text(a.classLabel,
-                      style: const TextStyle(
-                          color: AppColors.textPrimary,
+                      style: TextStyle(
+                          color: context.appColors.textPrimary,
                           fontWeight: FontWeight.w700,
                           fontSize: 15)),
                 ),
@@ -407,8 +409,8 @@ class _FeeLedgerScreenState extends State<FeeLedgerScreen> {
             ),
             const SizedBox(height: 4),
             Text('${a.totalStudents} students',
-                style:
-                    const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                style: TextStyle(
+                    color: context.appColors.textMuted, fontSize: 12)),
             const SizedBox(height: 10),
             Row(
               children: [

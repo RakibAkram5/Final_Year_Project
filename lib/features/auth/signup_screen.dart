@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -161,16 +162,18 @@ class _SignupScreenState extends State<SignupScreen>
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Text("Academy Registered!",
+        backgroundColor: context.appColors.surface,
+        title: Text("Academy Registered!",
             style: TextStyle(
-                color: AppColors.accent, fontWeight: FontWeight.bold)),
+                color: context.appColors.accentText,
+                fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
                 "Your academy is ready. Share this code with your teachers and students to join:",
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                style: TextStyle(
+                    color: context.appColors.textSecondary, fontSize: 13)),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
@@ -179,8 +182,8 @@ class _SignupScreenState extends State<SignupScreen>
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.accent)),
               child: Text(code,
-                  style: const TextStyle(
-                      color: AppColors.accent,
+                  style: TextStyle(
+                      color: context.appColors.accentText,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2)),
@@ -202,7 +205,7 @@ class _SignupScreenState extends State<SignupScreen>
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         title: const Text("Request Sent"),
         content: const Text(
             "Your account is pending approval from the Academy Admin. You can login once they approve you."),
@@ -275,7 +278,8 @@ class _SignupScreenState extends State<SignupScreen>
       child: Row(
         children: [
           IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              icon:
+                  Icon(Icons.arrow_back, color: context.appColors.textPrimary),
               onPressed: () => Navigator.pop(context)),
           const Spacer(),
           const SizedBox(width: 40),
@@ -289,9 +293,10 @@ class _SignupScreenState extends State<SignupScreen>
       height: 52,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.5),
+        color: context.appColors.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: TabBar(
         controller: _tabController,
@@ -309,7 +314,7 @@ class _SignupScreenState extends State<SignupScreen>
           ],
         ),
         labelColor: AppColors.textOnAccent,
-        unselectedLabelColor: AppColors.textSecondary,
+        unselectedLabelColor: context.appColors.textSecondary,
         labelStyle: const TextStyle(
             fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
         unselectedLabelStyle: const TextStyle(
@@ -354,11 +359,11 @@ class _SignupScreenState extends State<SignupScreen>
               hint: "Full location",
               controller: _academyAddressCtrl),
         ] else ...[
-          const Align(
+          Align(
               alignment: Alignment.centerLeft,
               child: Text("I AM A:",
                   style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1))),
@@ -404,7 +409,7 @@ class _SignupScreenState extends State<SignupScreen>
                                 : Icons.vpn_key_rounded,
                             color: _linkedAcademyId != null
                                 ? AppColors.success
-                                : AppColors.accent),
+                                : context.appColors.accentText),
                   ),
                 ),
               ),
@@ -445,7 +450,7 @@ class _SignupScreenState extends State<SignupScreen>
                   suffix: IconButton(
                     icon: Icon(
                         _obscure ? Icons.visibility : Icons.visibility_off,
-                        color: AppColors.textMuted),
+                        color: context.appColors.textMuted),
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                 ),
@@ -468,33 +473,34 @@ class _SignupScreenState extends State<SignupScreen>
             controller: _confirmCtrl,
             obscure: _obscure,
             validator: (v) => Validators.confirmPassword(v, _passCtrl.text)),
-        const Align(
+        Align(
             alignment: Alignment.centerLeft,
             child: Text("RECOVERY QUESTION",
                 style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1))),
         const SizedBox(height: 4),
-        const Align(
+        Align(
             alignment: Alignment.centerLeft,
             child: Text(
                 "Used to verify it's you if you ever forget your password.",
-                style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                style: TextStyle(
+                    color: context.appColors.textMuted, fontSize: 11))),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.inputFill,
+            color: context.appColors.inputFill,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.appColors.border),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _securityQuestion,
               isExpanded: true,
-              dropdownColor: AppColors.surfaceAlt,
+              dropdownColor: context.appColors.surfaceAlt,
               items: SecurityQuestions.all
                   .map((q) => DropdownMenuItem(value: q, child: Text(q)))
                   .toList(),
@@ -529,13 +535,14 @@ class _SignupScreenState extends State<SignupScreen>
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
                 gradient: selected ? AppColors.accentButton : null,
-                color:
-                    selected ? null : AppColors.surface.withValues(alpha: 0.5),
+                color: selected
+                    ? null
+                    : context.appColors.surface.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                     color: selected
                         ? Colors.transparent
-                        : AppColors.border.withValues(alpha: 0.5)),
+                        : context.appColors.border.withValues(alpha: 0.5)),
                 boxShadow: selected
                     ? [
                         BoxShadow(
@@ -551,7 +558,7 @@ class _SignupScreenState extends State<SignupScreen>
                   style: TextStyle(
                     color: selected
                         ? AppColors.textOnAccent
-                        : AppColors.textSecondary,
+                        : context.appColors.textSecondary,
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
@@ -569,13 +576,14 @@ class _SignupScreenState extends State<SignupScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text("Already have an account? ",
-            style: TextStyle(color: AppColors.textSecondary)),
+        Text("Already have an account? ",
+            style: TextStyle(color: context.appColors.textSecondary)),
         GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: const Text("Log In",
+          child: Text("Log In",
               style: TextStyle(
-                  color: AppColors.accent, fontWeight: FontWeight.w700)),
+                  color: context.appColors.accentText,
+                  fontWeight: FontWeight.w700)),
         ),
       ],
     );

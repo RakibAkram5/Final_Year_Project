@@ -15,6 +15,20 @@ function decodeImage(data, mimeType) {
   return isPng || isJpeg ? bytes : null;
 }
 
+/** ISO 13616 IBAN check (mod-97). Accepts spaces; returns normalised IBAN or null. */
+function normalizeIban(value) {
+  const iban = String(value).replace(/\s+/g, '').toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(iban)) return null;
+  if (iban.startsWith('PK') && iban.length !== 24) return null;
+  const rearranged = iban.slice(4) + iban.slice(0, 4);
+  let remainder = 0;
+  for (const ch of rearranged) {
+    const digits = /[A-Z]/.test(ch) ? String(ch.charCodeAt(0) - 55) : ch;
+    for (const d of digits) remainder = (remainder * 10 + Number(d)) % 97;
+  }
+  return remainder === 1 ? iban : null;
+}
+
 const getSettings = async (req, res, next) => {
   try {
     const academy = await prisma.academy.findUnique({
@@ -23,6 +37,7 @@ const getSettings = async (req, res, next) => {
         name: true, paymentQrData: true, paymentQrMimeType: true,
         paymentProvider: true, paymentAccountTitle: true,
         paymentAccountDetails: true, paymentQrEnabled: true,
+        bankName: true, bankAccountNumber: true, bankIban: true, paymentInstructions: true,
       },
     });
     if (!academy) return res.status(404).json({ success: false, message: 'Academy not found.' });
@@ -34,20 +49,35 @@ const getSettings = async (req, res, next) => {
       accountTitle: academy.paymentAccountTitle,
       accountDetails: academy.paymentAccountDetails,
       enabled: academy.paymentQrEnabled,
+      bankName: academy.bankName,
+      bankAccountNumber: academy.bankAccountNumber,
+      bankIban: academy.bankIban,
+      paymentInstructions: academy.paymentInstructions,
     } });
   } catch (err) { next(err); }
 };
 
 const updateSettings = async (req, res, next) => {
   try {
-    const { qrImageBase64, qrMimeType, provider, accountTitle, accountDetails, enabled } = req.body;
+    const { qrImageBase64, qrMimeType, provider, accountTitle, accountDetails, enabled,
+      bankName, bankAccountNumber, bankIban, paymentInstructions } = req.body;
     if (typeof enabled !== 'boolean') return res.status(400).json({ success: false, message: 'enabled must be a boolean.' });
     for (const [key, value, max] of [
       ['provider', provider, 60], ['accountTitle', accountTitle, 120], ['accountDetails', accountDetails, 220],
+      ['bankName', bankName, 80], ['bankAccountNumber', bankAccountNumber, 34],
+      ['bankIban', bankIban, 40], ['paymentInstructions', paymentInstructions, 1000],
     ]) {
       if (value != null && (typeof value !== 'string' || value.length > max)) {
         return res.status(400).json({ success: false, message: `Invalid ${key}.` });
       }
+    }
+    if (bankAccountNumber && !/^[0-9][0-9 -]{5,32}$/.test(bankAccountNumber.trim())) {
+      return res.status(400).json({ success: false, message: 'Account number may contain only digits, spaces and dashes.' });
+    }
+    let iban = null;
+    if (bankIban && bankIban.trim()) {
+      iban = normalizeIban(bankIban);
+      if (!iban) return res.status(400).json({ success: false, message: 'The IBAN is not valid (check the length and digits).' });
     }
     let imageUpdate = {};
     if (qrImageBase64 === null) imageUpdate = { paymentQrData: null, paymentQrMimeType: null };
@@ -56,7 +86,8 @@ const updateSettings = async (req, res, next) => {
       if (!bytes) return res.status(400).json({ success: false, message: 'QR image must be a valid PNG or JPEG under 512 KB.' });
       imageUpdate = { paymentQrData: bytes, paymentQrMimeType: qrMimeType };
     }
-    if (enabled && !String(accountDetails || '').trim()) {
+    const hasBank = Boolean(String(bankAccountNumber || '').trim() || iban);
+    if (enabled && !String(accountDetails || '').trim() && !hasBank) {
       return res.status(400).json({ success: false, message: 'Add verified payment account details before enabling payment instructions.' });
     }
     await prisma.academy.update({
@@ -66,6 +97,10 @@ const updateSettings = async (req, res, next) => {
         paymentAccountTitle: accountTitle?.trim() || null,
         paymentAccountDetails: accountDetails?.trim() || null,
         paymentQrEnabled: enabled,
+        ...(bankName !== undefined ? { bankName: bankName?.trim() || null } : {}),
+        ...(bankAccountNumber !== undefined ? { bankAccountNumber: bankAccountNumber?.trim() || null } : {}),
+        ...(bankIban !== undefined ? { bankIban: iban } : {}),
+        ...(paymentInstructions !== undefined ? { paymentInstructions: paymentInstructions?.trim() || null } : {}),
         ...imageUpdate,
       },
     });
@@ -135,4 +170,5 @@ const reviewProof = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getSettings, updateSettings, submitProof, listPendingProofs, reviewProof };
+module.exports = {
+  normalizeIban, getSettings, updateSettings, submitProof, listPendingProofs, reviewProof };

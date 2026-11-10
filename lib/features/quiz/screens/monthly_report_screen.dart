@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -121,21 +122,21 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appColors.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border)),
+                border: Border.all(color: context.appColors.border)),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedClassId,
                 hint: const Text('Select Class'),
                 isExpanded: true,
-                dropdownColor: AppColors.surface,
+                dropdownColor: context.appColors.surface,
                 items: classes
                     .map((c) => DropdownMenuItem(
                         value: c.id,
                         child: Text(c.displayLabel,
-                            style:
-                                const TextStyle(color: AppColors.textPrimary))))
+                            style: TextStyle(
+                                color: context.appColors.textPrimary))))
                     .toList(),
                 onChanged: (v) => setState(() => _selectedClassId = v),
               ),
@@ -145,20 +146,20 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appColors.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border)),
+                border: Border.all(color: context.appColors.border)),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedMonth,
                 isExpanded: true,
-                dropdownColor: AppColors.surface,
+                dropdownColor: context.appColors.surface,
                 items: _months
                     .map((m) => DropdownMenuItem(
                         value: m,
                         child: Text(m,
-                            style:
-                                const TextStyle(color: AppColors.textPrimary))))
+                            style: TextStyle(
+                                color: context.appColors.textPrimary))))
                     .toList(),
                 onChanged: (v) => setState(() => _selectedMonth = v!),
               ),
@@ -189,9 +190,9 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
 
         final data = snap.data;
         if (data == null || data['quizCount'] == 0) {
-          return const Center(
+          return Center(
               child: Text('No data found for this month',
-                  style: TextStyle(color: AppColors.textSecondary)));
+                  style: TextStyle(color: context.appColors.textSecondary)));
         }
 
         final Map<String, Map<String, dynamic>> studentStats =
@@ -218,9 +219,10 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,8 +231,8 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(stats['name'],
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 16)),
               Text("${percentage.toStringAsFixed(1)}%",
@@ -241,7 +243,7 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
                       fontWeight: FontWeight.bold)),
             ],
           ),
-          const Divider(height: 24, color: AppColors.border),
+          Divider(height: 24, color: context.appColors.border),
           ...subjects.map((sub) {
             final subStats =
                 stats['subjects'][sub] ?? {'obtained': 0.0, 'total': 0.0};
@@ -251,11 +253,12 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(sub,
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 12)),
+                      style: TextStyle(
+                          color: context.appColors.textSecondary,
+                          fontSize: 12)),
                   Text("${subStats['obtained']} / ${subStats['total']}",
-                      style: const TextStyle(
-                          color: AppColors.textPrimary,
+                      style: TextStyle(
+                          color: context.appColors.textPrimary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600)),
                 ],
@@ -268,8 +271,8 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
   }
 
   Widget _buildNoClassState() {
-    return const Center(
+    return Center(
         child: Text('Select a class to view reports',
-            style: TextStyle(color: AppColors.textSecondary)));
+            style: TextStyle(color: context.appColors.textSecondary)));
   }
 }

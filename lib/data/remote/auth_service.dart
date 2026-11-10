@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../models/app_user.dart';
+import '../models/parent_link_request.dart';
 import 'api_client.dart';
 import 'live_query.dart';
 
@@ -78,6 +79,9 @@ class AuthService {
         'academyAddress': user.academyAddress,
         'academyPhone': user.academyPhone,
         'academyLogo': user.academyLogo,
+        'academyLatitude': user.academyLocation?.latitude,
+        'academyLongitude': user.academyLocation?.longitude,
+        'academyLocationLabel': user.academyLocation?.label,
         'academyCode': user.academyCode,
         'assignedSections': user.assignedSections,
         'linkedChildren': user.linkedChildren,
@@ -273,6 +277,55 @@ class AuthService {
     DataChanges.notify(DataTopics.users);
   }
 
+  // --- Parent → child link requests (admin-approved) ------------------------
+
+  /// Parent submits a request to be linked to an existing child. The backend
+  /// verifies and an admin approves; this never links directly.
+  Future<ParentLinkRequest> submitLinkRequest({
+    required String childName,
+    String? childEmail,
+    String? rollNumber,
+  }) async {
+    final res = await _api.post('/users/link-requests', {
+      'childName': childName,
+      if (childEmail != null && childEmail.isNotEmpty) 'childEmail': childEmail,
+      if (rollNumber != null && rollNumber.isNotEmpty) 'rollNumber': rollNumber,
+    });
+    return ParentLinkRequest.fromJson(Map<String, dynamic>.from(res as Map));
+  }
+
+  /// The signed-in parent's own link requests and their statuses.
+  Future<List<ParentLinkRequest>> getMyLinkRequests() async {
+    final res = await _api.get('/users/link-requests/mine');
+    return (res as List)
+        .map((e) => ParentLinkRequest.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  /// Admin: link requests for the academy, filtered by [status] (default PENDING).
+  Future<List<ParentLinkRequest>> getLinkRequests({String status = 'PENDING'}) async {
+    final res = await _api.get('/users/link-requests?status=$status');
+    return (res as List)
+        .map((e) => ParentLinkRequest.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  /// Admin: approve a request, linking the parent to [studentId] (or the
+  /// backend's auto-matched student when [studentId] is omitted).
+  Future<void> approveLinkRequest(String requestId, {String? studentId}) async {
+    await _api.post('/users/link-requests/$requestId/approve', {
+      if (studentId != null && studentId.isNotEmpty) 'studentId': studentId,
+    });
+    DataChanges.notify(DataTopics.users);
+  }
+
+  /// Admin: reject a request with an optional [note] explaining why.
+  Future<void> rejectLinkRequest(String requestId, {String? note}) async {
+    await _api.post('/users/link-requests/$requestId/reject', {
+      if (note != null && note.isNotEmpty) 'note': note,
+    });
+  }
+
   /// Returns the profile for [uid], or null if it does not exist or is not
   /// visible to the caller. Never substitutes the signed-in user's profile.
   Future<AppUser?> getProfile(String uid) async {
@@ -329,6 +382,29 @@ class AuthService {
       );
       await _cacheUser(_currentUser!);
     }
+  }
+
+  /// Saves (or clears, when [location] is null) the academy location and
+  /// optionally its street address. Admin only; the server validates ranges.
+  Future<AcademyLocation?> saveAcademyLocation(AcademyLocation? location,
+      {String? address}) async {
+    final response = await _api.put('/auth/academy', {
+      'latitude': location?.latitude,
+      'longitude': location?.longitude,
+      if (location != null) 'locationLabel': location.label,
+      if (address != null) 'address': address,
+    });
+    final saved = AcademyLocation.tryParse(response['academyLatitude'],
+        response['academyLongitude'], response['academyLocationLabel']);
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(
+        academyLocation: saved,
+        clearAcademyLocation: saved == null,
+        academyAddress: response['academyAddress'] as String?,
+      );
+      await _cacheUser(_currentUser!);
+    }
+    return saved;
   }
 
   Future<void> directUpdatePassword(String newPassword,
@@ -586,6 +662,8 @@ class AuthService {
       academyAddress: json['academyAddress'] ?? json['academy_address'],
       academyPhone: json['academyPhone'] ?? json['academy_phone'],
       academyLogo: json['academyLogo'] ?? json['academy_logo'],
+      academyLocation: AcademyLocation.tryParse(json['academyLatitude'],
+          json['academyLongitude'], json['academyLocationLabel']),
       academyCode: json['academyCode'] ?? json['academy_code'],
       assignedSections: (json['assignedSections'] as List?)
               ?.map((e) => e.toString())

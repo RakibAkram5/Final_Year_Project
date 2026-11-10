@@ -1,4 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/theme/theme_extensions.dart';
+import '../../shared/documents_screen.dart';
+import '../../../data/remote/file_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -11,7 +14,7 @@ import '../../../widgets/web/web_nav_items.dart';
 import '../../../widgets/web/web_shell.dart';
 import '../../../data/models/quiz_model.dart';
 import '../../../data/remote/pdf_generator_service.dart';
-import 'create_quiz_screen.dart';
+import 'exam_paper_generator_screen.dart';
 import 'mark_entry_screen.dart';
 import 'ai_paper_grader_screen.dart';
 
@@ -67,9 +70,8 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CreateQuizScreen(
+                  builder: (_) => ExamPaperGeneratorScreen(
                     classId: _selectedClassId!,
-                    isAiGen: true,
                   ),
                 ),
               ),
@@ -113,9 +115,8 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => CreateQuizScreen(
+                      builder: (_) => ExamPaperGeneratorScreen(
                         classId: _selectedClassId!,
-                        isAiGen: true,
                       ),
                     ),
                   ),
@@ -155,9 +156,9 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('SELECT CLASS',
+              Text('SELECT CLASS',
                   style: TextStyle(
-                      color: AppColors.textMuted,
+                      color: context.appColors.textMuted,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1)),
@@ -165,25 +166,26 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.appColors.surface,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.appColors.border),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedClassId,
-                    hint: const Text('Choose a class',
-                        style: TextStyle(color: AppColors.textSecondary)),
-                    dropdownColor: AppColors.surface,
+                    hint: Text('Choose a class',
+                        style:
+                            TextStyle(color: context.appColors.textSecondary)),
+                    dropdownColor: context.appColors.surface,
                     isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down,
-                        color: AppColors.accent),
+                    icon: Icon(Icons.keyboard_arrow_down,
+                        color: context.appColors.accentText),
                     items: classes.map((c) {
                       return DropdownMenuItem(
                         value: c.id,
                         child: Text("${c.className} (${c.section})",
-                            style:
-                                const TextStyle(color: AppColors.textPrimary)),
+                            style: TextStyle(
+                                color: context.appColors.textPrimary)),
                       );
                     }).toList(),
                     onChanged: (val) => setState(() => _selectedClassId = val),
@@ -208,10 +210,11 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.class_outlined,
-              size: 64, color: AppColors.textMuted.withValues(alpha: 0.3)),
+              size: 64,
+              color: context.appColors.textMuted.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          const Text('Select a class to view tests',
-              style: TextStyle(color: AppColors.textSecondary)),
+          Text('Select a class to view tests',
+              style: TextStyle(color: context.appColors.textSecondary)),
         ],
       ),
     );
@@ -242,9 +245,9 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
         }
         final list = snap.data ?? [];
         if (list.isEmpty) {
-          return const Center(
+          return Center(
               child: Text('No tests created yet',
-                  style: TextStyle(color: AppColors.textSecondary)));
+                  style: TextStyle(color: context.appColors.textSecondary)));
         }
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
@@ -281,9 +284,10 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
@@ -295,8 +299,8 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
                   color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.description_rounded,
-                    color: AppColors.accent),
+                child: Icon(Icons.description_rounded,
+                    color: context.appColors.accentText),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -304,18 +308,39 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(quiz.title,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
+                        style: TextStyle(
+                            color: context.appColors.textPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: 16)),
                     Text(
                         "${quiz.subject} • ${quiz.month} • ${quiz.totalMarks} Marks",
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 12)),
+                        style: TextStyle(
+                            color: context.appColors.textMuted, fontSize: 12)),
                   ],
                 ),
               ),
               IconButton(
+                tooltip: 'Exam documents',
+                icon: Icon(Icons.folder_rounded,
+                    color: context.appColors.accentText, size: 20),
+                // Question papers, answer keys, result sheets for this test.
+                // Visible to the class teacher and admins only.
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DocumentsScreen(
+                      title: '${quiz.title} · Documents',
+                      subtitle: 'Exam paper, answer key and result sheets. '
+                          'Only the class teacher and academy admins can see these.',
+                      category: FileCategory.examDocument,
+                      ownerId: quiz.id,
+                      canEdit: true,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Delete test',
                 icon: const Icon(Icons.delete_outline,
                     color: AppColors.danger, size: 20),
                 onPressed: () => _confirmDelete(quiz),
@@ -422,12 +447,12 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceAlt,
-        title: const Text('Delete Test?',
-            style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text(
+        backgroundColor: context.appColors.surfaceAlt,
+        title: Text('Delete Test?',
+            style: TextStyle(color: context.appColors.textPrimary)),
+        content: Text(
             'This will remove the test and all student marks permanently.',
-            style: TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: context.appColors.textSecondary)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),

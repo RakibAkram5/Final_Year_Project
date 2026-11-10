@@ -21,6 +21,10 @@ const resourceRoutes = require('./routes/resourceRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const timetableRoutes = require('./routes/timetableRoutes');
 const mlRoutes = require('./routes/mlRoutes');
+const fileRoutes = require('./routes/fileRoutes');
+const assignmentRoutes = require('./routes/assignmentRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const geoRoutes = require('./routes/geoRoutes');
 
 const app = express();
 
@@ -69,7 +73,8 @@ app.get('/api/v2/version', (req, res) => {
       service: 'TaleemPlus Enterprise Backend',
       environment: process.env.NODE_ENV || 'development',
       database: 'PostgreSQL + Prisma',
-      release_date: '2026-10-30',
+      release_date: '2026-11-09',
+      app_version: '1.0.1',
       supported_roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT']
     }
   });
@@ -86,6 +91,10 @@ app.use('/api/v2/ocr', ocrRoutes);
 app.use('/api/v2/attendance', attendanceRoutes);
 app.use('/api/v2/fees', feeRoutes);
 app.use('/api/v2/quizzes', quizRoutes);
+app.use('/api/v2/files', fileRoutes);
+app.use('/api/v2/assignments', assignmentRoutes);
+app.use('/api/v2/reports', reportRoutes);
+app.use('/api/v2/geo', geoRoutes);
 // The resource router owns both /resources and /queries collections, so it is
 // mounted at the version root rather than under /resources.
 app.use('/api/v2', resourceRoutes);

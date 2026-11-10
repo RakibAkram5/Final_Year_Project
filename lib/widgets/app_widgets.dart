@@ -107,17 +107,17 @@ class TaleemLogo extends StatelessWidget {
           errorBuilder: (context, error, stackTrace) {
             return Container(
               padding: EdgeInsets.all(size * 0.22),
-              color: AppColors.surface,
+              color: context.appColors.surface,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Icon(Icons.school_rounded,
-                      size: size * 0.45, color: AppColors.accent),
+                      size: size * 0.45, color: context.appColors.accentText),
                   Positioned(
                     right: 0,
                     bottom: 2,
                     child: Icon(Icons.add_circle_rounded,
-                        size: size * 0.22, color: AppColors.accent),
+                        size: size * 0.22, color: context.appColors.accentText),
                   ),
                 ],
               ),
@@ -139,6 +139,7 @@ class LabeledField extends StatelessWidget {
   final bool obscure;
   final Widget? suffix;
   final TextInputAction textInputAction;
+  final ValueChanged<String>? onChanged;
 
   const LabeledField({
     super.key,
@@ -150,6 +151,7 @@ class LabeledField extends StatelessWidget {
     this.obscure = false,
     this.suffix,
     this.textInputAction = TextInputAction.next,
+    this.onChanged,
   });
 
   @override
@@ -172,6 +174,7 @@ class LabeledField extends StatelessWidget {
           keyboardType: keyboardType,
           obscureText: obscure,
           textInputAction: textInputAction,
+          onChanged: onChanged,
           style: TextStyle(color: context.appColors.textPrimary),
           decoration: InputDecoration(
             hintText: hint,
@@ -197,15 +200,16 @@ class OfflineBadge extends StatelessWidget {
         border: Border.all(color: AppColors.accent, width: 1.2),
         color: AppColors.accent.withValues(alpha: 0.08),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.storage_rounded, size: 14, color: AppColors.accent),
-          SizedBox(width: 6),
+          Icon(Icons.storage_rounded,
+              size: 14, color: context.appColors.accentText),
+          const SizedBox(width: 6),
           Text(
             '100% OFFLINE AUTH',
             style: TextStyle(
-              color: AppColors.accent,
+              color: context.appColors.accentText,
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.5,

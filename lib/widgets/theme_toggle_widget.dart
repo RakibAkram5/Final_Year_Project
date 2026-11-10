@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/theme_extensions.dart';
 import 'package:provider/provider.dart';
 import '../logic/theme_provider.dart';
 import '../core/theme/app_colors.dart';
@@ -14,7 +15,8 @@ class ThemeToggle extends StatelessWidget {
     return PopupMenuButton<ThemeMode>(
       icon: Icon(
         _getIcon(themeProvider.themeMode),
-        color: isDark ? AppColors.accent : AppColors.textPrimaryLight,
+        color:
+            isDark ? context.appColors.accentText : AppColors.textPrimaryLight,
       ),
       onSelected: (ThemeMode mode) => themeProvider.setThemeMode(mode),
       itemBuilder: (context) => [

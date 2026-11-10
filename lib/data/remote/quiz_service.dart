@@ -1,5 +1,6 @@
 import '../models/quiz_model.dart';
 import '../models/test_mark_model.dart';
+import '../exam/curriculum_bank.dart';
 import 'api_client.dart';
 import 'live_query.dart';
 
@@ -34,10 +35,81 @@ class QuizService {
       'totalMarks': quiz.totalMarks.round(),
       'instructions': quiz.instructions,
       'questions': quiz.questions.map((q) => q.toMap()).toList(),
+      // Exam-paper layout + teacher answer key. Backend persists it into the
+      // Quiz.paperMeta JSON column when present; older backends ignore it and
+      // the paper still saves (layout then falls back to type-grouping on
+      // reopen).
+      'paperMeta': quiz.paperMeta,
     });
     DataChanges.notify(DataTopics.quizzes);
     return QuizModel.fromMap(
         (res['id'] ?? '').toString(), Map<String, dynamic>.from(res as Map));
+  }
+
+  /// Optional AI question generation. Returns curriculum items when the server
+  /// has an AI key configured, or `null` (not configured / upstream failure)
+  /// so the caller transparently falls back to the offline generator.
+  Future<List<BankItem>?> aiGenerateItems({
+    required String subject,
+    required String classLabel,
+    required List<String> chapters,
+    required String difficulty,
+    required int mcqCount,
+    required int shortCount,
+    required int longCount,
+  }) async {
+    try {
+      final res = await _api.post('/quizzes/ai-generate', {
+        'subject': subject,
+        'classLabel': classLabel,
+        'chapters': chapters,
+        'difficulty': difficulty,
+        'mcqCount': mcqCount,
+        'shortCount': shortCount,
+        'longCount': longCount,
+      });
+      final items = (res is Map ? res['items'] : null) as List?;
+      if (items == null) return null;
+      return items
+          .whereType<Map>()
+          .map((m) => _bankItemFromJson(Map<String, dynamic>.from(m)))
+          .whereType<BankItem>()
+          .toList();
+    } on ApiException {
+      // 501 (not configured) or an upstream error — caller uses offline.
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  BankItem? _bankItemFromJson(Map<String, dynamic> m) {
+    final typeStr = (m['type'] ?? '').toString();
+    final type = QuestionType.values.firstWhere(
+      (t) => t.name == typeStr,
+      orElse: () => QuestionType.short,
+    );
+    final text = (m['text'] ?? '').toString().trim();
+    if (text.isEmpty) return null;
+    final options = (m['options'] as List?)?.map((e) => e.toString()).toList();
+    if (type == QuestionType.mcq && (options == null || options.length < 4)) {
+      return null;
+    }
+    return BankItem(
+      type: type,
+      chapter: (m['chapter'] ?? '').toString(),
+      text: text,
+      options: type == QuestionType.mcq ? options : null,
+      correctIndex: type == QuestionType.mcq
+          ? ((m['correctIndex'] as num?)?.toInt() ?? 0).clamp(0, 3)
+          : null,
+      answer: (m['answer'] ?? '').toString(),
+      keywords: (m['keywords'] as List?)?.map((e) => e.toString()).toList() ??
+          const [],
+      difficulty: ['Easy', 'Medium', 'Hard'].contains(m['difficulty'])
+          ? m['difficulty'].toString()
+          : 'Medium',
+    );
   }
 
   Future<void> updateQuestions(

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -123,8 +124,8 @@ class _AttendanceMarkingScreenState extends State<AttendanceMarkingScreen> {
             style: const TextStyle(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
-            icon:
-                const Icon(Icons.event_rounded, color: AppColors.textSecondary),
+            icon: Icon(Icons.event_rounded,
+                color: context.appColors.textSecondary),
             tooltip: 'Change date',
             onPressed: _pickDate,
           ),
@@ -195,17 +196,19 @@ class _AttendanceMarkingScreenState extends State<AttendanceMarkingScreen> {
   }
 
   Widget _emptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.group_off_rounded, size: 56, color: AppColors.textMuted),
-          SizedBox(height: 12),
+          Icon(Icons.group_off_rounded,
+              size: 56, color: context.appColors.textMuted),
+          const SizedBox(height: 12),
           Text('No students enrolled in this class',
-              style: TextStyle(color: AppColors.textSecondary)),
-          SizedBox(height: 4),
+              style: TextStyle(color: context.appColors.textSecondary)),
+          const SizedBox(height: 4),
           Text('Ask your admin to enroll students',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              style:
+                  TextStyle(color: context.appColors.textMuted, fontSize: 12)),
         ],
       ),
     );
@@ -233,20 +236,21 @@ class _AttendanceMarkingScreenState extends State<AttendanceMarkingScreen> {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              const Icon(Icons.calendar_today_rounded,
-                  size: 16, color: AppColors.accent),
+              Icon(Icons.calendar_today_rounded,
+                  size: 16, color: context.appColors.accentText),
               const SizedBox(width: 8),
               Text(DateFormat('EEEE, d MMM yyyy').format(_selectedDate),
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontWeight: FontWeight.w700)),
               const Spacer(),
               TextButton(
@@ -314,9 +318,10 @@ class _AttendanceMarkingScreenState extends State<AttendanceMarkingScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: context.appColors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
@@ -325,15 +330,17 @@ class _AttendanceMarkingScreenState extends State<AttendanceMarkingScreen> {
             backgroundColor: AppColors.accent.withValues(alpha: 0.15),
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: const TextStyle(
-                  color: AppColors.accent, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                  color: context.appColors.accentText,
+                  fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(name,
-                style: const TextStyle(
-                    color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: context.appColors.textPrimary,
+                    fontWeight: FontWeight.w600)),
           ),
           _statusBtn('P', 'present', AppColors.success, status, id),
           const SizedBox(width: 4),
@@ -381,7 +388,8 @@ class _AttendanceMarkingScreenState extends State<AttendanceMarkingScreen> {
         color:
             Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.95),
         border: Border(
-          top: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+          top: BorderSide(
+              color: context.appColors.border.withValues(alpha: 0.5)),
         ),
       ),
       child: PrimaryButton(

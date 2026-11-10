@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../../core/theme/theme_extensions.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -21,6 +22,10 @@ class _AcademyPaymentSettingsScreenState
   final _provider = TextEditingController();
   final _title = TextEditingController();
   final _details = TextEditingController();
+  final _bankName = TextEditingController();
+  final _accountNumber = TextEditingController();
+  final _iban = TextEditingController();
+  final _instructions = TextEditingController();
   final _picker = ImagePicker();
   bool _loading = true;
   bool _saving = false;
@@ -53,6 +58,10 @@ class _AcademyPaymentSettingsScreenState
     _provider.dispose();
     _title.dispose();
     _details.dispose();
+    _bankName.dispose();
+    _accountNumber.dispose();
+    _iban.dispose();
+    _instructions.dispose();
     super.dispose();
   }
 
@@ -62,6 +71,10 @@ class _AcademyPaymentSettingsScreenState
       _provider.text = (settings['provider'] ?? '').toString();
       _title.text = (settings['accountTitle'] ?? '').toString();
       _details.text = (settings['accountDetails'] ?? '').toString();
+      _bankName.text = (settings['bankName'] ?? '').toString();
+      _accountNumber.text = (settings['bankAccountNumber'] ?? '').toString();
+      _iban.text = (settings['bankIban'] ?? '').toString();
+      _instructions.text = (settings['paymentInstructions'] ?? '').toString();
       _enabled = settings['enabled'] == true;
       _existingImage = settings['qrImageBase64'] as String?;
     } catch (error) {
@@ -146,6 +159,10 @@ class _AcademyPaymentSettingsScreenState
         'provider': _provider.text.trim(),
         'accountTitle': _title.text.trim(),
         'accountDetails': _details.text.trim(),
+        'bankName': _bankName.text.trim(),
+        'bankAccountNumber': _accountNumber.text.trim(),
+        'bankIban': _iban.text.trim(),
+        'paymentInstructions': _instructions.text.trim(),
         'enabled': _enabled,
       };
       if (_removeImage) {
@@ -190,9 +207,9 @@ class _AcademyPaymentSettingsScreenState
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                const Text(
+                Text(
                     'Payment QR and account details are private to this academy. Verify them before enabling payment instructions.',
-                    style: TextStyle(color: AppColors.textSecondary)),
+                    style: TextStyle(color: context.appColors.textSecondary)),
                 const SizedBox(height: 20),
                 TextField(
                     controller: _provider,
@@ -209,6 +226,39 @@ class _AcademyPaymentSettingsScreenState
                     maxLines: 3,
                     decoration: const InputDecoration(
                         labelText: 'Account / wallet details')),
+                const SizedBox(height: 20),
+                Text('BANK ACCOUNT',
+                    style: TextStyle(
+                        color: context.appColors.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.1)),
+                const SizedBox(height: 8),
+                TextField(
+                    controller: _bankName,
+                    decoration: const InputDecoration(labelText: 'Bank name')),
+                const SizedBox(height: 12),
+                TextField(
+                    controller: _accountNumber,
+                    keyboardType: TextInputType.number,
+                    decoration:
+                        const InputDecoration(labelText: 'Account number')),
+                const SizedBox(height: 12),
+                TextField(
+                    controller: _iban,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                        labelText: 'IBAN',
+                        helperText:
+                            'Checked with the IBAN checksum (PK IBANs have 24 characters).')),
+                const SizedBox(height: 12),
+                TextField(
+                    controller: _instructions,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                        labelText: 'Payment instructions for parents',
+                        hintText:
+                            'e.g. Write the challan number as the reference.')),
                 const SizedBox(height: 20),
                 if (_newImage != null)
                   FutureBuilder<Uint8List>(
@@ -227,7 +277,7 @@ class _AcademyPaymentSettingsScreenState
                     height: 130,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.appColors.border),
                         borderRadius: BorderRadius.circular(12)),
                     child: const Text('No QR image uploaded'),
                   ),
