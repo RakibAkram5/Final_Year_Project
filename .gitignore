@@ -75,3 +75,6 @@ DEMO_LOGIN_CREDENTIALS.md
 
 # Claude Code local settings (machine-specific permission rules)
 .claude/settings.local.json
+
+# Demo seed credentials (dev-only, never commit)
+DEMO_SEED_CREDENTIALS.csv
