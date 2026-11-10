@@ -355,22 +355,31 @@ class StudentDashboard extends StatelessWidget {
                             fontSize: 13)),
                   const SizedBox(height: 12),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.08),
+                      color: context.appColors.surfaceAlt
+                          .withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: context.appColors.border
+                              .withValues(alpha: 0.5)),
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.format_quote_rounded,
-                            color: context.appColors.accentText, size: 16),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1),
+                          child: Icon(Icons.format_quote_rounded,
+                              color: context.appColors.textMuted, size: 16),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text('"${_quoteOfTheDay()}"',
                               style: TextStyle(
                                   color: context.appColors.textSecondary,
-                                  fontSize: 12,
+                                  fontSize: 12.5,
+                                  height: 1.35,
                                   fontStyle: FontStyle.italic)),
                         ),
                       ],

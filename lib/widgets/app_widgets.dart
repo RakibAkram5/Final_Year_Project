@@ -167,7 +167,7 @@ class LabeledField extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextFormField(
           controller: controller,
           validator: validator,
@@ -181,7 +181,7 @@ class LabeledField extends StatelessWidget {
             suffixIcon: suffix,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
       ],
     );
   }

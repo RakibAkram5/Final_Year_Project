@@ -54,6 +54,9 @@ Widget _teacherSectionPicker(
             final selected = selectedKeys.contains(key);
             return CheckboxListTile(
               dense: true,
+              visualDensity: VisualDensity.compact,
+              controlAffinity: ListTileControlAffinity.trailing,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
               value: selected,
               title: Text(s.displayLabel, style: const TextStyle(fontSize: 13)),
               onChanged: (v) => onToggle(key, v ?? false),

@@ -74,6 +74,19 @@ class TimetableSlot {
       : '$className${section.isNotEmpty ? '-$section' : ''}'
           '${subject.isNotEmpty ? ' ($subject)' : ''}';
 
+  /// The subject as the primary, clearly identifiable label. Falls back to the
+  /// class name (then a generic word) so a slot missing its subject is still
+  /// shown gracefully instead of blank — never an arbitrary/guessed subject.
+  String get subjectLabel => isBreak
+      ? 'Break'
+      : (subject.isNotEmpty
+          ? subject
+          : (className.isNotEmpty ? className : 'Class'));
+
+  /// "9th Class - A" (section omitted when empty).
+  String get classSectionLabel =>
+      '$className${section.isNotEmpty ? ' - $section' : ''}'.trim();
+
   Map<String, dynamic> toMap() {
     return {
       'academy_id': academyId,
