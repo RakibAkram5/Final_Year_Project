@@ -57,7 +57,7 @@ class _StudentPickerFieldState extends State<StudentPickerField> {
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       setState(() => _searching = true);
       final results =
-          await AuthService().searchStudentsByName(q, widget.academyId);
+          await AuthService().searchStudentsByName(widget.academyId, q);
       if (!mounted) return;
       setState(() {
         _searching = false;
