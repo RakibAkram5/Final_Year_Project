@@ -38,7 +38,7 @@ class WebTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final webColors = context.webColors;
     return Container(
-      height: 66,
+      height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 22),
       decoration: BoxDecoration(
         color: webColors.topbarBackground,

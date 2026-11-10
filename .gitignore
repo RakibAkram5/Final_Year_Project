@@ -72,3 +72,6 @@ DEMO_LOGIN_CREDENTIALS.md
 
 # Generated release bundle (build artifacts)
 /release/
+
+# Claude Code local settings (machine-specific permission rules)
+.claude/settings.local.json

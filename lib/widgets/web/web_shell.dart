@@ -155,7 +155,7 @@ class _WebAppShellState extends State<WebAppShell> {
                             BoxConstraints(maxWidth: widget.maxContentWidth),
                         child: Padding(
                           padding:
-                              widget.contentPadding ?? const EdgeInsets.all(28),
+                              widget.contentPadding ?? const EdgeInsets.all(24),
                           child: widget.body,
                         ),
                       ),

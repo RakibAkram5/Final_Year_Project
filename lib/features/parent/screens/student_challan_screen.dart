@@ -395,14 +395,13 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
         ElevatedButton.icon(
           onPressed: () => _showPaymentInstructions(c),
           icon: const Icon(Icons.payment_rounded),
-          label: const Text("PAY NOW",
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          label: const Text("PAY NOW"),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.accent,
             foregroundColor: AppColors.textOnAccent,
-            minimumSize: const Size(double.infinity, 56),
+            minimumSize: const Size(double.infinity, 44),
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
         const SizedBox(height: 12),
@@ -416,9 +415,9 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.accent,
                   side: const BorderSide(color: AppColors.accent),
-                  minimumSize: const Size(0, 50),
+                  minimumSize: const Size(0, 40),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(10)),
                 ),
               ),
             ),
@@ -431,9 +430,9 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.accent,
                   side: const BorderSide(color: AppColors.accent),
-                  minimumSize: const Size(0, 50),
+                  minimumSize: const Size(0, 40),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(10)),
                 ),
               ),
             ),
