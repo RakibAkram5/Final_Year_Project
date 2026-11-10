@@ -166,6 +166,8 @@ class ChallanPdfService {
                     challan.studentCode.isEmpty
                         ? challan.studentId
                         : challan.studentCode),
+                _infoRow("Fee Month",
+                    DateFormat('MMMM yyyy').format(challan.billingMonth)),
               ],
             ),
           ),
@@ -177,6 +179,8 @@ class ChallanPdfService {
                 _infoRow("Roll No", challan.rollNumber),
                 _infoRow("Due Date",
                     DateFormat('dd-MMM-yyyy').format(challan.dueDate)),
+                _infoRow("Payment Status",
+                    challan.effectiveStatus.toUpperCase()),
               ],
             ),
           ),
