@@ -1,0 +1,3 @@
+# Shell scripts must stay LF: the Vercel/Netlify build shells choke on CRLF
+# (e.g. `set -euo pipefail` becomes `pipefail\r` -> "invalid option name").
+*.sh text eol=lf
