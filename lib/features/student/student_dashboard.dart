@@ -29,6 +29,7 @@ import '../shared/notifications_screen.dart';
 import '../../widgets/academy_logo.dart';
 import '../../widgets/gradient_background.dart';
 import '../../core/theme/theme_extensions.dart';
+import '../quiz/screens/online_tests_screen.dart';
 import '../quiz/screens/student_test_report_screen.dart';
 import '../shared/view_announcements_screen.dart';
 import 'screens/student_attendance_screen.dart';
@@ -244,6 +245,14 @@ class StudentDashboard extends StatelessWidget {
                 _sectionLabel(context, 'PERFORMANCE'),
                 const SizedBox(height: 10),
                 _moduleGroup(context, Icons.insights_rounded, [
+                  _ModuleItem(
+                      'Online Tests',
+                      'Attempt tests set by your teachers',
+                      Icons.quiz_rounded,
+                      () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const OnlineTestsScreen()))),
                   _ModuleItem(
                       'Test Reports',
                       'Check your marks and performance',

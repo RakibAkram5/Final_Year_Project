@@ -55,6 +55,12 @@ import 'package:taleemplus_app/features/parent/screens/child_timetable_screen.da
 import 'package:taleemplus_app/features/parent/screens/student_challan_screen.dart';
 import 'package:taleemplus_app/features/quiz/screens/monthly_report_screen.dart';
 import 'package:taleemplus_app/features/quiz/screens/student_test_report_screen.dart';
+import 'package:taleemplus_app/features/quiz/screens/online_tests_screen.dart';
+import 'package:taleemplus_app/features/quiz/screens/quiz_submissions_screen.dart';
+import 'package:taleemplus_app/features/quiz/screens/submission_review_screen.dart';
+import 'package:taleemplus_app/features/quiz/screens/take_quiz_screen.dart';
+import 'package:taleemplus_app/data/models/quiz_model.dart';
+import 'package:taleemplus_app/data/models/quiz_submission_model.dart';
 import 'package:taleemplus_app/features/quiz/screens/teacher_quiz_list_screen.dart';
 import 'package:taleemplus_app/features/shared/notifications_screen.dart';
 import 'package:taleemplus_app/features/shared/view_announcements_screen.dart';
@@ -110,6 +116,43 @@ class _Ctx {
 
   String get meId => (fx['GET /auth/me'] as Map)['id'] as String;
   String get academyId => (fx['GET /auth/me'] as Map)['academyId'] as String;
+
+  /// The first recorded quiz, re-labelled as an ONLINE test with a time limit
+  /// so the attempt screens render their timer and navigator.
+  QuizModel get onlineQuiz {
+    final m = Map<String, dynamic>.from((fx['GET /quizzes'] as List).first);
+    return QuizModel.fromMap(m['id'] as String, m)
+        .copyWith(attemptMode: 'ONLINE', durationMinutes: 30);
+  }
+
+  /// A graded submission for [onlineQuiz] (one MCQ-style answer per question).
+  QuizSubmission get gradedSubmission {
+    final quiz = onlineQuiz;
+    return QuizSubmission(
+      id: 'sub-1',
+      quizId: quiz.id,
+      studentId: meId,
+      studentName: '[TEST] Muhammad Abdul Rehman Siddiqui Chaudhry',
+      status: SubmissionStatus.graded,
+      submittedAt: DateTime(2026, 11, 13, 10, 30),
+      gradedAt: DateTime(2026, 11, 13, 12, 0),
+      autoScore: 0,
+      autoMaxScore: 0,
+      finalScore: quiz.totalMarks * 0.7,
+      teacherNote:
+          'Good attempt. Revise the second chapter before the next test.',
+      answers: [
+        for (final q in quiz.questions)
+          QuizAnswer(
+              questionId: q.id,
+              selectedIndex: q.type == QuestionType.mcq ? 0 : null,
+              answerText: q.type == QuestionType.mcq
+                  ? ''
+                  : 'A fairly long written answer that should wrap over several lines on a narrow phone without overflowing.',
+              marksAwarded: q.marks * 0.7),
+      ],
+    );
+  }
 }
 
 class _Config {
@@ -175,6 +218,9 @@ final Map<String, Map<String, _Builder>> _screens = {
     'Classroom': (c) => ClassroomManagementScreen(classEntity: c.longestClass),
     'TeacherAnnouncements': (_) => const TeacherAnnouncementsScreen(),
     'TeacherQuizList': (_) => const TeacherQuizListScreen(),
+    'QuizSubmissions': (c) => QuizSubmissionsScreen(quiz: c.onlineQuiz),
+    'GradeSubmission': (c) => SubmissionReviewScreen(
+        quiz: c.onlineQuiz, submission: c.gradedSubmission, canGrade: true),
     'MonthlyReport': (_) => const MonthlyReportScreen(),
     'TeacherTimetable': (_) => const teacher_tt.MyTimetableScreen(),
     'TeacherAssignments': (_) => const AssignmentsScreen(),
@@ -192,6 +238,10 @@ final Map<String, Map<String, _Builder>> _screens = {
     'ProgressChart': (c) => StudentProgressChartScreen(studentUid: c.meId),
     'TestReport': (c) =>
         StudentTestReportScreen(studentUid: c.meId, studentName: 'Me'),
+    'OnlineTests': (_) => const OnlineTestsScreen(),
+    'TakeQuiz': (c) => TakeQuizScreen(quiz: c.onlineQuiz),
+    'SubmissionResult': (c) => SubmissionReviewScreen(
+        quiz: c.onlineQuiz, submission: c.gradedSubmission, canGrade: false),
     'TeacherDetails': (c) => TeacherDetailsScreen(classEntity: c.longestClass),
     'AiSummarizer': (_) => const AiSummarizerScreen(),
     'ViewAnnouncements': (_) => const ViewAnnouncementsScreen(),
@@ -208,6 +258,8 @@ final Map<String, Map<String, _Builder>> _screens = {
     'ParentDashboard': (_) => const ParentDashboard(),
     'ChildOverview': (c) => ChildOverviewScreen(child: c.child),
     'ChildTimetable': (c) => ChildTimetableScreen(child: c.child),
+    'ChildOnlineTests': (c) => OnlineTestsScreen(
+        studentUid: c.child.uid, studentName: c.child.fullName),
     'AllChallans': (_) => const AllChallansScreen(),
     'StudentChallan': (c) => StudentChallanScreen(studentUid: c.child.uid),
     'AcademyContact': (c) => AcademyContactScreen(academyId: c.academyId),

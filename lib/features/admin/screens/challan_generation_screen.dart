@@ -3,16 +3,11 @@ import '../../../core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/web/web_breakpoints.dart';
-import '../../../data/models/app_user.dart';
 import '../../../data/models/class_section.dart';
-import '../../../data/remote/auth_service.dart';
 import '../../../logic/auth_provider.dart';
 import '../../../logic/class_section_provider.dart';
-import '../../../data/models/fee_challan_model.dart';
 import '../../../data/repositories/fee_challan_repository.dart';
 import '../../../widgets/gradient_background.dart';
 import '../../../widgets/app_widgets.dart';
@@ -302,71 +297,27 @@ class _ChallanGenerationScreenState extends State<ChallanGenerationScreen> {
         throw Exception("No students are enrolled in this section.");
       }
 
-      // Fetching all approved students from Firebase to ensure we have father names/extra data
-      final authService = AuthService();
-      final allStudents =
-          await authService.getApprovedByRole(UserRole.student, admin.uid);
-
-      // Avoid creating a second challan for a student who already has one
-      // for this billing month.
+      // One atomic, duplicate-safe server call: the backend creates a
+      // pending challan for every active student in the section and skips
+      // students who already have one for this billing month.
       final billingPeriod =
           DateFormat('yyyy-MM').format(_dueDateForMonth(_selectedMonth));
-      final existingChallans = await _repo.getAll(admin.uid);
-      final studentsAlreadyBilled = existingChallans
-          .where((c) => c.billingPeriod == billingPeriod)
-          .map((c) => c.studentId)
-          .toSet();
-
-      int count = 0;
-      int skipped = 0;
-      for (var studentId in section.studentIds) {
-        if (studentsAlreadyBilled.contains(studentId)) {
-          skipped++;
-          continue;
-        }
-        // Find student in our fresh list, or fallback to section records
-        final student = allStudents.firstWhere((s) => s.uid == studentId,
-            orElse: () => AppUser(
-                  uid: studentId,
-                  fullName: section.studentNames[studentId] ?? "Student",
-                  email: "",
-                  phoneNumber: "",
-                  role: UserRole.student,
-                  academyName: "N/A",
-                  academyId: admin.uid,
-                ));
-
-        final challan = FeeChallanModel(
-          id: const Uuid().v4(),
-          academyId: admin.uid,
-          challanNumber:
-              "CH-${_selectedMonth.substring(0, 3).toUpperCase()}-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}",
-          billingPeriod: billingPeriod,
-          studentId: studentId,
-          studentName: student.fullName,
-          fatherName: student.academyName ??
-              "N/A", // We reuse academyName for student bio sometimes
-          classLabel: section.displayLabel,
-          rollNumber: student.rollNumber,
-          issueDate: DateTime.now(),
-          dueDate: _dueDateForMonth(_selectedMonth),
-          monthlyFee: double.tryParse(_monthlyFeeCtrl.text) ?? 0,
-          admissionFee: double.tryParse(_admissionFeeCtrl.text) ?? 0,
-          examFee: double.tryParse(_examFeeCtrl.text) ?? 0,
-          transportFee: 0,
-          fine: double.tryParse(_fineCtrl.text) ?? 0,
-          status: 'pending',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-
-        await _repo.createChallan(challan);
-        count++;
-      }
+      final created = await _repo.generateForSection(
+        sectionId: section.id,
+        billingPeriod: billingPeriod,
+        dueDate: _dueDateForMonth(_selectedMonth),
+        monthlyFee: double.tryParse(_monthlyFeeCtrl.text) ?? 0,
+        admissionFee: double.tryParse(_admissionFeeCtrl.text) ?? 0,
+        examFee: double.tryParse(_examFeeCtrl.text) ?? 0,
+        fine: double.tryParse(_fineCtrl.text) ?? 0,
+      );
+      final count = created.length;
+      final skipped = section.studentIds.length - count;
 
       if (mounted) {
-        final skippedNote =
-            skipped > 0 ? " ($skipped already had one, skipped)" : "";
+        final skippedNote = skipped > 0
+            ? " ($skipped already had one or are inactive, skipped)"
+            : "";
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(
                 "Generated $count challans for $_selectedMonth!$skippedNote"),

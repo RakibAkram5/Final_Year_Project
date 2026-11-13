@@ -12,6 +12,7 @@ import '../../../widgets/web/web_nav_items.dart';
 import '../../../widgets/web/web_shell.dart';
 import '../../../data/models/quiz_model.dart';
 import '../../../data/models/test_mark_model.dart';
+import 'quiz_submissions_screen.dart';
 
 class QuizResultsScreen extends StatelessWidget {
   final QuizModel quiz;
@@ -161,6 +162,18 @@ class QuizResultsScreen extends StatelessWidget {
                       color: context.appColors.textMuted, fontSize: 12)),
             ],
           ),
+          if (quiz.isOnline) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => QuizSubmissionsScreen(quiz: quiz)),
+              ),
+              icon: const Icon(Icons.fact_check_rounded, size: 18),
+              label: const Text('Online submissions & grading'),
+            ),
+          ],
         ],
       ),
     );

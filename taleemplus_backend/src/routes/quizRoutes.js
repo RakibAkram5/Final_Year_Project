@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const quizController = require('../controllers/quizController');
+const attempts = require('../controllers/quizAttemptController');
 const { authenticateToken } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
 
@@ -33,6 +34,18 @@ router.post(
   '/ai-generate',
   authorizeRoles('ADMIN', 'TEACHER'),
   quizController.aiGenerate
+);
+// Online attempts (student) and submission review (teacher/admin). Registered
+// before the bare '/:id' routes so '/attempt' is never read as an id.
+router.post('/:id/attempt', authorizeRoles('STUDENT'), attempts.startAttempt);
+router.put('/:id/attempt/answers', authorizeRoles('STUDENT'), attempts.saveAnswers);
+router.post('/:id/attempt/submit', authorizeRoles('STUDENT'), attempts.submitAttempt);
+router.get('/:id/attempt', attempts.getAttempt);
+router.get('/:id/submissions', authorizeRoles('ADMIN', 'TEACHER'), attempts.listSubmissions);
+router.put(
+  '/:id/submissions/:sid/grade',
+  authorizeRoles('ADMIN', 'TEACHER'),
+  attempts.gradeSubmission
 );
 router.get('/:id', quizController.getQuizById);
 router.post('/', authorizeRoles('ADMIN', 'TEACHER'), quizController.createQuiz);

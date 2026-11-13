@@ -42,6 +42,12 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
   String _difficulty = 'Medium';
   final DateTime _testDate = DateTime.now();
 
+  // Online attempt settings. Off by default: a test is a printed paper unless
+  // the teacher explicitly opens it for attempts in the student portal.
+  bool _online = false;
+  final _durationCtrl = TextEditingController();
+  DateTime? _availableUntil;
+
   final List<QuizQuestion> _questions = [];
 
   /// MCQ -> Short -> Long, preserving relative order within each type —
@@ -83,6 +89,7 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
     _titleCtrl.dispose();
     _subjectCtrl.dispose();
     _instructionsCtrl.dispose();
+    _durationCtrl.dispose();
     _chapterCtrl.dispose();
     _sessionCtrl.dispose();
     super.dispose();
@@ -499,6 +506,14 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
 
   Future<void> _saveQuiz() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_online && _durationCtrl.text.trim().isNotEmpty) {
+      final d = int.tryParse(_durationCtrl.text.trim());
+      if (d == null || d < 1 || d > 600) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Time limit must be between 1 and 600 minutes.')));
+        return;
+      }
+    }
     if (_questions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Add at least one question!')));
@@ -542,6 +557,9 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
       createdByName: user.fullName,
       createdAt: DateTime.now(),
       questions: _sortedQuestions,
+      attemptMode: _online ? 'ONLINE' : 'PAPER',
+      durationMinutes: _online ? int.tryParse(_durationCtrl.text.trim()) : null,
+      availableUntil: _online ? _availableUntil : null,
     );
 
     try {
@@ -656,6 +674,7 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
                 hint: 'e.g. No calculators',
                 controller: _instructionsCtrl),
           ]),
+          _buildFormSection('ONLINE ATTEMPT', [_buildOnlineSettings()]),
           const SizedBox(height: 10),
           Text('QUESTIONS',
               style: TextStyle(
@@ -732,6 +751,99 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
         ],
       ),
     );
+  }
+
+  /// Lets the teacher open this test for attempts in the student portal.
+  /// MCQs are then graded automatically on submission; written answers are
+  /// reviewed in "Submissions". Paper tests are unaffected.
+  Widget _buildOnlineSettings() {
+    final df = DateFormat('d MMM yyyy, h:mm a');
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.appColors.surface.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+        border:
+            Border.all(color: context.appColors.border.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            value: _online,
+            activeThumbColor: AppColors.accent,
+            title: Text('Students attempt this test online',
+                style: TextStyle(
+                    color: context.appColors.textPrimary,
+                    fontWeight: FontWeight.w600)),
+            subtitle: Text(
+                _online
+                    ? 'Multiple-choice answers are graded automatically; you grade written answers in Submissions.'
+                    : 'Off: this is a printed paper sat in class. Marks are entered manually.',
+                style: TextStyle(
+                    color: context.appColors.textMuted, fontSize: 12)),
+            onChanged: (v) => setState(() => _online = v),
+          ),
+          if (_online) ...[
+            const SizedBox(height: 8),
+            LabeledField(
+                label: 'Time limit (minutes, optional)',
+                hint: 'e.g. 30 — leave empty for no limit',
+                keyboardType: TextInputType.number,
+                controller: _durationCtrl),
+            Text('Deadline (optional)',
+                style: TextStyle(
+                    color: context.appColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _pickDeadline,
+                    icon: const Icon(Icons.event_rounded, size: 18),
+                    label: Text(
+                        _availableUntil == null
+                            ? 'No deadline — open until you delete the test'
+                            : 'Closes ${df.format(_availableUntil!)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+                if (_availableUntil != null)
+                  IconButton(
+                    tooltip: 'Remove deadline',
+                    onPressed: () => setState(() => _availableUntil = null),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickDeadline() async {
+    final now = DateTime.now();
+    final initial = _availableUntil ?? now.add(const Duration(days: 7));
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial.isBefore(now) ? now : initial,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (!mounted) return;
+    final t = time ?? const TimeOfDay(hour: 23, minute: 59);
+    setState(() => _availableUntil =
+        DateTime(date.year, date.month, date.day, t.hour, t.minute));
   }
 
   Widget _buildFormSection(String title, List<Widget> children) {

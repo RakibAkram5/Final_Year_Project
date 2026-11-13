@@ -83,6 +83,7 @@ abstract final class DataTopics {
   static const resources = 'resources';
   static const queries = 'queries';
   static const quizzes = 'quizzes';
+  static const quizSubmissions = 'quiz_submissions';
   static const marks = 'marks';
   static const ocrDocuments = 'ocr_documents';
   static const users = 'users';

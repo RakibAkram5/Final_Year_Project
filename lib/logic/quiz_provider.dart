@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/models/quiz_model.dart';
+import '../data/models/quiz_submission_model.dart';
 import '../data/models/test_mark_model.dart';
 import '../data/remote/quiz_service.dart';
 
@@ -51,6 +52,33 @@ class QuizProvider extends ChangeNotifier {
   Future<void> deleteMark(String markId, {String academyId = ''}) async {
     await _service.deleteMark(markId, academyId);
   }
+
+  // --- Online attempts ---
+
+  Future<QuizSubmission> startAttempt(String quizId) =>
+      _service.startAttempt(quizId);
+
+  Future<QuizSubmission> saveAnswers(String quizId, List<QuizAnswer> answers) =>
+      _service.saveAnswers(quizId, answers);
+
+  Future<QuizSubmission> submitAttempt(
+          String quizId, List<QuizAnswer> answers) =>
+      _service.submitAttempt(quizId, answers);
+
+  Future<QuizSubmission?> getAttempt(String quizId, {String? studentId}) =>
+      _service.getAttempt(quizId, studentId: studentId);
+
+  Stream<List<QuizSubmission>> watchSubmissions(String quizId) =>
+      _service.watchSubmissions(quizId);
+
+  Future<QuizSubmission> gradeSubmission(
+    String quizId,
+    String submissionId, {
+    required Map<String, double> marksByQuestion,
+    String? teacherNote,
+  }) =>
+      _service.gradeSubmission(quizId, submissionId,
+          marksByQuestion: marksByQuestion, teacherNote: teacherNote);
 
   // --- Streams (Real-time data) ---
 

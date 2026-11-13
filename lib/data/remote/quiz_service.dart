@@ -1,4 +1,5 @@
 import '../models/quiz_model.dart';
+import '../models/quiz_submission_model.dart';
 import '../models/test_mark_model.dart';
 import '../exam/curriculum_bank.dart';
 import 'api_client.dart';
@@ -40,6 +41,11 @@ class QuizService {
       // the paper still saves (layout then falls back to type-grouping on
       // reopen).
       'paperMeta': quiz.paperMeta,
+      // Online attempt settings (ignored by backends that predate them).
+      'attemptMode': quiz.attemptMode,
+      'availableFrom': quiz.availableFrom?.toUtc().toIso8601String(),
+      'availableUntil': quiz.availableUntil?.toUtc().toIso8601String(),
+      'durationMinutes': quiz.durationMinutes,
     });
     DataChanges.notify(DataTopics.quizzes);
     return QuizModel.fromMap(
@@ -207,4 +213,73 @@ class QuizService {
           String classId, String academyId) =>
       liveQuery(DataTopics.marks,
           () async => _marks(await _api.get('/quizzes/marks/class/$classId')));
+
+  // --- Online attempts -----------------------------------------------------
+
+  QuizSubmission _submission(dynamic res) =>
+      QuizSubmission.fromMap(Map<String, dynamic>.from(res as Map));
+
+  /// Starts (or resumes) the signed-in student's attempt.
+  Future<QuizSubmission> startAttempt(String quizId) async =>
+      _submission(await _api.post('/quizzes/$quizId/attempt', {}));
+
+  /// Autosaves answers while the attempt is in progress.
+  Future<QuizSubmission> saveAnswers(
+      String quizId, List<QuizAnswer> answers) async {
+    return _submission(await _api.put('/quizzes/$quizId/attempt/answers', {
+      'answers': answers.map((a) => a.toPayload()).toList(),
+    }));
+  }
+
+  /// Finalises the attempt. Safe to retry: a second call returns the
+  /// already-graded submission unchanged.
+  Future<QuizSubmission> submitAttempt(
+      String quizId, List<QuizAnswer> answers) async {
+    final res = await _api.post('/quizzes/$quizId/attempt/submit', {
+      'answers': answers.map((a) => a.toPayload()).toList(),
+    });
+    DataChanges.notify(DataTopics.quizSubmissions);
+    DataChanges.notify(DataTopics.marks);
+    return _submission(res);
+  }
+
+  /// The attempt for [studentId] (own attempt when null). Returns null when
+  /// the student has not started this quiz.
+  Future<QuizSubmission?> getAttempt(String quizId, {String? studentId}) async {
+    try {
+      final suffix = studentId == null
+          ? ''
+          : '?studentId=${Uri.encodeQueryComponent(studentId)}';
+      return _submission(await _api.get('/quizzes/$quizId/attempt$suffix'));
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  /// Teacher/admin: every submission for a quiz, refreshed on changes.
+  Stream<List<QuizSubmission>> watchSubmissions(String quizId) => liveQuery(
+      DataTopics.quizSubmissions,
+      () async => ((await _api.get('/quizzes/$quizId/submissions')) as List)
+          .map((e) => _submission(e))
+          .toList());
+
+  /// Teacher/admin: award marks for written answers (and an optional note).
+  Future<QuizSubmission> gradeSubmission(
+    String quizId,
+    String submissionId, {
+    required Map<String, double> marksByQuestion,
+    String? teacherNote,
+  }) async {
+    final res =
+        await _api.put('/quizzes/$quizId/submissions/$submissionId/grade', {
+      'marks': marksByQuestion.entries
+          .map((e) => {'questionId': e.key, 'marksAwarded': e.value})
+          .toList(),
+      if (teacherNote != null) 'teacherNote': teacherNote,
+    });
+    DataChanges.notify(DataTopics.quizSubmissions);
+    DataChanges.notify(DataTopics.marks);
+    return _submission(res);
+  }
 }

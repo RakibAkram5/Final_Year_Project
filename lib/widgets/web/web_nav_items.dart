@@ -36,6 +36,7 @@ import '../../features/student/screens/student_attendance_screen.dart';
 import '../../features/student/screens/student_fee_screen.dart';
 import '../../features/student/screens/student_progress_chart_screen.dart';
 import '../../features/quiz/screens/student_test_report_screen.dart';
+import '../../features/quiz/screens/online_tests_screen.dart';
 
 import '../../features/parent/screens/all_challans_screen.dart';
 import '../../features/parent/screens/academy_contact_screen.dart';
@@ -295,6 +296,11 @@ List<WebNavSection> buildStudentNavSections(
           onTap: () => push(StudentAttendanceScreen(studentUid: uid))),
     ]),
     WebNavSection(title: 'PERFORMANCE', items: [
+      WebNavItem(
+          id: 'online_tests',
+          label: 'Online Tests',
+          icon: Icons.quiz_rounded,
+          onTap: () => push(const OnlineTestsScreen())),
       WebNavItem(
           id: 'test_reports',
           label: 'Test Reports',

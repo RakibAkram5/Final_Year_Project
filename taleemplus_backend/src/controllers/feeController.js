@@ -102,24 +102,44 @@ const getAllChallans = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// Bulk, duplicate-safe challan generation for every student in a class
+// section (`sectionId`, the enrollment unit used by the admin UI) or in a
+// subject class (`classId`, legacy). One challan per student per billing
+// period; students who already have one are skipped. All inserts run in a
+// single transaction so a failure never leaves half a class billed.
 const generateChallans = async (req, res, next) => {
   try {
-    const { classId, monthlyFee, admissionFee, examFee, transportFee, fine, dueDate } = req.body;
+    const { classId, sectionId, monthlyFee, admissionFee, examFee, transportFee, fine, dueDate } = req.body;
 
-    if (!classId || !monthlyFee || !dueDate) {
-      return res.status(400).json({ success: false, message: 'classId, monthlyFee, and dueDate are required.' });
+    if ((!classId && !sectionId) || !monthlyFee || !dueDate) {
+      return res.status(400).json({ success: false, message: 'classId or sectionId, monthlyFee, and dueDate are required.' });
     }
 
-    const classObj = await prisma.class.findFirst({
-      where: { id: classId, academyId: req.academyId },
-      include: { enrollments: { include: { student: true } } }
-    });
-
-    if (!classObj) {
-      return res.status(404).json({ success: false, message: 'Class section not found.' });
+    let classLabel;
+    let roster; // [{ studentId, rollNumber, student }]
+    if (sectionId) {
+      const section = await prisma.classSection.findFirst({
+        where: { id: sectionId, academyId: req.academyId },
+        include: { enrollments: { include: { student: true } } }
+      });
+      if (!section) {
+        return res.status(404).json({ success: false, message: 'Class section not found.' });
+      }
+      classLabel = [section.className, section.program, section.section]
+        .filter((part) => part && String(part).trim())
+        .join(' - ');
+      roster = section.enrollments;
+    } else {
+      const classObj = await prisma.class.findFirst({
+        where: { id: classId, academyId: req.academyId },
+        include: { enrollments: { include: { student: true } } }
+      });
+      if (!classObj) {
+        return res.status(404).json({ success: false, message: 'Class section not found.' });
+      }
+      classLabel = `${classObj.className} - ${classObj.section}`;
+      roster = classObj.enrollments;
     }
-
-    const classLabel = `${classObj.className} - ${classObj.section}`;
     const mFee = parseFloat(monthlyFee) || 0;
     const aFee = parseFloat(admissionFee) || 0;
     const eFee = parseFloat(examFee) || 0;
@@ -137,40 +157,44 @@ const generateChallans = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'billingPeriod must use YYYY-MM format.' });
     }
 
-    const createdChallans = [];
-    for (const enrollment of classObj.enrollments) {
-      const duplicate = await prisma.feeChallan.findFirst({
+    const createdChallans = await prisma.$transaction(async (tx) => {
+      const existing = await tx.feeChallan.findMany({
         where: {
           academyId: req.academyId,
-          studentId: enrollment.studentId,
-          billingPeriod
-        },
-        select: { id: true }
-      });
-      if (duplicate) continue;
-      const challanNumber = `CH-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
-      const challan = await prisma.feeChallan.create({
-        include: { student: { select: { studentCode: true } } },
-        data: {
-          academyId: req.academyId,
-          challanNumber,
-          studentId: enrollment.studentId,
-          studentName: enrollment.student.fullName,
-          classLabel,
-          rollNumber: enrollment.rollNumber || null,
-          dueDate: parsedDueDate,
           billingPeriod,
-          monthlyFee: mFee,
-          admissionFee: aFee,
-          examFee: eFee,
-          transportFee: tFee,
-          fine: fFee,
-          totalAmount,
-          status: 'PENDING'
-        }
+          studentId: { in: roster.map((e) => e.studentId) }
+        },
+        select: { studentId: true }
       });
-      createdChallans.push(challan);
-    }
+      const alreadyBilled = new Set(existing.map((e) => e.studentId));
+      const created = [];
+      for (const enrollment of roster) {
+        if (alreadyBilled.has(enrollment.studentId)) continue;
+        if (!enrollment.student || enrollment.student.accountStatus !== 'ACTIVE') continue;
+        const challanNumber = `CH-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+        created.push(await tx.feeChallan.create({
+          include: { student: { select: { studentCode: true } } },
+          data: {
+            academyId: req.academyId,
+            challanNumber,
+            studentId: enrollment.studentId,
+            studentName: enrollment.student.fullName,
+            classLabel,
+            rollNumber: enrollment.rollNumber || enrollment.student.rollNumber || null,
+            dueDate: parsedDueDate,
+            billingPeriod,
+            monthlyFee: mFee,
+            admissionFee: aFee,
+            examFee: eFee,
+            transportFee: tFee,
+            fine: fFee,
+            totalAmount,
+            status: 'PENDING'
+          }
+        }));
+      }
+      return created;
+    });
 
     res.status(201).json({
       success: true,
@@ -178,7 +202,7 @@ const generateChallans = async (req, res, next) => {
       data: createdChallans.map(formatChallan),
       meta: {
         created: createdChallans.length,
-        skipped_existing: classObj.enrollments.length - createdChallans.length
+        skipped_existing: roster.length - createdChallans.length
       }
     });
   } catch (err) {
