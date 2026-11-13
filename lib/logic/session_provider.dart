@@ -79,6 +79,9 @@ class SessionProvider extends ChangeNotifier with WidgetsBindingObserver {
           _handleTimeout();
         } else {
           _startTimer(_timeoutSeconds - elapsed);
+          // Access tokens live 15 minutes; refresh proactively so the first
+          // request after resuming does not hit an expired-token error.
+          unawaited(_auth!.onAppResumed());
         }
       }
     }

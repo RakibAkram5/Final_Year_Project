@@ -1,6 +1,10 @@
 const ERROR_CODES = Object.freeze({
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   UNAUTHENTICATED: 'UNAUTHENTICATED',
+  // Access token was valid once but has expired: the client should refresh.
+  TOKEN_EXPIRED: 'TOKEN_EXPIRED',
+  // Account exists but is not ACTIVE (pending approval / deactivated).
+  ACCOUNT_INACTIVE: 'ACCOUNT_INACTIVE',
   FORBIDDEN: 'FORBIDDEN',
   NOT_FOUND: 'NOT_FOUND',
   CONFLICT: 'CONFLICT',

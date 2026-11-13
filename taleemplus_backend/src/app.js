@@ -25,8 +25,20 @@ const fileRoutes = require('./routes/fileRoutes');
 const assignmentRoutes = require('./routes/assignmentRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const geoRoutes = require('./routes/geoRoutes');
+const brandingRoutes = require('./routes/brandingRoutes');
 
 const app = express();
+
+// Version metadata comes from package.json so /api/v2/version cannot drift
+// from the released backend (it used to be a hard-coded literal).
+const BACKEND_PACKAGE = (() => {
+  try {
+    const pkg = require('../package.json');
+    return { version: pkg.version, releaseDate: pkg.releaseDate || null };
+  } catch (_) {
+    return { version: 'unknown', releaseDate: null };
+  }
+})();
 
 const configuredOrigins = (process.env.CORS_ORIGINS || '')
   .split(',')
@@ -56,11 +68,21 @@ const corsOptions = {
   maxAge: 600,
 };
 
+// Behind Vercel's (single-hop) reverse proxy req.ip would otherwise be the
+// proxy address for every client, making IP-keyed rate limits shared.
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '1500kb' }));
-app.use(morgan('dev'));
+// Production logs omit query strings (they can carry e-mails, e.g.
+// /auth/security-question?email=) and keep one compact line per request.
+morgan.token('path', (req) => (req.originalUrl || req.url || '').split('?')[0]);
+app.use(
+  isProduction
+    ? morgan(':method :path :status :res[content-length] - :response-time ms')
+    : morgan('dev')
+);
 
 // API v2 Version & Metadata endpoint. Registered before the routers because
 // the notification router applies authentication to every unmatched
@@ -73,8 +95,8 @@ app.get('/api/v2/version', (req, res) => {
       service: 'TaleemPlus Enterprise Backend',
       environment: process.env.NODE_ENV || 'development',
       database: 'PostgreSQL + Prisma',
-      release_date: '2026-11-09',
-      app_version: '1.0.1',
+      release_date: BACKEND_PACKAGE.releaseDate,
+      app_version: BACKEND_PACKAGE.version,
       supported_roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT']
     }
   });
@@ -95,6 +117,7 @@ app.use('/api/v2/files', fileRoutes);
 app.use('/api/v2/assignments', assignmentRoutes);
 app.use('/api/v2/reports', reportRoutes);
 app.use('/api/v2/geo', geoRoutes);
+app.use('/api/v2/academy', brandingRoutes);
 // The resource router owns both /resources and /queries collections, so it is
 // mounted at the version root rather than under /resources.
 app.use('/api/v2', resourceRoutes);

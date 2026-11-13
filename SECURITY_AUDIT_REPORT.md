@@ -52,4 +52,21 @@ that call the real API with users of different roles and academies.
 | Firebase web API key remains in Git history | Low–Medium | restrict/rotate in Google Cloud if that project still exists |
 | No antivirus scanning of uploads | Low | files are never executed or served inline except PDF/images; add scanning if required |
 | List endpoints capped, not paginated | Low (availability) | add cursor pagination |
-| Android `applicationId` is `com.example.taleem_plus` and release signing is not configured | Info | set a real id and signing key before Play distribution |
+| Android `applicationId` is `com.example.taleem_plus` and release signing is not configured | Info | **Done**: `com.taleemplus.app`; release keystore generated 2026-11-13 (outside the repo) |
+
+## Update 2026-11-13 (v1.2.0)
+
+Fixed since the table above was written (regression tests in `tests/securityRegressions.contract.test.js`, `tests/quizAttempt.contract.test.js`, `tests/parentPortal.contract.test.js`):
+
+| Finding | Fix |
+|---|---|
+| Refresh tokens stored as raw strings | Stored as SHA-256 hashes, rotated on every refresh (`5e8727b`). |
+| Expired access token answered with 403 → clients never refreshed; sessions broke after 15 min | 401 + `TOKEN_EXPIRED` / `UNAUTHENTICATED`; 403 + `ACCOUNT_INACTIVE` only for disabled accounts. Client refreshes on 401 and proactively on app resume. |
+| **Parent could read the whole student directory** (`GET /users/directory?role=STUDENT`) | Scoped to staff + the parent's linked children. |
+| Any teacher could edit/delete any announcement and answer any student query | Creator-or-admin for announcements; class teacher-or-admin for query answers. |
+| Rate limiter keyed on the proxy address | `trust proxy = 1` (Vercel); production log line without query strings. |
+| No Content-Security-Policy on the web app | CSP in `netlify.toml` / `web/_headers` allowing only the origins the app loads (CanvasKit, Tesseract.js, pdf.js, Google Fonts, OpenStreetMap). |
+| Answer keys for online tests | New attempt endpoints never return `correct_index` / keywords before submission; grading is server-side; one submission per student (unique constraint). |
+| Duplicated ML service code (`ml_service/hf_space/build`) | Generated copy removed from git and ignored; `prepare_space.py` regenerates it. |
+
+Still open and requiring the owner: credential rotation and git-history rewrite (`SECURITY_ROTATION_PLAN.md`), a shared rate-limit store, zod v4 upgrade.

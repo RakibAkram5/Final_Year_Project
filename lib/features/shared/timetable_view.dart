@@ -157,24 +157,78 @@ class TimetableView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(s.displayLabel,
-                    style: TextStyle(
-                        color: context.appColors.textPrimary,
-                        fontWeight: FontWeight.w700)),
+                // Subject is the primary, clearly identifiable label; the
+                // class-section sits beside it as a compact badge.
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(s.subjectLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: context.appColors.textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                    if (!s.isBreak && s.classSectionLabel.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      _badge(context, s.classSectionLabel),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 4),
-                Text(s.timeRangeLabel,
-                    style: TextStyle(
-                        color: context.appColors.textSecondary, fontSize: 12)),
-                if (!s.isBreak && s.teacherName.isNotEmpty)
-                  Text(
-                      '${s.teacherName}${s.room.isNotEmpty ? ' • ${s.room}' : ''}',
-                      style: TextStyle(
-                          color: context.appColors.textMuted, fontSize: 11)),
+                Row(
+                  children: [
+                    Icon(Icons.schedule_rounded,
+                        size: 13, color: context.appColors.textMuted),
+                    const SizedBox(width: 4),
+                    Text(s.timeRangeLabel,
+                        style: TextStyle(
+                            color: context.appColors.textSecondary,
+                            fontSize: 12)),
+                  ],
+                ),
+                if (!s.isBreak && s.teacherName.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(Icons.person_outline_rounded,
+                          size: 13, color: context.appColors.textMuted),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                            '${s.teacherName}${s.room.isNotEmpty ? '  •  ${s.room}' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: context.appColors.textMuted,
+                                fontSize: 11.5)),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _badge(BuildContext context, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+              color: context.appColors.accentText,
+              fontSize: 11,
+              fontWeight: FontWeight.w600)),
     );
   }
 }

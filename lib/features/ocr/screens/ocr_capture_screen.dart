@@ -102,7 +102,8 @@ class _OcrCaptureScreenState extends State<OcrCaptureScreen> {
             : '${_text.text.trim()}\n\n$combined';
       });
       if (result.isEmpty) {
-        _snack('No text was found. Try a clearer image or a different language.');
+        _snack(
+            'No text was found. Try a clearer image or a different language.');
       }
     } catch (e) {
       if (mounted) setState(() => _error = 'OCR failed: $e');
@@ -259,8 +260,7 @@ class _OcrCaptureScreenState extends State<OcrCaptureScreen> {
                   ? null
                   : (v) => setState(() => _language = v ?? OcrLanguage.english),
               items: OcrLanguage.values
-                  .map((l) =>
-                      DropdownMenuItem(value: l, child: Text(l.label)))
+                  .map((l) => DropdownMenuItem(value: l, child: Text(l.label)))
                   .toList(),
             ),
           ],
@@ -297,7 +297,8 @@ class _OcrCaptureScreenState extends State<OcrCaptureScreen> {
                   ? '${_docs[i].name.substring(0, 22)}…'
                   : _docs[i].name,
             ),
-            onDeleted: _processing ? null : () => setState(() => _docs.removeAt(i)),
+            onDeleted:
+                _processing ? null : () => setState(() => _docs.removeAt(i)),
           ),
       ],
     );

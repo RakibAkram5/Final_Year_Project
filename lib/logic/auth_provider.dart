@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants/app_constants.dart';
 import '../data/models/app_user.dart';
+import '../data/remote/api_client.dart';
 import '../data/remote/auth_service.dart';
+import '../data/remote/branding_service.dart';
 
 enum AuthStatus { idle, loading, authenticated, error }
 
@@ -82,9 +84,29 @@ class AuthProvider extends ChangeNotifier {
       _currentUser = null;
       _status = AuthStatus.idle;
       notifyListeners();
+    } on ApiException catch (e) {
+      // 401/403 here means the access token could not be refreshed (refresh
+      // token revoked or expired) or the account was deactivated: the cached
+      // session is dead and must not be kept.
+      if (e.statusCode == 401 || e.statusCode == 403) {
+        await _authService.signOut();
+        _currentUser = null;
+        _status = AuthStatus.idle;
+        notifyListeners();
+      }
+      // Other API errors (5xx, timeouts) keep the cached session.
     } catch (_) {
       // Network/auth transport failure: keep the cached session.
     }
+  }
+
+  /// Called when the app returns to the foreground: refreshes the access
+  /// token proactively and re-validates the profile so a session that sat in
+  /// the background past the 15-minute access-token lifetime keeps working.
+  Future<void> onAppResumed() async {
+    if (_currentUser == null) return;
+    await _authService.refreshSessionIfPossible();
+    await _refreshProfileSilently();
   }
 
   /// Returns true only when the user is approved and should enter a dashboard.
@@ -206,6 +228,16 @@ class AuthProvider extends ChangeNotifier {
         clearAcademyLocation: saved == null,
         academyAddress: address,
       );
+      notifyListeners();
+    }
+  }
+
+  /// Admin: applies freshly saved academy branding to [currentUser] so every
+  /// portal screen, sidebar and PDF uses the new identity immediately.
+  Future<void> applyBranding(AcademyBranding branding) async {
+    final updated = await _authService.applyBranding(branding);
+    if (updated != null) {
+      _currentUser = updated;
       notifyListeners();
     }
   }

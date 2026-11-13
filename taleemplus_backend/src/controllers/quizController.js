@@ -1,7 +1,7 @@
 const prisma = require('../config/db');
 const aiQuestionService = require('../services/aiQuestionService');
 const { canReadStudent } = require('../utils/studentAccess');
-const { forbidden, notFound } = require('../utils/apiError');
+const { forbidden, notFound, badRequest } = require('../utils/apiError');
 const { sendSuccess } = require('../utils/response');
 const { toIso } = require('../utils/dto');
 const {
@@ -58,6 +58,11 @@ const formatQuiz = (quiz, includeAnswers) => ({
   test_date: toIso(quiz.testDate),
   instructions: quiz.instructions || '',
   paper_meta: sanitizePaperMeta(quiz.paperMeta, includeAnswers),
+  // Online attempts (PAPER = printed test, ONLINE = attempt in the portal).
+  attempt_mode: quiz.attemptMode || 'PAPER',
+  available_from: toIso(quiz.availableFrom),
+  available_until: toIso(quiz.availableUntil),
+  duration_minutes: quiz.durationMinutes ?? null,
   created_by_uid: quiz.createdById,
   created_by_name: quiz.createdBy?.fullName || '',
   created_at: toIso(quiz.createdAt),
@@ -182,6 +187,42 @@ const roundMarks = (value, fallback) => {
   return Number.isFinite(n) && n >= 0 ? Math.round(n) : fallback;
 };
 
+// Online-attempt settings shared by create and update. Returns the Prisma
+// data fragment or throws a 400 on bad input. Unknown/absent keys are left
+// untouched so legacy clients keep creating PAPER quizzes.
+const attemptSettings = (body) => {
+  const data = {};
+  if (body.attemptMode !== undefined) {
+    const mode = String(body.attemptMode || 'PAPER').toUpperCase();
+    if (!['PAPER', 'ONLINE'].includes(mode)) {
+      throw badRequest('attemptMode must be PAPER or ONLINE.');
+    }
+    data.attemptMode = mode;
+  }
+  for (const key of ['availableFrom', 'availableUntil']) {
+    if (body[key] === undefined) continue;
+    if (body[key] === null || body[key] === '') { data[key] = null; continue; }
+    const d = new Date(body[key]);
+    if (Number.isNaN(d.getTime())) throw badRequest(`${key} must be an ISO-8601 date-time.`);
+    data[key] = d;
+  }
+  if (body.durationMinutes !== undefined) {
+    if (body.durationMinutes === null || body.durationMinutes === '') {
+      data.durationMinutes = null;
+    } else {
+      const n = Number(body.durationMinutes);
+      if (!Number.isInteger(n) || n < 1 || n > 600) {
+        throw badRequest('durationMinutes must be a whole number between 1 and 600.');
+      }
+      data.durationMinutes = n;
+    }
+  }
+  if (data.availableFrom && data.availableUntil && data.availableFrom > data.availableUntil) {
+    throw badRequest('availableFrom must be before availableUntil.');
+  }
+  return data;
+};
+
 const createQuiz = async (req, res, next) => {
   try {
     const {
@@ -223,6 +264,7 @@ const createQuiz = async (req, res, next) => {
         testDate: testDate ? new Date(testDate) : null,
         instructions: instructions || null,
         paperMeta: normalizePaperMeta(paperMeta),
+        ...attemptSettings(req.body),
         createdById: req.user.id,
         questions: {
           create: questions.map((question) => ({
@@ -337,6 +379,7 @@ const updateQuiz = async (req, res, next) => {
       }
     }
     if (req.body.totalMarks !== undefined) data.totalMarks = parseInt(req.body.totalMarks, 10);
+    Object.assign(data, attemptSettings(req.body));
     if (req.body.paperMeta !== undefined) {
       data.paperMeta = normalizePaperMeta(req.body.paperMeta);
     }

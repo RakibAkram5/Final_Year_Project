@@ -20,6 +20,39 @@ class FeeChallanRepository {
     });
   }
 
+  /// Atomic, duplicate-safe generation for every active student enrolled in a
+  /// class section (one server call instead of one POST per student).
+  /// Students who already have a challan for [billingPeriod] are skipped.
+  /// Returns the challans that were created.
+  Future<List<FeeChallanModel>> generateForSection({
+    required String sectionId,
+    required String billingPeriod,
+    required DateTime dueDate,
+    required double monthlyFee,
+    double admissionFee = 0,
+    double examFee = 0,
+    double transportFee = 0,
+    double fine = 0,
+  }) async {
+    final res = await _api.post(
+        '/fees/challans/generate',
+        {
+          'sectionId': sectionId,
+          'billingPeriod': billingPeriod,
+          'dueDate': ApiClient.dateOnly(dueDate),
+          'monthlyFee': monthlyFee,
+          'admissionFee': admissionFee,
+          'examFee': examFee,
+          'transportFee': transportFee,
+          'fine': fine,
+        },
+        timeout: const Duration(seconds: 60));
+    return (res as List)
+        .map((item) => FeeChallanModel.fromMap(
+            (item['id'] ?? '').toString(), Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
   /// Throws on network/authorization errors so screens can show them
   /// instead of an misleading empty state.
   Future<List<FeeChallanModel>> getForStudent(

@@ -156,3 +156,84 @@ def test_status_distinguishes_ready_to_train_from_insufficient(monkeypatch, tmp_
     body = _request("GET", "/models/status", headers=AUTH, params={"academy_id": "a"}).json()
     assert body["fee_risk"]["status"] == "READY_TO_TRAIN"
     assert body["performance"]["status"] == "INSUFFICIENT_DATA"
+
+
+def _performance_rows():
+    from datetime import date, timedelta
+    origin = date(2024, 1, 1)
+    rows = []
+    for d in range(120):
+        prior = 40 + (d % 50)
+        rows.append({"target_date": origin + timedelta(days=d), "prior_avg": float(prior),
+                     "prior_count": 1 + d % 4, "attendance_pct": 60.0 + (d % 40),
+                     "target": float(min(100, prior + 5 + (d % 3)))})
+    return rows
+
+
+def test_batch_prediction_scores_many_rows_in_one_call(monkeypatch, tmp_path):
+    """A promoted model scores a whole academy in one request; results are in
+    row order and carry the model's own validation metrics (no invented ones)."""
+    from app import main
+    monkeypatch.setattr(config, "INTERNAL_TOKEN", TOKEN)
+    monkeypatch.setattr(config, "DATABASE_URL", "postgresql://unused")
+    monkeypatch.setattr(config, "ARTIFACT_DIR", tmp_path)
+    monkeypatch.setattr(config, "MIN_FEE_SAMPLES", 40)
+    monkeypatch.setattr(config, "MIN_PERFORMANCE_SAMPLES", 40)
+    monkeypatch.setattr(main, "extract_fee_rows", lambda *_: _fee_rows())
+    monkeypatch.setattr(main, "extract_performance_rows", lambda *_: _performance_rows())
+    for model in ("fee-risk", "performance"):
+        assert _request("POST", f"/models/train/{model}", headers=AUTH,
+                        json={"academy_id": "academy-batch"}).status_code == 202
+        _wait_until_idle()
+    status = _request("GET", "/models/status", headers=AUTH, params={"academy_id": "academy-batch"}).json()
+    assert status["fee_risk"]["status"] == "PRODUCTION"
+    assert status["performance"]["status"] == "PRODUCTION"
+
+    fee_rows = [{"attendance_pct": 95, "late_count": 0, "delay_avg": 0, "consistency": 1, "outstanding": 1000},
+                {"attendance_pct": 20, "late_count": 3, "delay_avg": 10, "consistency": 0, "outstanding": 1000},
+                {"attendance_pct": None, "late_count": 1, "delay_avg": 2, "consistency": None, "outstanding": 0}]
+    fee = _request("POST", "/predict/fee-risk/batch", headers=AUTH,
+                   json={"academy_id": "academy-batch", "rows": fee_rows})
+    assert fee.status_code == 200, fee.text
+    body = fee.json()
+    assert body["count"] == 3 and len(body["results"]) == 3
+    assert body["version"] == status["fee_risk"]["version"]
+    assert "roc_auc" in body["metrics"]
+    for result in body["results"]:
+        assert 0.0 <= result["probability"] <= 1.0
+        assert result["risk_category"] in {"Low Risk", "Medium Risk", "High Risk"}
+    # The diligent row must not be riskier than the chronically late one.
+    assert body["results"][0]["probability"] <= body["results"][1]["probability"]
+    # Batch and single-row scoring agree.
+    single = _request("POST", "/predict/fee-risk", headers=AUTH,
+                      json={"academy_id": "academy-batch", "features": fee_rows[1]}).json()
+    assert abs(single["probability"] - body["results"][1]["probability"]) < 1e-9
+
+    perf = _request("POST", "/predict/performance/batch", headers=AUTH,
+                    json={"academy_id": "academy-batch",
+                          "rows": [{"prior_avg": 80, "prior_count": 3, "attendance_pct": 90},
+                                   {"prior_avg": 45, "prior_count": 2, "attendance_pct": 70}]})
+    assert perf.status_code == 200, perf.text
+    marks = [r["predicted_marks"] for r in perf.json()["results"]]
+    assert len(marks) == 2 and all(0 <= m <= 100 for m in marks)
+    assert "mae" in perf.json()["metrics"]
+
+    # Validation still applies per row and names the offending row.
+    bad = _request("POST", "/predict/fee-risk/batch", headers=AUTH,
+                   json={"academy_id": "academy-batch", "rows": [fee_rows[0], {"attendance_pct": 150}]})
+    assert bad.status_code == 422
+    assert bad.json()["detail"]["row"] == 1
+
+    # An empty batch is a valid no-op.
+    empty = _request("POST", "/predict/performance/batch", headers=AUTH,
+                     json={"academy_id": "academy-batch", "rows": []})
+    assert empty.status_code == 200 and empty.json()["count"] == 0
+
+
+def test_batch_prediction_refuses_unavailable_model(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "INTERNAL_TOKEN", TOKEN)
+    monkeypatch.setattr(config, "ARTIFACT_DIR", tmp_path)
+    r = _request("POST", "/predict/performance/batch", headers=AUTH,
+                 json={"academy_id": "nobody", "rows": [{"prior_avg": 1, "prior_count": 1, "attendance_pct": 1}]})
+    assert r.status_code == 409
+    assert r.json()["detail"]["status"] == "NOT_READY"

@@ -580,6 +580,22 @@ const getDirectory = async (req, res, next) => {
       accountStatus: 'ACTIVE',
       ...(role && USER_ROLES.includes(role) ? { role } : {})
     };
+    // Privacy: a parent may only see staff and their OWN linked children.
+    // Without this the directory leaked every student's contact details to
+    // any parent account (same scoping as getUsersByRole).
+    if (req.user.role === 'PARENT') {
+      if (where.role === 'PARENT') {
+        where.id = req.user.id;
+      } else if (where.role === 'STUDENT') {
+        where.studentLinks = { some: { parentId: req.user.id } };
+      } else if (!where.role) {
+        where.OR = [
+          { role: { in: ['ADMIN', 'TEACHER'] } },
+          { role: 'STUDENT', studentLinks: { some: { parentId: req.user.id } } },
+          { id: req.user.id }
+        ];
+      }
+    }
     const users = await prisma.user.findMany({
       where,
       orderBy: { fullName: 'asc' }

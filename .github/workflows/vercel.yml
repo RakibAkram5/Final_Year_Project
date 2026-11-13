@@ -39,6 +39,7 @@ jobs:
         if: steps.token.outputs.ready == 'true'
         with:
           channel: stable
+          flutter-version: '3.47.9'
           cache: true
 
       - uses: actions/setup-node@v4

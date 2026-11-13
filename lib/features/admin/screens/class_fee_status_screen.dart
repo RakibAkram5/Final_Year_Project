@@ -9,6 +9,7 @@ import '../../../data/models/class_entity.dart';
 import '../../../data/models/fee_challan_model.dart';
 import '../../../data/repositories/fee_challan_repository.dart';
 import '../../../logic/auth_provider.dart';
+import '../../../widgets/challan_actions.dart';
 import '../../../widgets/gradient_background.dart';
 import '../../../widgets/web/web_nav_items.dart';
 import '../../../widgets/web/web_shell.dart';
@@ -227,6 +228,13 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
                     fontSize: 10,
                     fontWeight: FontWeight.bold)),
           ),
+          if (challan != null)
+            IconButton(
+              icon: Icon(Icons.picture_as_pdf_outlined,
+                  color: context.appColors.textSecondary, size: 20),
+              onPressed: () => ChallanActions.showSheet(context, challan),
+              tooltip: "Download / print / share challan",
+            ),
           if (challan != null && !challan.isPaid)
             IconButton(
               icon: Icon(Icons.check_circle_outline,

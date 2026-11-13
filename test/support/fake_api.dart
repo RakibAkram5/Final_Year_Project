@@ -77,9 +77,54 @@ Future<bool> loadRealFonts() async {
 
 /// Real API responses recorded from a local seeded backend by
 /// `tool/record_ui_fixtures.js`.
-Map<String, dynamic> loadFixtures() =>
-    jsonDecode(File('test/fixtures/ui_api_fixtures.json').readAsStringSync())
-        as Map<String, dynamic>;
+///
+/// Deadlines are re-anchored to "now": the recording stored absolute
+/// `dueAt` values, so once the calendar passed them every assignment turned
+/// "Closed" and the student submission UI vanished (CI went red on
+/// 2026-11-13 for exactly this reason). Each `dueAt` keeps its distance
+/// from the recording's most recent deadline, shifted so that deadline is
+/// seven days from today.
+Map<String, dynamic> loadFixtures() {
+  final fixtures =
+      jsonDecode(File('test/fixtures/ui_api_fixtures.json').readAsStringSync())
+          as Map<String, dynamic>;
+  final dues = <DateTime>[];
+  void collect(dynamic node) {
+    if (node is Map) {
+      final due = node['dueAt'];
+      if (due is String) {
+        final parsed = DateTime.tryParse(due);
+        if (parsed != null) dues.add(parsed);
+      }
+      node.values.forEach(collect);
+    } else if (node is List) {
+      node.forEach(collect);
+    }
+  }
+
+  collect(fixtures);
+  if (dues.isEmpty) return fixtures;
+  final latest = dues.reduce((a, b) => a.isAfter(b) ? a : b);
+  final shift =
+      DateTime.now().toUtc().add(const Duration(days: 7)).difference(latest);
+  void reanchor(dynamic node) {
+    if (node is Map) {
+      final due = node['dueAt'];
+      if (due is String) {
+        final parsed = DateTime.tryParse(due);
+        if (parsed != null) {
+          node['dueAt'] = parsed.add(shift).toUtc().toIso8601String();
+        }
+      }
+      node.values.forEach(reanchor);
+    } else if (node is List) {
+      node.forEach(reanchor);
+    }
+  }
+
+  reanchor(fixtures);
+  return fixtures;
+}
 
 final _uuid = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',

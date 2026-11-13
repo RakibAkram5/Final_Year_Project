@@ -68,68 +68,89 @@ class AllChallansScreen extends StatelessWidget {
   }
 
   Widget _childChallanTile(BuildContext context, dynamic child) {
+    final viewButton = ElevatedButton.icon(
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => StudentChallanScreen(studentUid: child.uid)),
+      ),
+      icon: const Icon(Icons.receipt_long_rounded, size: 18),
+      label: const Text("View Challan"),
+    );
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: context.appColors.surface.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border:
             Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      // Compact single-row card: avatar + student info on the left, a
+      // content-width action on the right. On very narrow phones the action
+      // drops to its own right-aligned line so the name keeps its space.
+      child: LayoutBuilder(builder: (context, constraints) {
+        // Stack the action under the name when the row is narrow OR when the
+        // user has a large accessibility text scale (the button grows with it).
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
+        final stack = constraints.maxWidth < 340 * textScale;
+        final info = Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: AppColors.accent.withValues(alpha: 0.1),
+              child: Text(
+                child.fullName.isNotEmpty
+                    ? child.fullName[0].toUpperCase()
+                    : '?',
+                style: TextStyle(
+                    color: context.appColors.accentText,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(child.fullName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: context.appColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15)),
+                  Text("Student Profile",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: context.appColors.textMuted, fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
+        );
+
+        if (stack) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                backgroundColor: AppColors.accent.withValues(alpha: 0.1),
-                child: Text(
-                  child.fullName.isNotEmpty
-                      ? child.fullName[0].toUpperCase()
-                      : '?',
-                  style: TextStyle(
-                      color: context.appColors.accentText,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(child.fullName,
-                        style: TextStyle(
-                            color: context.appColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16)),
-                    Text("Student Profile",
-                        style: TextStyle(
-                            color: context.appColors.textMuted, fontSize: 12)),
-                  ],
-                ),
-              ),
+              info,
+              const SizedBox(height: 12),
+              Align(alignment: Alignment.centerRight, child: viewButton),
             ],
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => StudentChallanScreen(studentUid: child.uid)),
-            ),
-            icon: const Icon(Icons.receipt_long_rounded, size: 18),
-            label: const Text("VIEW CHALLAN"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: AppColors.textOnAccent,
-              minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-          ),
-        ],
-      ),
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: info),
+            const SizedBox(width: 12),
+            viewButton,
+          ],
+        );
+      }),
     );
   }
 

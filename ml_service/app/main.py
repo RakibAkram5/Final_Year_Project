@@ -56,6 +56,12 @@ class PredictRequest(BaseModel):
     features: dict[str, float | None]
 
 
+class BatchPredictRequest(BaseModel):
+    """Many feature rows scored in one call (one model load, one request)."""
+    academy_id: str = Field(min_length=1, max_length=128)
+    rows: list[dict[str, float | None]] = Field(max_length=5000)
+
+
 class TrainRequest(BaseModel):
     academy_id: str = Field(min_length=1, max_length=128)
 
@@ -308,33 +314,66 @@ def rollback(request: RollbackRequest):
     return {"status": "PRODUCTION", "version": request.version, "model": request.model}
 
 
-def _predict(model_name: str, request: PredictRequest):
-    loaded = load_production(config.ARTIFACT_DIR, _academy_key(request.academy_id), model_name)
+_FEATURE_LIMITS = {"attendance_pct": (0, 100), "late_count": (0, None),
+                   "delay_avg": (0, None), "consistency": (0, 1),
+                   "outstanding": (0, None), "prior_avg": (0, 100), "prior_count": (0, None)}
+
+
+def _validate_features(expected: list[str], features: dict, index: int | None = None):
+    where = {} if index is None else {"row": index}
+    missing = [name for name in expected if name not in features]
+    if missing:
+        raise HTTPException(422, {"message": "Missing model features", "fields": missing, **where})
+    unknown = [name for name in features if name not in expected]
+    if unknown:
+        raise HTTPException(422, {"message": "Unknown model features", "fields": unknown, **where})
+    for name, value in features.items():
+        low, high = _FEATURE_LIMITS[name]
+        if value is not None and (not math.isfinite(value) or value < low or (high is not None and value > high)):
+            raise HTTPException(422, {"message": "Feature value is outside its valid range", "field": name, **where})
+
+
+def _load_for_prediction(model_name: str, academy_id: str):
+    loaded = load_production(config.ARTIFACT_DIR, _academy_key(academy_id), model_name)
     if not loaded:
         raise HTTPException(409, {"status": "NOT_READY", "message": "No validated production model is available"})
-    model, metadata = loaded
-    expected = metadata["features"]
-    missing = [name for name in expected if name not in request.features]
-    if missing:
-        raise HTTPException(422, {"message": "Missing model features", "fields": missing})
-    unknown = [name for name in request.features if name not in expected]
-    if unknown:
-        raise HTTPException(422, {"message": "Unknown model features", "fields": unknown})
-    limits = {"attendance_pct": (0, 100), "late_count": (0, None),
-              "delay_avg": (0, None), "consistency": (0, 1),
-              "outstanding": (0, None), "prior_avg": (0, 100), "prior_count": (0, None)}
-    for name, value in request.features.items():
-        low, high = limits[name]
-        if value is not None and (not math.isfinite(value) or value < low or (high is not None and value > high)):
-            raise HTTPException(422, {"message": "Feature value is outside its valid range", "field": name})
+    return loaded
+
+
+def _score(model_name: str, model, metadata: dict, rows: list[dict]) -> list[dict]:
+    """Score already-validated rows in one vectorised call."""
     import pandas as pd
-    row = {name: request.features[name] for name in expected}
-    output = model.predict(pd.DataFrame([row]))[0]
+    expected = metadata["features"]
+    frame = pd.DataFrame([{name: row[name] for name in expected} for row in rows])
+    version = metadata["version"]
     if model_name == "fee-risk":
-        probability = float(model.predict_proba(pd.DataFrame([row]))[0, 1])
-        category = "High Risk" if probability >= .7 else "Medium Risk" if probability >= .4 else "Low Risk"
-        return {"version": metadata["version"], "probability": probability, "risk_category": category}
-    return {"version": metadata["version"], "predicted_marks": float(max(0, min(100, output))), "uncertainty": None}
+        probabilities = model.predict_proba(frame)[:, 1]
+        results = []
+        for probability in probabilities:
+            probability = float(probability)
+            category = "High Risk" if probability >= .7 else "Medium Risk" if probability >= .4 else "Low Risk"
+            results.append({"version": version, "probability": probability, "risk_category": category})
+        return results
+    outputs = model.predict(frame)
+    return [{"version": version, "predicted_marks": float(max(0, min(100, output))), "uncertainty": None}
+            for output in outputs]
+
+
+def _predict(model_name: str, request: PredictRequest):
+    model, metadata = _load_for_prediction(model_name, request.academy_id)
+    _validate_features(metadata["features"], request.features)
+    return _score(model_name, model, metadata, [request.features])[0]
+
+
+def _predict_batch(model_name: str, request: BatchPredictRequest):
+    model, metadata = _load_for_prediction(model_name, request.academy_id)
+    for index, features in enumerate(request.rows):
+        _validate_features(metadata["features"], features, index)
+    results = _score(model_name, model, metadata, request.rows) if request.rows else []
+    return {"version": metadata["version"], "model": model_name, "count": len(results),
+            "metrics": (metadata.get("metrics") or {}).get("metrics"),
+            "trained_at": metadata.get("trained_at"), "records": metadata.get("records"),
+            "results": results}
 
 
 @app.post("/predict/fee-risk", dependencies=[Depends(internal_auth)])
@@ -345,3 +384,13 @@ def predict_fee(request: PredictRequest):
 @app.post("/predict/performance", dependencies=[Depends(internal_auth)])
 def predict_performance(request: PredictRequest):
     return _predict("performance", request)
+
+
+@app.post("/predict/fee-risk/batch", dependencies=[Depends(internal_auth)])
+def predict_fee_batch(request: BatchPredictRequest):
+    return _predict_batch("fee-risk", request)
+
+
+@app.post("/predict/performance/batch", dependencies=[Depends(internal_auth)])
+def predict_performance_batch(request: BatchPredictRequest):
+    return _predict_batch("performance", request)

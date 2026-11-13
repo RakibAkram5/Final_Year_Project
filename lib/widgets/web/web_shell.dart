@@ -9,6 +9,7 @@ import '../../core/web/web_breakpoints.dart';
 import '../../core/web/web_theme.dart';
 import '../../data/models/app_user.dart';
 import '../../logic/auth_provider.dart';
+import '../academy_logo.dart';
 import 'web_nav_items.dart';
 import 'web_topbar.dart';
 
@@ -101,6 +102,7 @@ class _WebAppShellState extends State<WebAppShell> {
                   navSections: widget.navSections,
                   activeNavId: widget.activeNavId,
                   collapsed: false,
+                  user: widget.user,
                   onNavigate: () => Navigator.of(context).maybePop(),
                 ),
               ),
@@ -130,6 +132,7 @@ class _WebAppShellState extends State<WebAppShell> {
                     navSections: widget.navSections,
                     activeNavId: widget.activeNavId,
                     collapsed: _collapsed,
+                    user: widget.user,
                     onToggleCollapse: _toggleCollapsed,
                   ),
                 ),
@@ -155,7 +158,7 @@ class _WebAppShellState extends State<WebAppShell> {
                             BoxConstraints(maxWidth: widget.maxContentWidth),
                         child: Padding(
                           padding:
-                              widget.contentPadding ?? const EdgeInsets.all(28),
+                              widget.contentPadding ?? const EdgeInsets.all(24),
                           child: widget.body,
                         ),
                       ),
@@ -177,6 +180,7 @@ class _SidebarContent extends StatelessWidget {
   final List<WebNavSection> navSections;
   final String activeNavId;
   final bool collapsed;
+  final AppUser? user;
   final VoidCallback? onToggleCollapse;
   final VoidCallback? onNavigate;
 
@@ -186,39 +190,61 @@ class _SidebarContent extends StatelessWidget {
     required this.navSections,
     required this.activeNavId,
     required this.collapsed,
+    this.user,
     this.onToggleCollapse,
     this.onNavigate,
   });
 
   @override
   Widget build(BuildContext context) {
+    final academyName = user?.academyName?.trim();
+    final hasAcademy = academyName != null && academyName.isNotEmpty;
     return Column(
       children: [
+        // The academy's own identity heads the sidebar; the platform name
+        // appears only as a discreet attribution at the bottom.
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
           child: Row(
             mainAxisAlignment:
                 collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                    gradient: AppColors.accentButton,
-                    borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.school_rounded,
-                    color: AppColors.textOnAccent, size: 20),
-              ),
+              if (hasAcademy)
+                AcademyLogo.forUser(user, size: 36, radius: 10)
+              else
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                      gradient: AppColors.accentButton,
+                      borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.school_rounded,
+                      color: AppColors.textOnAccent, size: 20),
+                ),
               if (!collapsed) ...[
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text('TaleemPlus',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                          color: context.appColors.textPrimary)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(hasAcademy ? academyName : 'Academy Portal',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                              color: context.appColors.textPrimary)),
+                      if (user != null)
+                        Text(user!.role.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: context.appColors.accentText)),
+                    ],
+                  ),
                 ),
               ],
             ],
@@ -252,22 +278,32 @@ class _SidebarContent extends StatelessWidget {
             ],
           ),
         ),
-        if (onToggleCollapse != null)
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Align(
-              alignment: collapsed ? Alignment.center : Alignment.centerRight,
-              child: IconButton(
-                icon: Icon(
-                    collapsed
-                        ? Icons.chevron_right_rounded
-                        : Icons.chevron_left_rounded,
-                    color: context.appColors.textSecondary),
-                tooltip: collapsed ? 'Expand sidebar' : 'Collapse sidebar',
-                onPressed: onToggleCollapse,
-              ),
-            ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+          child: Row(
+            mainAxisAlignment: collapsed
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.spaceBetween,
+            children: [
+              if (!collapsed)
+                const Expanded(
+                    child: Padding(
+                        padding: EdgeInsets.only(left: 6),
+                        child: PoweredByTaleemPlus(centered: false))),
+              if (onToggleCollapse != null)
+                IconButton(
+                  icon: Icon(
+                      collapsed
+                          ? Icons.chevron_right_rounded
+                          : Icons.chevron_left_rounded,
+                      color: context.appColors.textSecondary),
+                  tooltip: collapsed ? 'Expand sidebar' : 'Collapse sidebar',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onToggleCollapse,
+                ),
+            ],
           ),
+        ),
       ],
     );
   }

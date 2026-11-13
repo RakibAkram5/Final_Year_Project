@@ -17,6 +17,7 @@ import '../../../data/remote/pdf_generator_service.dart';
 import 'exam_paper_generator_screen.dart';
 import 'mark_entry_screen.dart';
 import 'ai_paper_grader_screen.dart';
+import 'quiz_submissions_screen.dart';
 
 class TeacherQuizListScreen extends StatefulWidget {
   final bool isAiGen;
@@ -316,6 +317,27 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
                         "${quiz.subject} • ${quiz.month} • ${quiz.totalMarks} Marks",
                         style: TextStyle(
                             color: context.appColors.textMuted, fontSize: 12)),
+                    if (quiz.isOnline)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                              quiz.durationMinutes == null
+                                  ? 'ONLINE'
+                                  : 'ONLINE • ${quiz.durationMinutes} MIN',
+                              style: const TextStyle(
+                                  color: AppColors.success,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6)),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -381,6 +403,30 @@ class _TeacherQuizListScreenState extends State<TeacherQuizListScreen> {
                             ),
                     icon: const Icon(Icons.share_rounded, size: 18),
                     label: const Text("SHARE PDF"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      foregroundColor: AppColors.textOnAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else if (quiz.isOnline)
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => QuizSubmissionsScreen(quiz: quiz)),
+                    ),
+                    icon: const Icon(Icons.fact_check_rounded, size: 18),
+                    label: const Text("SUBMISSIONS & GRADING"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accent,
                       foregroundColor: AppColors.textOnAccent,

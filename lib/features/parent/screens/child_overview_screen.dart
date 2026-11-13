@@ -13,6 +13,7 @@ import '../../../widgets/gradient_background.dart';
 import '../../../widgets/web/web_nav_items.dart';
 import '../../../widgets/web/web_shell.dart';
 import '../../student/screens/student_attendance_screen.dart';
+import '../../quiz/screens/online_tests_screen.dart';
 import '../../quiz/screens/student_test_report_screen.dart';
 import '../../student/screens/student_progress_chart_screen.dart';
 
@@ -128,6 +129,18 @@ class ChildOverviewScreen extends StatelessWidget {
               MaterialPageRoute(
                   builder: (_) => ChildAlertsScreen(
                       childName: child.fullName, childUid: child.uid))),
+        ),
+        const SizedBox(height: 12),
+        _actionTile(
+          context,
+          'Online Tests',
+          'Results of tests attempted in the portal',
+          Icons.quiz_rounded,
+          () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => OnlineTestsScreen(
+                      studentUid: child.uid, studentName: child.fullName))),
         ),
         const SizedBox(height: 12),
         _actionTile(

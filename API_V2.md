@@ -62,6 +62,8 @@ All academy data is scoped to the caller's academy from the access token; client
 |---|---|---|
 | Users | `GET /users/pending`, `PUT /users/:id/approve` · `reject` · `deactivate` · `reactivate`, `POST /users/create`, `PUT /users/:id`, `PUT /users/me`, `GET /users/by-role` · `directory` · `search` · `:id`, `POST /users/profiles`, `GET /users/roll-number-available?rollNumber=&excludeId=` | Deactivation keeps all history and revokes sessions. Parents listing students see only linked children. |
 | Parent links | `POST /users/link-child`, `DELETE /users/link-child/:studentId[?parentId=]` | Admin passes `parentId`; parents act on themselves. |
+| Link requests | `POST /users/link-requests` (parent), `GET /users/link-requests/mine`, `GET /users/link-requests[?status=]` (admin), `POST /users/link-requests/:id/approve` · `reject` | A parent asks; the link exists only after an admin approves. |
+| Academy branding | `GET /academy/branding`, `PUT /academy/branding` (admin), `GET /academy/branding/public?code=` (public, rate-limited) | Name, address, phone, e-mail and a validated logo image (data URI); the logo is rendered in every portal and on PDFs. |
 | Classes | `GET/POST /classes`, `PUT/DELETE /classes/:id`, `POST /classes/:id/enroll`, `DELETE /classes/:id/enroll/:studentId` | `studentIds` accepted on create. |
 | Class sections | `GET/POST /class-sections`, `PUT/DELETE /class-sections/:id`, `PUT /class-sections/:id/enrollment`, `POST /class-sections/:id/enroll`, `DELETE /class-sections/:id/enroll/:studentId` | Roster changes cascade to linked subject classes. Deleting a section keeps its classes. |
 | Academic structure | `GET/PUT /academic-structure` | `{ levels: [{ name, groups[] }] }` |
@@ -69,7 +71,9 @@ All academy data is scoped to the caller's academy from the access token; client
 | Attendance | `POST /attendance/mark`, `GET /attendance[?classId&from&to]`, `GET /attendance/class?classId&logDate`, `GET /attendance/student/:id` | One record per class/student/day (upsert). Teachers only for their own classes. |
 | Fees | `POST /fees/challans`, `POST /fees/challans/generate`, `GET /fees/challans`, `GET /fees/challans/student/:id`, `PUT /fees/challans/:id/pay`, `GET /fees/ledger/stats` | Status is `overdue` once the due day has passed. Ledger includes `total_overdue` and a `monthly` breakdown by billing period. |
 | Payments | `GET/PUT /fees/payment-settings`, `POST /fees/challans/:id/proof`, `GET /fees/payment-proofs/pending`, `PUT /fees/payment-proofs/:id/review` | |
-| Quizzes & marks | `GET/POST /quizzes`, `GET/PUT/DELETE /quizzes/:id`, `PUT /quizzes/:id/questions`, `POST /quizzes/marks`, `DELETE /quizzes/marks/:id`, `GET /quizzes/marks/quiz/:id` · `class/:id` · `student/:id` · `academy` | Teachers manage only their own classes' quizzes. Students/parents never receive answer keys. |
+| Quizzes & marks | `GET/POST /quizzes`, `GET/PUT/DELETE /quizzes/:id`, `PUT /quizzes/:id/questions`, `POST /quizzes/marks`, `DELETE /quizzes/marks/:id`, `GET /quizzes/marks/quiz/:id` · `class/:id` · `student/:id` · `academy` | Teachers manage only their own classes' quizzes. Students/parents never receive answer keys. Quizzes carry `attempt_mode` (`PAPER` \| `ONLINE`), `available_from/until`, `duration_minutes`. |
+| Online attempts | `POST /quizzes/:id/attempt`, `PUT /quizzes/:id/attempt/answers`, `POST /quizzes/:id/attempt/submit`, `GET /quizzes/:id/attempt[?studentId=]`, `GET /quizzes/:id/submissions`, `PUT /quizzes/:id/submissions/:sid/grade` | One submission per student per quiz (idempotent submit). MCQs auto-graded on the server; written answers graded by the class teacher; result published as a TestMark when complete. |
+| ML (admin) | `GET /admin/ml/status` · `dashboard` · `analytics` · `metrics` · `history`, `POST /admin/ml/predict/*`, `train/*`, `retrain`, `rollback` | Proxy to the ML service with the internal token; training calls limited to 3/min. |
 | Resources & queries | `GET/POST /resources`, `PUT/DELETE /resources/:id`, `GET/POST /queries`, `PUT /queries/:id/answer` | Create body: `{ classId, title, description?, fileUrl? or contentText? }`. |
 | Timetable | `GET /timetable[?teacherId&classIds&dayOfWeek]`, `POST /timetable`, `PUT/DELETE /timetable/:id` | `dayOfWeek` 1 = Monday … 7 = Sunday. |
 | Notifications | `GET /notifications`, `POST /notifications`, `PUT /notifications/:id/read`, `PUT /notifications/read-all`, `DELETE /notifications/:id` | Approvals create a notification automatically. |
@@ -99,7 +103,7 @@ Error responses include a stable machine-readable code:
 }
 ```
 
-Codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `RATE_LIMITED`, `INTERNAL_ERROR`, plus login-specific `ACCOUNT_LOCKED`, `ACCOUNT_PENDING`, `ACCOUNT_REJECTED`, `ACCOUNT_INACTIVE`.
+Codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `TOKEN_EXPIRED` (401 — refresh the access token and retry), `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `RATE_LIMITED`, `INTERNAL_ERROR`, plus account-state codes `ACCOUNT_LOCKED` (423), `ACCOUNT_PENDING`, `ACCOUNT_REJECTED`, `ACCOUNT_INACTIVE` (403 — a refresh will not help; sign the user out).
 
 Collection DTOs use snake_case. Auth/profile DTOs use camelCase. Dates are ISO-8601 strings; date-only fields use `YYYY-MM-DD`. Enum values in collection DTOs are lowercase.
 

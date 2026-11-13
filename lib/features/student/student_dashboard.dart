@@ -26,8 +26,10 @@ import '../../widgets/latest_announcement_card.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
 import '../shared/notifications_screen.dart';
+import '../../widgets/academy_logo.dart';
 import '../../widgets/gradient_background.dart';
 import '../../core/theme/theme_extensions.dart';
+import '../quiz/screens/online_tests_screen.dart';
 import '../quiz/screens/student_test_report_screen.dart';
 import '../shared/view_announcements_screen.dart';
 import 'screens/student_attendance_screen.dart';
@@ -98,19 +100,10 @@ class StudentDashboard extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          children: [
-            Icon(Icons.school_rounded,
-                color: context.appColors.accentText, size: 22),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text('Student Portal',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        ),
+        title: AcademyTitle(
+            user: user,
+            portalLabel: 'Student Portal',
+            portalIcon: Icons.school_rounded),
         actions: dashboardAppBarActions(context,
             notificationBell: _notificationBell(context, user),
             onSecurity: () => _showSecuritySettings(context),
@@ -253,6 +246,14 @@ class StudentDashboard extends StatelessWidget {
                 const SizedBox(height: 10),
                 _moduleGroup(context, Icons.insights_rounded, [
                   _ModuleItem(
+                      'Online Tests',
+                      'Attempt tests set by your teachers',
+                      Icons.quiz_rounded,
+                      () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const OnlineTestsScreen()))),
+                  _ModuleItem(
                       'Test Reports',
                       'Check your marks and performance',
                       Icons.analytics_rounded,
@@ -355,22 +356,31 @@ class StudentDashboard extends StatelessWidget {
                             fontSize: 13)),
                   const SizedBox(height: 12),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.08),
+                      color:
+                          context.appColors.surfaceAlt.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color:
+                              context.appColors.border.withValues(alpha: 0.5)),
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.format_quote_rounded,
-                            color: context.appColors.accentText, size: 16),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1),
+                          child: Icon(Icons.format_quote_rounded,
+                              color: context.appColors.textMuted, size: 16),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text('"${_quoteOfTheDay()}"',
                               style: TextStyle(
                                   color: context.appColors.textSecondary,
-                                  fontSize: 12,
+                                  fontSize: 12.5,
+                                  height: 1.35,
                                   fontStyle: FontStyle.italic)),
                         ),
                       ],

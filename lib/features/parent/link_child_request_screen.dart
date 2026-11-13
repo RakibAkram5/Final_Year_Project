@@ -54,7 +54,8 @@ class _LinkChildRequestScreenState extends State<LinkChildRequestScreen> {
       setState(() => _error = e.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Could not load your requests. Please try again.');
+      setState(
+          () => _error = 'Could not load your requests. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

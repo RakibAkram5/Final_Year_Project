@@ -206,6 +206,30 @@ class QuizModel {
   /// PDF generator rebuilds sections from [questions] by type.
   final List<PaperSection> sections;
 
+  // --- Online attempt settings (additive; legacy quizzes are PAPER) ---
+
+  /// 'PAPER' (printed, sat in class) or 'ONLINE' (attempted in the portal).
+  final String attemptMode;
+
+  /// Window during which an ONLINE quiz may be started. Null = open-ended.
+  final DateTime? availableFrom;
+  final DateTime? availableUntil;
+
+  /// Per-attempt time limit for ONLINE quizzes. Null = untimed.
+  final int? durationMinutes;
+
+  bool get isOnline => attemptMode == 'ONLINE';
+
+  /// Whether a student may start an attempt right now (window only; the
+  /// server is authoritative and re-checks on every call).
+  bool get isOpenNow {
+    if (!isOnline) return false;
+    final now = DateTime.now();
+    if (availableFrom != null && now.isBefore(availableFrom!)) return false;
+    if (availableUntil != null && now.isAfter(availableUntil!)) return false;
+    return true;
+  }
+
   QuizModel({
     required this.id,
     required this.academyId,
@@ -229,6 +253,10 @@ class QuizModel {
     this.language = 'en',
     this.chapters = const [],
     this.sections = const [],
+    this.attemptMode = 'PAPER',
+    this.availableFrom,
+    this.availableUntil,
+    this.durationMinutes,
   });
 
   /// Exam title with a sensible fallback chain.
@@ -398,7 +426,25 @@ class QuizModel {
       language: (meta?['language'] ?? 'en').toString(),
       chapters: chapters,
       sections: sections,
+      attemptMode:
+          (map['attempt_mode'] ?? map['attemptMode'] ?? 'PAPER').toString(),
+      availableFrom:
+          _parseOptionalDate(map['available_from'] ?? map['availableFrom']),
+      availableUntil:
+          _parseOptionalDate(map['available_until'] ?? map['availableUntil']),
+      durationMinutes:
+          ((map['duration_minutes'] ?? map['durationMinutes']) as num?)
+              ?.toInt(),
     );
+  }
+
+  static DateTime? _parseOptionalDate(dynamic val) {
+    if (val == null) return null;
+    if (val is DateTime) return val.toLocal();
+    if (val is String && val.trim().isNotEmpty) {
+      return DateTime.tryParse(val)?.toLocal();
+    }
+    return null;
   }
 
   QuizModel copyWith({
@@ -411,6 +457,10 @@ class QuizModel {
     String? language,
     List<String>? chapters,
     String? instructions,
+    String? attemptMode,
+    DateTime? availableFrom,
+    DateTime? availableUntil,
+    int? durationMinutes,
   }) {
     return QuizModel(
       id: id,
@@ -435,6 +485,10 @@ class QuizModel {
       language: language ?? this.language,
       chapters: chapters ?? this.chapters,
       sections: sections ?? this.sections,
+      attemptMode: attemptMode ?? this.attemptMode,
+      availableFrom: availableFrom ?? this.availableFrom,
+      availableUntil: availableUntil ?? this.availableUntil,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
     );
   }
 }

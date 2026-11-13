@@ -75,6 +75,13 @@ model Academy {
   bankAccountNumber     String?
   bankIban              String?
   paymentInstructions   String?
+  // White-label branding: each academy owns its identity. The logo is stored
+  // as validated image bytes (PNG/JPEG/WebP, size-capped) so it renders the
+  // same on Android, Web and inside generated PDFs without a public URL.
+  email                 String?
+  logoData              Bytes?
+  logoMimeType          String?
+  logoUpdatedAt         DateTime?
 
   users             User[]
   classes           Class[]
@@ -86,6 +93,7 @@ model Academy {
   announcements     Announcement[]
   quizzes           Quiz[]
   testMarks         TestMark[]
+  quizSubmissions   QuizSubmission[]
   sharedResources   SharedResource[]
   studentQueries    StudentQuery[]
   notifications     Notification[]
@@ -135,6 +143,7 @@ model User {
   createdNotices         Announcement[]           @relation("CreatedBy")
   createdQuizzes         Quiz[]                   @relation("QuizCreatedBy")
   testMarks              TestMark[]               @relation("StudentMarks")
+  quizSubmissions        QuizSubmission[]         @relation("StudentQuizSubmissions")
   resources              SharedResource[]         @relation("TeacherResources")
   askedQueries           StudentQuery[]           @relation("StudentQueries")
   answeredQueries        StudentQuery[]           @relation("TeacherQueries")
@@ -407,14 +416,22 @@ model Quiz {
   // counts, exam metadata and short/long model answers). Nullable so legacy
   // quizzes and non-exam quizzes are unaffected.
   paperMeta    Json?
+  // Online attempts: PAPER quizzes are printed and sat in class (default);
+  // ONLINE quizzes can be attempted in the student portal until
+  // availableUntil, with an optional per-attempt time limit.
+  attemptMode     String    @default("PAPER")
+  availableFrom   DateTime?
+  availableUntil  DateTime?
+  durationMinutes Int?
   createdById  String
   createdAt    DateTime  @default(now())
 
-  academy   Academy        @relation(fields: [academyId], references: [id], onDelete: Cascade)
-  class     Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
-  createdBy User           @relation("QuizCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  questions QuizQuestion[]
-  testMarks TestMark[]
+  academy     Academy          @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  class       Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdBy   User             @relation("QuizCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  questions   QuizQuestion[]
+  testMarks   TestMark[]
+  submissions QuizSubmission[]
 
   @@index([academyId, classId, createdAt])
   @@map("quizzes")
@@ -430,7 +447,8 @@ model QuizQuestion {
   marks           Int      @default(5)
   gradingKeywords String[] @default([])
 
-  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  quiz    Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers QuizAnswer[]
 
   @@map("quiz_questions")
 }
@@ -459,6 +477,56 @@ model TestMark {
   @@unique([quizId, studentId])
   @@index([academyId, classId, month])
   @@map("test_marks")
+}
+
+// One student's attempt at an ONLINE quiz. Exactly one per (quiz, student):
+// the unique constraint is what makes submission retries safe (a second
+// submit finds the SUBMITTED row and returns it instead of grading twice).
+model QuizSubmission {
+  id            String    @id @default(uuid())
+  academyId     String
+  quizId        String
+  studentId     String
+  status        String    @default("IN_PROGRESS") // IN_PROGRESS | SUBMITTED | GRADED
+  startedAt     DateTime  @default(now())
+  submittedAt   DateTime?
+  gradedAt      DateTime?
+  // Marks for auto-graded (MCQ) questions, computed server-side on submit.
+  autoScore     Float?
+  autoMaxScore  Float?
+  // Final marks once every question has a score (auto + teacher review).
+  finalScore    Float?
+  needsReview   Boolean   @default(false)
+  teacherNote   String?
+  updatedAt     DateTime  @updatedAt
+
+  academy Academy      @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  quiz    Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student User         @relation("StudentQuizSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  answers QuizAnswer[]
+
+  @@unique([quizId, studentId])
+  @@index([academyId, quizId, status])
+  @@index([studentId, submittedAt])
+  @@map("quiz_submissions")
+}
+
+model QuizAnswer {
+  id            String   @id @default(uuid())
+  submissionId  String
+  questionId    String
+  selectedIndex Int?
+  answerText    String?
+  // Set on submit for MCQs; set by the teacher for short/long answers.
+  isCorrect     Boolean?
+  marksAwarded  Float?
+  updatedAt     DateTime @updatedAt
+
+  submission QuizSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question   QuizQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, questionId])
+  @@map("quiz_answers")
 }
 
 model SharedResource {

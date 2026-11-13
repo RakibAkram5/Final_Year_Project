@@ -1,6 +1,7 @@
 {
   "name": "taleemplus-backend",
-  "version": "1.0.1",
+  "version": "1.2.0",
+  "releaseDate": "2026-11-13",
   "description": "Node.js Express REST API backend with PostgreSQL and Prisma ORM for TaleemPlus",
   "main": "src/server.js",
   "scripts": {

@@ -23,10 +23,12 @@ const authenticateToken = async (req, res, next) => {
     }
 
     if (user.accountStatus !== 'ACTIVE') {
+      // Authenticated but not allowed: a refresh cannot fix this, so keep 403
+      // (the client signs the user out instead of retrying).
       return sendError(
         res,
         403,
-        ERROR_CODES.FORBIDDEN,
+        ERROR_CODES.ACCOUNT_INACTIVE,
         'Account is pending approval or disabled.'
       );
     }
@@ -43,7 +45,11 @@ const authenticateToken = async (req, res, next) => {
     req.academyId = user.academyId;
     next();
   } catch (err) {
-    return sendError(res, 403, ERROR_CODES.UNAUTHENTICATED, 'Token expired or invalid.');
+    // 401 (not 403) so clients know a token refresh is the right recovery.
+    if (err && err.name === 'TokenExpiredError') {
+      return sendError(res, 401, ERROR_CODES.TOKEN_EXPIRED, 'Access token has expired.');
+    }
+    return sendError(res, 401, ERROR_CODES.UNAUTHENTICATED, 'Token expired or invalid.');
   }
 };
 

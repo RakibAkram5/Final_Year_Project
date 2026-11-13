@@ -14,6 +14,8 @@ Academy 1─* Class (subject offering) ─ primaryTeacher → User(TEACHER)
 Class 1─* StudentEnrollment *─1 User(STUDENT)
 Class 1─* AttendanceRecord (unique class+student+logDate)
 Class 1─* Quiz 1─* QuizQuestion ; Quiz 1─* TestMark (unique quiz+student)
+Quiz 1─* QuizSubmission (unique quiz+student, ONLINE attempts) 1─* QuizAnswer (unique submission+question)
+User(PARENT) 1─* ParentLinkRequest ─ student? → User(STUDENT)   (admin-approved linking)
 Class 1─* TimetableSlot ; Class 1─* SharedResource ; Class 1─* Assignment 1─* AssignmentSubmission
 User(STUDENT) 1─* FeeChallan (unique academy+student+billingPeriod) 1─* FeePaymentProof
 Academy 1─* StoredFile (category + ownerId → resource/assignment/submission/quiz/user)
@@ -43,6 +45,10 @@ PENDING, VERIFIED, REJECTED
 
 PENDING, MAPPED, SKIPPED, FAILED
 
+## Enum LinkRequestStatus
+
+PENDING, APPROVED, REJECTED
+
 ## Academy (`academies`)
 
 | Field | Type | Notes |
@@ -70,6 +76,10 @@ PENDING, MAPPED, SKIPPED, FAILED
 | bankAccountNumber | String? |  |
 | bankIban | String? |  |
 | paymentInstructions | String? |  |
+| email | String? | branding: academy contact e-mail (migration `20261110200000_academy_branding`) |
+| logoData | Bytes? | branding: validated PNG/JPEG/WebP logo bytes (size- and dimension-capped) |
+| logoMimeType | String? |  |
+| logoUpdatedAt | DateTime? |  |
 
 ## User (`users`)
 
@@ -131,6 +141,29 @@ PENDING, MAPPED, SKIPPED, FAILED
 | parent | → User | onDelete: Cascade |
 | student | → User | onDelete: Cascade |
 | _unique_ | | `@@unique([parentId, studentId])` |
+
+## ParentLinkRequest (`parent_link_requests`)
+
+A parent asks to be linked to a child; the link (`ParentStudent`) is created only when an academy admin approves. Migration `20261110120000_parent_link_requests`.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | String | @id @default(uuid()) |
+| academyId | String |  |
+| parentId | String |  |
+| studentId | String? | matched student (resolved by the backend/admin) |
+| childName | String |  |
+| childEmail | String? |  |
+| rollNumber | String? |  |
+| status | LinkRequestStatus | @default(PENDING) |
+| note | String? | admin's reason on reject / system note |
+| decidedById | String? | admin who approved/rejected |
+| decidedAt | DateTime? |  |
+| createdAt | DateTime | @default(now()) |
+| updatedAt | DateTime | @updatedAt |
+| parent | → User | onDelete: Cascade |
+| student | → User? | onDelete: SetNull |
+| _index_ | | `@@index([academyId, status])`, `@@index([parentId, status])` |
 
 ## Class (`classes`)
 
@@ -320,11 +353,17 @@ PENDING, MAPPED, SKIPPED, FAILED
 | totalMarks | Int |  |
 | testDate | DateTime? |  |
 | instructions | String? |  |
+| paperMeta | Json? | exam-paper layout + teacher answer key (never sent to students) |
+| attemptMode | String | @default("PAPER") — `PAPER` (printed) or `ONLINE` (attempt in the student portal); migration `20261113120000_quiz_online_attempts` |
+| availableFrom | DateTime? | ONLINE: earliest start |
+| availableUntil | DateTime? | ONLINE: deadline |
+| durationMinutes | Int? | ONLINE: per-attempt time limit |
 | createdById | String |  |
 | createdAt | DateTime | @default(now()) |
 | academy | → Academy | onDelete: Cascade |
 | class | → Class | onDelete: Cascade |
 | createdBy | → User | onDelete: Cascade |
+| submissions | → QuizSubmission[] |  |
 | _index_ | | `@@index([academyId, classId, createdAt])` |
 
 ## QuizQuestion (`quiz_questions`)
@@ -365,6 +404,48 @@ PENDING, MAPPED, SKIPPED, FAILED
 | student | → User | onDelete: Cascade |
 | _unique_ | | `@@unique([quizId, studentId])` |
 | _index_ | | `@@index([academyId, classId, month])` |
+
+## QuizSubmission (`quiz_submissions`)
+
+One student's attempt at an ONLINE quiz. Exactly one row per (quiz, student): the unique constraint makes a retried submit idempotent (the server returns the already-graded row instead of grading twice). MCQs are scored on submit; a `TestMark` is written when every question has a score (`status = GRADED`).
+
+| Field | Type | Notes |
+|---|---|---|
+| id | String | @id @default(uuid()) |
+| academyId | String |  |
+| quizId | String |  |
+| studentId | String |  |
+| status | String | @default("IN_PROGRESS") — `IN_PROGRESS` \| `SUBMITTED` (awaiting teacher review) \| `GRADED` |
+| startedAt | DateTime | @default(now()) |
+| submittedAt | DateTime? |  |
+| gradedAt | DateTime? |  |
+| autoScore | Float? | marks from auto-graded MCQs |
+| autoMaxScore | Float? | MCQ marks available |
+| finalScore | Float? | set when every question is scored |
+| needsReview | Boolean | @default(false) — has ungraded written answers |
+| teacherNote | String? |  |
+| updatedAt | DateTime | @updatedAt |
+| academy | → Academy | onDelete: Cascade |
+| quiz | → Quiz | onDelete: Cascade |
+| student | → User | onDelete: Cascade |
+| _unique_ | | `@@unique([quizId, studentId])` |
+| _index_ | | `@@index([academyId, quizId, status])`, `@@index([studentId, submittedAt])` |
+
+## QuizAnswer (`quiz_answers`)
+
+| Field | Type | Notes |
+|---|---|---|
+| id | String | @id @default(uuid()) |
+| submissionId | String |  |
+| questionId | String |  |
+| selectedIndex | Int? | MCQ choice |
+| answerText | String? | short/long answer (≤ 5000 chars) |
+| isCorrect | Boolean? | set on submit for MCQs |
+| marksAwarded | Float? | MCQ: automatic; written: by the teacher |
+| updatedAt | DateTime | @updatedAt |
+| submission | → QuizSubmission | onDelete: Cascade |
+| question | → QuizQuestion | onDelete: Cascade |
+| _unique_ | | `@@unique([submissionId, questionId])` |
 
 ## SharedResource (`shared_resources`)
 

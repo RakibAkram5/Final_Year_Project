@@ -165,20 +165,24 @@ class AppWebTheme {
         elevation: 0,
         shadowColor: Colors.black.withValues(alpha: 0.06),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(14),
           side: BorderSide(color: border.withValues(alpha: 0.5)),
         ),
       ),
       dialogTheme: base.dialogTheme.copyWith(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       inputDecorationTheme: base.inputDecorationTheme.copyWith(
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: border),
         ),
       ),
-      visualDensity: VisualDensity.standard,
+      // Denser-than-default controls for the desktop SaaS shell: this trims
+      // every Material component's intrinsic size (buttons land in the
+      // ~36-40px range, list tiles/inputs tighten) without per-widget edits.
+      // Kept web-only so mobile touch targets stay comfortable.
+      visualDensity: const VisualDensity(horizontal: -1, vertical: -1),
       splashFactory: InkSparkle.splashFactory,
     );
   }

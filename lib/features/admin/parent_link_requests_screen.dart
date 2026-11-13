@@ -67,7 +67,8 @@ class _ParentLinkRequestsScreenState extends State<ParentLinkRequestsScreen>
   Future<void> _approve(ParentLinkRequest r) async {
     setState(() => _busy.add(r.id));
     try {
-      await AuthService().approveLinkRequest(r.id, studentId: r.matchedStudent?.id);
+      await AuthService()
+          .approveLinkRequest(r.id, studentId: r.matchedStudent?.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Request approved and child linked.')),
@@ -99,7 +100,8 @@ class _ParentLinkRequestsScreenState extends State<ParentLinkRequestsScreen>
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel')),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, controller.text.trim()),
               child: const Text('Reject'),
@@ -208,13 +210,15 @@ class _ParentLinkRequestsScreenState extends State<ParentLinkRequestsScreen>
               ],
             ),
             const SizedBox(height: 4),
-            Text([
-              if (r.childEmail?.isNotEmpty ?? false) r.childEmail,
-              if (r.rollNumber?.isNotEmpty ?? false) 'Roll ${r.rollNumber}',
-            ].whereType<String>().join(' · '),
+            Text(
+                [
+                  if (r.childEmail?.isNotEmpty ?? false) r.childEmail,
+                  if (r.rollNumber?.isNotEmpty ?? false) 'Roll ${r.rollNumber}',
+                ].whereType<String>().join(' · '),
                 style: theme.textTheme.bodySmall),
             const Divider(height: 18),
-            Text('Requested by: ${r.parent?.fullName ?? '—'}'
+            Text(
+                'Requested by: ${r.parent?.fullName ?? '—'}'
                 '${r.parent?.email != null ? ' (${r.parent!.email})' : ''}',
                 style: theme.textTheme.bodyMedium),
             const SizedBox(height: 6),
@@ -258,7 +262,8 @@ class _ParentLinkRequestsScreenState extends State<ParentLinkRequestsScreen>
                   ),
                   const SizedBox(width: 8),
                   FilledButton.icon(
-                    onPressed: busy || student == null ? null : () => _approve(r),
+                    onPressed:
+                        busy || student == null ? null : () => _approve(r),
                     icon: busy
                         ? const SizedBox(
                             width: 16,

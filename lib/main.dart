@@ -27,6 +27,7 @@ import 'features/admin/admin_dashboard.dart';
 import 'features/teacher/teacher_dashboard.dart';
 import 'features/student/student_dashboard.dart';
 import 'features/parent/parent_dashboard.dart';
+import 'widgets/connection_banner.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -136,6 +137,9 @@ class TaleemPlusApp extends StatelessWidget {
               navigatorObservers: [_activityNavigatorObserver],
               title: 'Taleem Plus',
               debugShowCheckedModeBanner: false,
+              // One offline banner for the whole app (see ConnectionStatus).
+              builder: (context, child) =>
+                  ConnectionBanner(child: child ?? const SizedBox.shrink()),
               // Web gets the SaaS-redesign theme (Inter font, softer surfaces,
               // smoother transitions); mobile keeps the original theme
               // untouched — `kIsWeb` is a compile-time constant, so mobile
