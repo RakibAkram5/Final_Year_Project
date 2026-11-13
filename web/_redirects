@@ -1,0 +1,5 @@
+# Kept in sync with netlify.toml (Flutter copies web/ into build/web, so a CLI
+# deploy of build/web carries the proxy + SPA rules even without the toml).
+/api/*  https://taleemplus.vercel.app/api/:splat  200!
+/health  https://taleemplus.vercel.app/health  200!
+/*  /index.html  200

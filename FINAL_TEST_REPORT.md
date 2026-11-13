@@ -1,5 +1,7 @@
 # Final test report (2026-11-09)
 
+> **Update 2026-11-13 (v1.2.0):** re-run on a throwaway PostgreSQL 18 cluster after the completion work — Backend Jest **178 / 178** (26 suites, incl. `securityRegressions`, `quizAttempt`, `feeBulkGenerate`), route contract **117 / 117**, Flutter **133 / 133** (65 screens × 12 viewport/theme configs; analyzer 0 errors / 0 warnings), ML pytest **55 / 55**, HTTP smoke **41 / 41** journeys (`taleemplus_backend/scripts/smoke-e2e.js`). Builds: `flutter build web --release`, signed Android APK/AAB. See README → Tests and `TALEEMPLUS_COMPLETE_PROJECT_AUDIT.md` for the defects this run verifies as fixed.
+
 All automated tests run against an **isolated local PostgreSQL 18** database
 or recorded API responses. Neither Neon database was used.
 

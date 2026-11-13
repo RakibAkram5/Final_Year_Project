@@ -11,7 +11,7 @@ Health: `GET /health` → `{ status, database }` (no auth).
 | Tenancy | The academy is **always** taken from the signed-in user, never from the request. Every query is scoped to it. |
 | Success | `{ "success": true, "data": … , "message"? }` |
 | Error | `{ "success": false, "code"?: "VALIDATION_ERROR" \| "FORBIDDEN" \| "NOT_FOUND" \| …, "message": "…", "details"?: [...] }` |
-| Status codes | 400 validation · 401 no/expired token · 403 role/relationship not allowed · 404 not found **or not visible to you** · 409 conflict/duplicate · 413 too large · 415 unsupported file · 423 account locked · 429 rate limited · 503 dependency (storage, ML, geocoder) unavailable |
+| Status codes | 400 validation · **401** missing, malformed or expired access token (`code` `UNAUTHENTICATED` / `TOKEN_EXPIRED` → refresh and retry) · **403** authenticated but not allowed (role/relationship, or `ACCOUNT_INACTIVE` – a refresh will not help) · 404 not found **or not visible to you** · 409 conflict/duplicate · 413 too large · 415 unsupported file · 423 account locked · 429 rate limited · 503 dependency (storage, ML, geocoder) unavailable |
 | Body size | JSON ≤ 1.5 MB; raw file uploads ≤ 4 MB (Vercel caps requests at 4.5 MB) |
 | Roles | `ADMIN`, `TEACHER`, `STUDENT`, `PARENT` |
 | v1 | `/api/v1/*` is a deprecated alias of a subset of v2 (sends `Deprecation: true`). |
@@ -50,6 +50,11 @@ Generated from `taleemplus_backend/src/routes/*.js`. "Roles" is the route-level 
 | POST | `/api/v2/users/link-child` | ADMIN |
 | DELETE | `/api/v2/users/link-child/:studentId` | ADMIN, PARENT |
 | POST | `/api/v2/users/create` | ADMIN |
+| POST | `/api/v2/users/link-requests` | PARENT |
+| GET | `/api/v2/users/link-requests/mine` | PARENT |
+| GET | `/api/v2/users/link-requests` | ADMIN |
+| POST | `/api/v2/users/link-requests/:id/approve` | ADMIN |
+| POST | `/api/v2/users/link-requests/:id/reject` | ADMIN |
 | PUT | `/api/v2/users/:id` | ADMIN |
 | GET | `/api/v2/users/:id` | ADMIN, TEACHER, PARENT |
 | GET | `/api/v2/classes` | any signed-in user |
@@ -97,6 +102,12 @@ Generated from `taleemplus_backend/src/routes/*.js`. "Roles" is the route-level 
 | GET | `/api/v2/quizzes/marks/student/:studentId` | any signed-in user |
 | POST | `/api/v2/quizzes/marks` | ADMIN, TEACHER |
 | DELETE | `/api/v2/quizzes/marks/:id` | ADMIN, TEACHER |
+| POST | `/api/v2/quizzes/:id/attempt` | STUDENT (enrolled) |
+| PUT | `/api/v2/quizzes/:id/attempt/answers` | STUDENT |
+| POST | `/api/v2/quizzes/:id/attempt/submit` | STUDENT |
+| GET | `/api/v2/quizzes/:id/attempt` | STUDENT (own) · PARENT (`?studentId=` linked child) · ADMIN, TEACHER (`?studentId=`) |
+| GET | `/api/v2/quizzes/:id/submissions` | ADMIN, TEACHER (class teacher) |
+| PUT | `/api/v2/quizzes/:id/submissions/:sid/grade` | ADMIN, TEACHER (class teacher) |
 | GET | `/api/v2/quizzes/:id` | any signed-in user |
 | POST | `/api/v2/quizzes` | ADMIN, TEACHER |
 | PUT | `/api/v2/quizzes/:id` | ADMIN, TEACHER |
@@ -139,15 +150,70 @@ Generated from `taleemplus_backend/src/routes/*.js`. "Roles" is the route-level 
 | POST | `/api/v2/timetable` | ADMIN |
 | PUT | `/api/v2/timetable/:id` | ADMIN |
 | DELETE | `/api/v2/timetable/:id` | ADMIN |
-| GET | `/api/v2/admin/ml/status` | any signed-in user |
-| GET | `/api/v2/admin/ml/metrics` | any signed-in user |
-| GET | `/api/v2/admin/ml/history` | any signed-in user |
-| POST | `/api/v2/admin/ml/predict/fee-risk` | any signed-in user |
-| POST | `/api/v2/admin/ml/predict/performance` | any signed-in user |
-| POST | `/api/v2/admin/ml/train/fee-risk` | any signed-in user |
-| POST | `/api/v2/admin/ml/train/performance` | any signed-in user |
-| POST | `/api/v2/admin/ml/retrain` | any signed-in user |
-| POST | `/api/v2/admin/ml/rollback` | any signed-in user |
+| GET | `/api/v2/academy/branding/public?code=` | public (rate-limited; name + logo only) |
+| GET | `/api/v2/academy/branding` | any signed-in user |
+| PUT | `/api/v2/academy/branding` | ADMIN |
+| GET | `/api/v2/admin/ml/status` | ADMIN |
+| GET | `/api/v2/admin/ml/dashboard` | ADMIN |
+| GET | `/api/v2/admin/ml/analytics` | ADMIN |
+| GET | `/api/v2/admin/ml/metrics` | ADMIN |
+| GET | `/api/v2/admin/ml/history` | ADMIN |
+| POST | `/api/v2/admin/ml/predict/fee-risk` | ADMIN |
+| POST | `/api/v2/admin/ml/predict/performance` | ADMIN |
+| POST | `/api/v2/admin/ml/train/fee-risk` | ADMIN (3/min) |
+| POST | `/api/v2/admin/ml/train/performance` | ADMIN (3/min) |
+| POST | `/api/v2/admin/ml/retrain` | ADMIN (3/min) |
+| POST | `/api/v2/admin/ml/rollback` | ADMIN (3/min) |
+
+## Endpoints added in v1.2.0 (2026-11-13)
+
+### Online quiz attempts — `/quizzes/:id/attempt*`
+
+A quiz is created with `attemptMode: "PAPER"` (default, printed) or `"ONLINE"`, plus optional `availableFrom`, `availableUntil` (ISO date-times) and `durationMinutes` (1–600). Only ONLINE quizzes can be attempted; the student must be enrolled in the class.
+
+| Call | Notes |
+|---|---|
+| `POST /quizzes/:id/attempt` | Start or resume → `201 {id, status: IN_PROGRESS, deadline, answers[]}`. An already submitted attempt is returned (200) with results instead. 400 before `availableFrom`/after `availableUntil`. |
+| `PUT /quizzes/:id/attempt/answers` | Autosave `{answers:[{questionId, selectedIndex?, answerText?}]}` while IN_PROGRESS. 400 for a question not in the quiz / option out of range; 409 after submission or when time is over. |
+| `POST /quizzes/:id/attempt/submit` | Finalises. MCQs are graded server-side (`is_correct`, `marks_awarded`), `auto_score`/`auto_max_score` set. All-MCQ quizzes become `GRADED` and publish a TestMark immediately; otherwise `SUBMITTED` + `needs_review`. **Idempotent**: a retry returns the same submission unchanged. |
+| `GET /quizzes/:id/attempt[?studentId=]` | The attempt. Students/parents receive `correct_indexes` and correctness only once the attempt is closed. |
+| `GET /quizzes/:id/submissions` | Class teacher/admin: every submission with scores. |
+| `PUT /quizzes/:id/submissions/:sid/grade` | `{marks:[{questionId, marksAwarded}], teacherNote?}` (0 ≤ marks ≤ question marks). When every question is scored the submission becomes `GRADED` and the TestMark is upserted. |
+
+The answer key (`correct_index`, `grading_keywords`, `paper_meta.answers`) is never included in quiz payloads for students or parents.
+
+### Parent → child link requests — `/users/link-requests`
+
+| Call | Notes |
+|---|---|
+| `POST /users/link-requests` (PARENT) | `{childName, childEmail?, rollNumber?}` → 201 PENDING. The backend matches at most one student in the parent's academy; 409 if a request/link already exists. |
+| `GET /users/link-requests/mine` (PARENT) | Own requests with status and admin note. |
+| `GET /users/link-requests[?status=PENDING\|APPROVED\|REJECTED]` (ADMIN) | Requests of the academy with the matched student. |
+| `POST /users/link-requests/:id/approve` (ADMIN) `{studentId?}` | Creates the ParentStudent link. |
+| `POST /users/link-requests/:id/reject` (ADMIN) `{note?}` | |
+
+### Academy branding — `/academy/branding`
+
+`GET` returns `{name, address, phone, email, logo (data URI or null)}`; `PUT` (admin) accepts those fields plus `logo` as a base64 data URI (PNG/JPEG/WebP, size- and dimension-validated, `null` removes it). `GET /academy/branding/public?code=TP-XXXXX` is unauthenticated and rate-limited: name + logo only, for the login screen. `/auth/me` carries `academyEmail` and the stored logo in `academyLogo`.
+
+### ML analytics — `GET /admin/ml/analytics?from&to&sectionId&level`
+
+Real-data dashboard series (attendance, fees, marks, predictions when a model is in production). `from`/`to` must be real calendar dates (`2026-13-01` → 400). `GET /admin/ml/dashboard` summarises model status per academy.
+
+### Bulk challans by section
+
+`POST /fees/challans/generate` now accepts `sectionId` (class section = the enrolment unit used by the admin UI) **or** `classId`. Runs in one transaction, skips students who already have a challan for `billingPeriod` and inactive accounts; response `meta: {created, skipped_existing}`.
+
+## Behaviour changes in v1.2.0 (clients must know)
+
+| Change | Why |
+|---|---|
+| Expired/invalid access tokens → **401** (`TOKEN_EXPIRED` / `UNAUTHENTICATED`) instead of 403; 403 + `ACCOUNT_INACTIVE` is reserved for disabled/pending accounts | Clients refresh on 401; sessions no longer break after the 15-minute access token. |
+| `GET /users/directory` for PARENT returns staff + the parent's own linked children only | Any parent could download every student's contact details. |
+| Teachers may edit/delete only announcements they created; `PUT /queries/:id/answer` only by the class teacher (or an admin) | Ownership checks were missing. |
+| `POST /admin/ml/predict/*` no longer shares the 3-per-minute training limiter | Dashboard refreshes hit 429. |
+| `/api/v2/version` reports the backend `package.json` version and `releaseDate` | Was a stale literal. |
+| `app.set('trust proxy', 1)`; production request log omits query strings | Correct client IP for rate limits; no e-mails in logs. |
 
 ## Endpoints added in this release
 

@@ -103,6 +103,9 @@ const expectStatus = (res, status, what) => {
       primaryTeacherId: ids.teacher, studentIds: [ids.student] } }), 201, 'class');
     ids.class = cls.data.id;
     if (!cls.data.student_ids.includes(ids.student)) throw new Error('student not enrolled');
+    // The admin UI enrols students at SECTION level (roster cascades to every
+    // subject class); bulk challans and class reports read that roster.
+    expectStatus(await call('PUT', `/class-sections/${ids.section}/enrollment`, { token: tokens.admin, body: { studentIds: [ids.student] } }), 200, 'section roster');
   });
   await check('admin', 'edit class details', async () => {
     const r = expectStatus(await call('PUT', `/classes/${ids.class}`, { token: tokens.admin, body: { subject: 'Mathematics II' } }), 200, 'update class');
@@ -217,6 +220,101 @@ const expectStatus = (res, status, what) => {
   await check('parent', 'cannot list other students', async () => {
     const r = expectStatus(await call('GET', '/users/by-role?role=student', { token: tokens.parent }), 200, 'by-role');
     if (r.data.some((u) => u.id !== ids.student)) throw new Error('foreign students listed');
+  });
+
+  // ------------------------------------------------------------ 2026-11-13 ADDITIONS
+  // Parent → child link request (parent asks, admin approves), privacy scoping,
+  // bulk challans by section, online quiz attempt + grading, branding, token expiry.
+  await check('parent', 'cannot enumerate students through /users/directory (B4)', async () => {
+    const r = expectStatus(await call('GET', '/users/directory?role=STUDENT', { token: tokens.parent }), 200, 'directory');
+    if (r.data.some((u) => u.id !== ids.student)) throw new Error('foreign students listed');
+    return `${r.data.length} visible (own child only)`;
+  });
+  await check('admin', 'create a second student (unlinked) for the link-request flow', async () => {
+    const r = expectStatus(await call('POST', '/users/create', { token: tokens.admin, body: {
+      email: `smoke-student2-${stamp}@test.taleemplus`, password: PASSWORD, fullName: `Smoke Second Child ${stamp}`, role: 'student', rollNumber: `S2-${stamp}` } }), 201, 'create student 2');
+    ids.student2 = r.data.id;
+  });
+  await check('parent', 'submit a link request for the second child', async () => {
+    const r = expectStatus(await call('POST', '/users/link-requests', { token: tokens.parent, body: {
+      childName: `Smoke Second Child ${stamp}`, rollNumber: `S2-${stamp}` } }), 201, 'link request');
+    ids.linkRequest = r.data.id;
+    const mine = expectStatus(await call('GET', '/users/link-requests/mine', { token: tokens.parent }), 200, 'mine');
+    if (!mine.data.some((x) => x.id === ids.linkRequest)) throw new Error('request not listed');
+    return `status ${r.data.status}`;
+  });
+  await check('admin', 'approve the link request → child appears for the parent', async () => {
+    const list = expectStatus(await call('GET', '/users/link-requests?status=PENDING', { token: tokens.admin }), 200, 'list');
+    if (!list.data.some((x) => x.id === ids.linkRequest)) throw new Error('request not visible to admin');
+    expectStatus(await call('POST', `/users/link-requests/${ids.linkRequest}/approve`, { token: tokens.admin, body: {} }), 200, 'approve');
+    const me = expectStatus(await call('GET', '/auth/me', { token: tokens.parent }), 200, 'me');
+    if (!me.data.linkedChildren.some((c) => c.id === ids.student2)) throw new Error('second child not linked');
+  });
+  await check('admin', 'bulk challans for the whole section (duplicate-safe)', async () => {
+    const body = { sectionId: ids.section, monthlyFee: 2500, dueDate: '2099-02-10', billingPeriod: '2099-02' };
+    const first = expectStatus(await call('POST', '/fees/challans/generate', { token: tokens.admin, body }), 201, 'generate');
+    const again = expectStatus(await call('POST', '/fees/challans/generate', { token: tokens.admin, body }), 201, 'generate again');
+    if (first.body.meta.created < 1) throw new Error('nothing generated');
+    if (again.body.meta.created !== 0) throw new Error('duplicates generated');
+    return `${first.body.meta.created} created, ${again.body.meta.skipped_existing} skipped on retry`;
+  });
+  await check('teacher', 'publish an ONLINE quiz (MCQ + written)', async () => {
+    const q = expectStatus(await call('POST', '/quizzes', { token: tokens.teacher, body: {
+      classId: ids.class, title: 'Smoke Online Quiz', subject: 'Mathematics II', totalMarks: 10,
+      attemptMode: 'ONLINE', durationMinutes: 30,
+      questions: [
+        { text: '2 + 2 = ?', type: 'mcq', options: ['3', '4', '5', '6'], correct_index: 1, marks: 4 },
+        { text: 'Define a prime number.', type: 'short', marks: 6 }
+      ] } }), 201, 'online quiz');
+    ids.onlineQuiz = q.data.id;
+    ids.onlineQ = q.data.questions.map((x) => x.id);
+    if (q.data.attempt_mode !== 'ONLINE') throw new Error('attempt mode not saved');
+  });
+  await check('student', 'attempt the online quiz: start → save → submit (MCQ auto-graded)', async () => {
+    const start = expectStatus(await call('POST', `/quizzes/${ids.onlineQuiz}/attempt`, { token: tokens.student, body: {} }), 201, 'start');
+    if (start.data.answers.some((a) => 'is_correct' in a)) throw new Error('key leaked before submit');
+    expectStatus(await call('PUT', `/quizzes/${ids.onlineQuiz}/attempt/answers`, { token: tokens.student, body: {
+      answers: [{ questionId: ids.onlineQ[0], selectedIndex: 1 }] } }), 200, 'autosave');
+    const sub = expectStatus(await call('POST', `/quizzes/${ids.onlineQuiz}/attempt/submit`, { token: tokens.student, body: {
+      answers: [{ questionId: ids.onlineQ[1], answerText: 'Divisible only by 1 and itself.' }] } }), 200, 'submit');
+    if (sub.data.auto_score !== 4 || sub.data.status !== 'SUBMITTED') throw new Error(JSON.stringify(sub.data).slice(0, 200));
+    const retry = expectStatus(await call('POST', `/quizzes/${ids.onlineQuiz}/attempt/submit`, { token: tokens.student, body: {} }), 200, 'retry');
+    if (retry.data.id !== sub.data.id) throw new Error('retry created a second submission');
+    ids.submission = sub.data.id;
+    return `auto ${sub.data.auto_score}/${sub.data.auto_max_score}, awaiting review`;
+  });
+  await check('teacher', 'grade the written answer → result published', async () => {
+    const list = expectStatus(await call('GET', `/quizzes/${ids.onlineQuiz}/submissions`, { token: tokens.teacher }), 200, 'submissions');
+    if (!list.data.some((s) => s.id === ids.submission)) throw new Error('submission missing');
+    const g = expectStatus(await call('PUT', `/quizzes/${ids.onlineQuiz}/submissions/${ids.submission}/grade`, { token: tokens.teacher, body: {
+      marks: [{ questionId: ids.onlineQ[1], marksAwarded: 5 }], teacherNote: 'Good.' } }), 200, 'grade');
+    if (g.data.status !== 'GRADED' || g.data.final_score !== 9) throw new Error(JSON.stringify(g.data).slice(0, 200));
+    const marks = expectStatus(await call('GET', `/quizzes/marks/student/${ids.student}`, { token: tokens.student }), 200, 'marks');
+    const m = marks.data.find((x) => x.quiz_id === ids.onlineQuiz);
+    if (!m || m.marks_obtained !== 9) throw new Error('TestMark not published');
+    return `final 9/10 grade ${m.grade_letter}`;
+  });
+  await check('parent', 'reads the child attempt; a paper quiz cannot be attempted', async () => {
+    const r = expectStatus(await call('GET', `/quizzes/${ids.onlineQuiz}/attempt?studentId=${ids.student}`, { token: tokens.parent }), 200, 'parent attempt read');
+    if (r.data.final_score !== 9) throw new Error('parent sees wrong score');
+    expectStatus(await call('POST', `/quizzes/${ids.quiz}/attempt`, { token: tokens.student, body: {} }), 400, 'paper attempt');
+  });
+  await check('admin', 'academy branding read/update; public branding by code', async () => {
+    const r = expectStatus(await call('PUT', '/academy/branding', { token: tokens.admin, body: { name: `Smoke Test Academy ${stamp}`, email: 'office@smoke.test' } }), 200, 'update branding');
+    if (r.data.email !== 'office@smoke.test') throw new Error('email not saved');
+    const pub = expectStatus(await call('GET', `/academy/branding/public?code=${ids.academyCode}`), 200, 'public branding');
+    return pub.data.name;
+  });
+  await check('admin', 'ML analytics endpoint answers (real data or honest empty state)', async () => {
+    const r = await call('GET', '/admin/ml/analytics', { token: tokens.admin });
+    if (![200, 503].includes(r.status)) throw new Error(`unexpected ${r.status}`);
+    const bad = await call('GET', '/admin/ml/analytics?from=2026-13-01', { token: tokens.admin });
+    if (bad.status !== 400) throw new Error('impossible date accepted');
+    return `HTTP ${r.status}`;
+  });
+  await check('admin', 'expired/invalid access token → 401 (refreshable), not 403', async () => {
+    const r = await call('GET', '/auth/me', { token: 'not-a-token' });
+    if (r.status !== 401) throw new Error(`got ${r.status}`);
   });
 
   // ------------------------------------------------------------ CLEANUP-FREE LIFECYCLE

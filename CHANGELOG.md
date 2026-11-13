@@ -1,5 +1,23 @@
 # Changelog — TaleemPlus
 
+## [1.2.0] — 2026-11-13
+
+### Added
+* **Online quiz attempts**: `Quiz.attemptMode/availableFrom/availableUntil/durationMinutes`, tables `quiz_submissions` and `quiz_answers` (migration `20261113120000_quiz_online_attempts`), controller `quizAttemptController.js` (start/resume, autosave, idempotent submit with server-side MCQ grading, teacher grading that publishes a `TestMark`, parent read through the linked child). Flutter: `TakeQuizScreen` (real attempt UI replacing the placeholder), `OnlineTestsScreen`, `SubmissionReviewScreen`, `QuizSubmissionsScreen`, online settings in the create-test form, navigation entries for all roles.
+* **Bulk challans by section**: `POST /fees/challans/generate` accepts `sectionId`; transactional and duplicate-safe; the admin screen makes one call instead of one per student.
+* **Offline read cache** (`OfflineCache`), `ConnectionStatus` + global `ConnectionBanner`.
+* **Academy branding** and **ML analytics dashboard** (backend, migration, screens, tests) committed.
+* Content-Security-Policy + `_headers`/`_redirects` shipped from `web/`.
+* Release keystore workflow (`android/key.properties`, outside-repo keystore, `TaleemPlus` archive name).
+* Tests: `securityRegressions.contract`, `quizAttempt.contract`, `feeBulkGenerate.contract`, `offline_cache_test.dart`; smoke E2E extended to 41 journeys; responsive matrix +5 screens.
+* Docs: `KNOWN_LIMITATIONS.md`, `SECURITY_ROTATION_PLAN.md`; API, schema, user guides, CI and deployment docs updated.
+
+### Fixed
+* B1 compile error (`contentAsBase64`), B3 401/refresh contract (+ resume refresh), B4 parent directory leak, B5 formatting + AllChallans overflow, B7 route-checker false positive, B8 analytics date validation, B9 `trust proxy`/prod logging, B10 announcement & query ownership, B11 prediction limiter, B12 `/version` metadata, B13 duplicated HF Space copy.
+
+### Changed
+* Backend version 1.2.0 (`releaseDate` in `package.json`); app 1.2.0+7. The "offline-first" wording was replaced by the accurate "offline read cache".
+
 ## [1.1.0] — 2026-11-09
 
 > Production release. Android (APK/AAB) and Web are built from this same source

@@ -1,7 +1,7 @@
 name: taleemplus_app
-description: "TaleemPlus - Offline-first AI-powered academy management app"
+description: "TaleemPlus - AI-assisted academy management app (online, with an offline read cache)"
 publish_to: 'none'
-version: 1.1.2+6
+version: 1.2.0+7
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -20,7 +20,7 @@ dependencies:
   sqflite: ^2.3.3
   path: ^1.9.0
 
-  # Connectivity (drives offline-first sync logic)
+  # Connectivity (drives the offline banner + read cache; writes are online-only)
   connectivity_plus: ^6.0.3
 
   # OCR

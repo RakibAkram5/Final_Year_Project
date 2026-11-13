@@ -14,7 +14,13 @@ TaleemPlus utilizes GitHub Actions for continuous integration, automated testing
 
 ## 2. Required GitHub Secrets
 To enable production deployments and secure builds, configure the following repository secrets under **Settings > Secrets and variables > Actions**:
-* `DATABASE_URL`: Production PostgreSQL connection string.
-* `JWT_SECRET`: Production JWT signing secret.
-* `REFRESH_TOKEN_SECRET`: Production refresh token secret.
-* `FIREBASE_OPTIONS`: Base64-encoded `firebase_options.dart` config (if using Firebase services).
+| Secret / variable | Used by | Purpose |
+|---|---|---|
+| `VERCEL_TOKEN` (secret) | `vercel.yml` | Continuous deployment of the backend to Vercel on pushes to `main` (runs `prisma migrate deploy` first). Without it the job is skipped, not failed. |
+| `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` (secrets) | `main.yml` | Release signing of the APK/AAB. `KEYSTORE_BASE64` = `base64 -w0 taleemplus-release.jks`. Without them the APK is debug-signed and the log says so. The keystore itself lives outside the repository (`~/.taleemplus/`). |
+| `API_BASE_URL` (variable) | `main.yml`, `flutter-ci.yml` | Production API origin baked into Android builds (`https://taleemplus.vercel.app/api/v2`). |
+| `ML_SERVICE_URL`, `ML_INTERNAL_TOKEN` (secrets) | `ml-monitor.yml` | Six-hourly eligibility-gated training sweep. `ML_INTERNAL_TOKEN` must equal the value configured on the ML Vercel project. |
+
+Backend CI (`backend-ci.yml`) needs **no** secrets: it provisions a disposable PostgreSQL service container and uses throwaway JWT values.
+
+Setting them (owner): `gh secret set VERCEL_TOKEN`, `gh secret set KEYSTORE_BASE64 < <(base64 -w0 ~/.taleemplus/taleemplus-release.jks)`, … or Settings → Secrets and variables → Actions.

@@ -68,5 +68,7 @@ Re-record the UI fixtures after API changes (local seeded API only):
 | Private Vercel Blob store connected to `taleemplus` | file uploads in production | Hobby quota |
 | Hugging Face account, write token, private model repo, Docker Space | ML deployment | CPU basic free |
 | Neon read-only role `ml_reader` | ML service database access | yes |
-| Release signing keystore (`android/key.properties`) | Play-installable signed APK/AAB | yes |
-| Rotate any secret that was ever shared, and the old Firebase web key in git history | hygiene | — |
+| Release signing keystore — generated 2026-11-13 at `~/.taleemplus/taleemplus-release.jks` (+ `key.properties`, copied to `android/key.properties`, both git-ignored). Back it up: losing it means Play updates are impossible. | Play-installable signed APK/AAB | yes |
+| Backend env `ML_SERVICE_URL` + `ML_INTERNAL_TOKEN` on the Vercel project `taleemplus` (token identical on the ML project) | admin AI screens show live model status instead of "ML service not available" | yes |
+| GitHub secrets `VERCEL_TOKEN`, `KEYSTORE_*`, `ML_SERVICE_URL`, `ML_INTERNAL_TOKEN` | continuous deploy, signed CI builds, ML monitor cron (see `CI_CD_SETUP.md`) | yes |
+| Rotate any secret that was ever shared, and the old Firebase web key in git history | hygiene — see `SECURITY_ROTATION_PLAN.md` | — |

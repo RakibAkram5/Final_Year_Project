@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../logic/connection_status.dart';
+import '../local/offline_cache.dart';
+
 class ApiException implements Exception {
   final String message;
   final int? statusCode;
@@ -116,6 +119,32 @@ class ApiClient {
     await prefs.setString(_accessTokenKey, access);
     await prefs.setString(_refreshTokenKey, refresh);
     _refreshToken = refresh;
+    OfflineCache.instance.scope = _userIdFromJwt(access);
+  }
+
+  /// The `userId` claim of an access token (used to scope the offline cache
+  /// to the signed-in user). Null when the token cannot be decoded.
+  static String? _userIdFromJwt(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) return null;
+      final payload =
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final claims = jsonDecode(payload);
+      return claims is Map ? claims['userId']?.toString() : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Restores the offline-cache scope for an already stored session (app
+  /// start). No-op when there is no token.
+  Future<void> restoreCacheScope() async {
+    if (OfflineCache.instance.scope != null) return;
+    final token = await getAccessToken();
+    if (token != null && token.isNotEmpty) {
+      OfflineCache.instance.scope = _userIdFromJwt(token);
+    }
   }
 
   Future<void> clearTokens() async {
@@ -123,6 +152,8 @@ class ApiClient {
     await prefs.remove(_accessTokenKey);
     await prefs.remove(_refreshTokenKey);
     _refreshToken = null;
+    // Never leave the previous user's cached data on a shared device.
+    await OfflineCache.instance.clear();
   }
 
   Future<Map<String, String>> _headers({bool withAuth = true}) async {
@@ -208,14 +239,38 @@ class ApiClient {
       }
     }
 
-    var response = await send();
+    final cacheable = method == 'GET' && withAuth;
+    http.Response response;
+    try {
+      response = await send();
+    } on ApiException catch (e) {
+      // No HTTP status = the server was never reached (offline, DNS, timeout).
+      if (e.statusCode == null) {
+        if (cacheable) {
+          await restoreCacheScope();
+          final cached = await OfflineCache.instance.read(endpoint);
+          if (cached != null) {
+            ConnectionStatus.instance.reportUnreachable(fromCache: true);
+            return cached.data;
+          }
+        }
+        ConnectionStatus.instance.reportUnreachable();
+      }
+      rethrow;
+    }
+    ConnectionStatus.instance.reportOnline();
     final mayRefresh = withAuth &&
         _isAuthFailure(response) &&
         !endpoint.startsWith('/auth/refresh') &&
         !endpoint.startsWith('/auth/login') &&
         !endpoint.startsWith('/auth/register');
     if (mayRefresh && await _refreshSession()) response = await send();
-    return _handleResponse(response);
+    final result = _handleResponse(response);
+    if (cacheable && response.statusCode >= 200 && response.statusCode < 300) {
+      await restoreCacheScope();
+      await OfflineCache.instance.write(endpoint, result);
+    }
+    return result;
   }
 
   /// True when the access token was rejected and a refresh may recover the

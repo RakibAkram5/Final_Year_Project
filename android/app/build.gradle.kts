@@ -91,7 +91,7 @@ android {
 }
 
 base {
-    archivesName.set("Final_Year_Project-version-1")
+    archivesName.set("TaleemPlus")
 }
 
 kotlin {
