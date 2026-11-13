@@ -315,7 +315,7 @@ class _MlAnalyticsScreenState extends State<MlAnalyticsScreen> {
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 180, maxWidth: 260),
       child: DropdownButtonFormField<T>(
-        value: value,
+        initialValue: value,
         items: items,
         isExpanded: true,
         onChanged: onChanged,

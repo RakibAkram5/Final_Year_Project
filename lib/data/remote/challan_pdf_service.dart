@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -189,7 +187,7 @@ class ChallanPdfService {
               ),
               pw.Expanded(
                 child: pw.Text(value.isEmpty ? '—' : value,
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                         fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
               ),
             ],
@@ -205,7 +203,7 @@ class ChallanPdfService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text('STUDENT DETAILS',
-              style: pw.TextStyle(
+              style: const pw.TextStyle(
                   fontSize: 8,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfBranding.brand,
@@ -297,13 +295,13 @@ class ChallanPdfService {
           children: [
             cell(''),
             cell('TOTAL PAYABLE',
-                style: pw.TextStyle(
+                style: const pw.TextStyle(
                     fontSize: 10.5,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfBranding.brand)),
             cell('Rs. ${_money.format(c.totalAmount)}',
                 align: pw.TextAlign.right,
-                style: pw.TextStyle(
+                style: const pw.TextStyle(
                     fontSize: 11.5,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfBranding.brand)),
@@ -358,7 +356,7 @@ class ChallanPdfService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text('PAYMENT INSTRUCTIONS',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                         fontSize: 8,
                         fontWeight: pw.FontWeight.bold,
                         color: PdfBranding.brand,
@@ -375,7 +373,7 @@ class ChallanPdfService {
                                   fontSize: 8.5, color: PdfBranding.muted))),
                       pw.Expanded(
                           child: pw.Text(row[1],
-                              style: pw.TextStyle(
+                              style: const pw.TextStyle(
                                   fontSize: 9,
                                   fontWeight: pw.FontWeight.bold))),
                     ]),
@@ -445,7 +443,7 @@ class ChallanPdfService {
                   style: const pw.TextStyle(
                       fontSize: 6.5, color: PdfBranding.muted)),
               pw.Text(value,
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                       fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
             ],
           ),

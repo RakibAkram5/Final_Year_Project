@@ -105,7 +105,7 @@ class PdfBranding {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(name.toUpperCase(),
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                         fontSize: 15,
                         fontWeight: pw.FontWeight.bold,
                         color: brand,
@@ -125,7 +125,7 @@ class PdfBranding {
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [
                 pw.Text(title,
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                         fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
                         color: ink,
@@ -162,7 +162,7 @@ class PdfBranding {
           color: brandLight,
           borderRadius: pw.BorderRadius.all(pw.Radius.circular(6))),
       child: pw.Text(BrandingUtils.initials(name),
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
               fontSize: 16, fontWeight: pw.FontWeight.bold, color: brand)),
     );
   }

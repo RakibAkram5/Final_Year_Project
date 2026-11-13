@@ -62,6 +62,8 @@ class _AcademyBrandingScreenState extends State<AcademyBrandingScreen> {
   }
 
   Future<void> _load() async {
+    // Read before the await: the provider lookup must not cross an async gap.
+    final user = context.read<AuthProvider>().currentUser;
     try {
       final branding = await _service.getBranding();
       _saved = branding;
@@ -72,7 +74,6 @@ class _AcademyBrandingScreenState extends State<AcademyBrandingScreen> {
       _error = null;
     } catch (e) {
       // Fall back to the session's academy fields so the form stays usable.
-      final user = context.read<AuthProvider>().currentUser;
       _name.text = user?.academyName ?? '';
       _address.text = user?.academyAddress ?? '';
       _phone.text = user?.academyPhone ?? '';

@@ -25,6 +25,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.47.9'
           cache: true
 
       # The app talks only to the REST API; no Firebase options or
@@ -61,6 +62,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.47.9'
           cache: true
 
       - name: Install Dependencies
@@ -129,6 +131,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.47.9'
           cache: true
 
       - name: Install Dependencies
