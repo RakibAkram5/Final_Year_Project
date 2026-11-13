@@ -295,7 +295,7 @@ Checked-in Android options are placeholders:
 ```dart
 // firebase_options.dart:50-56
 static const FirebaseOptions android = FirebaseOptions(
-  apiKey: 'AIzaSyPlaceholderApiKeyForTaleemPlusAndroid',
+  apiKey: '<redacted: legacy Firebase web key, see SECURITY_ROTATION_PLAN.md>',
   appId: '1:000000000000:android:0000000000000000000000',
   messagingSenderId: '000000000000',
   projectId: 'taleemplus-40755',
