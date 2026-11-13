@@ -267,10 +267,19 @@ class ApiClient {
     if (mayRefresh && await _refreshSession()) response = await send();
     final result = _handleResponse(response);
     if (cacheable && response.statusCode >= 200 && response.statusCode < 300) {
-      await restoreCacheScope();
-      await OfflineCache.instance.write(endpoint, result);
+      // Fire-and-forget: caching must never delay or fail a live response.
+      unawaited(_cacheResponse(endpoint, result));
     }
     return result;
+  }
+
+  Future<void> _cacheResponse(String endpoint, dynamic data) async {
+    try {
+      await restoreCacheScope();
+      await OfflineCache.instance.write(endpoint, data);
+    } catch (_) {
+      // Best effort only.
+    }
   }
 
   /// True when the access token was rejected and a refresh may recover the
