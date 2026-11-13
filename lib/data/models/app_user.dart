@@ -12,7 +12,11 @@ class AppUser {
   final String? academyId; // For multi-tenancy scoping
   final String? academyAddress;
   final String? academyPhone;
-  final String? academyLogo; // NEW: URL for branding
+  final String? academyEmail;
+
+  /// Academy logo as a base64 data URI (stored image) or a legacy URL.
+  /// Decode with `BrandingUtils.decodeLogo`; render with `AcademyLogo`.
+  final String? academyLogo;
 
   /// Saved academy location (Phase 6); null until an admin sets it.
   final AcademyLocation? academyLocation;
@@ -39,6 +43,7 @@ class AppUser {
     this.academyId,
     this.academyAddress,
     this.academyPhone,
+    this.academyEmail,
     this.academyLogo,
     this.academyLocation,
     this.academyCode,
@@ -68,6 +73,7 @@ class AppUser {
       'academy_id': academyId,
       'academy_address': academyAddress,
       'academy_phone': academyPhone,
+      'academy_email': academyEmail,
       'academy_logo': academyLogo,
       'academy_latitude': academyLocation?.latitude,
       'academy_longitude': academyLocation?.longitude,
@@ -102,6 +108,7 @@ class AppUser {
       academyId: map['academy_id'] as String?,
       academyAddress: map['academy_address'] as String?,
       academyPhone: map['academy_phone'] as String?,
+      academyEmail: map['academy_email'] as String?,
       academyLogo: map['academy_logo'] as String?,
       academyLocation: AcademyLocation.tryParse(map['academy_latitude'],
           map['academy_longitude'], map['academy_location_label']),
@@ -136,7 +143,9 @@ class AppUser {
     String? academyId,
     String? academyAddress,
     String? academyPhone,
+    String? academyEmail,
     String? academyLogo,
+    bool clearAcademyLogo = false,
     AcademyLocation? academyLocation,
     bool clearAcademyLocation = false,
     String? academyCode,
@@ -160,7 +169,8 @@ class AppUser {
       academyId: academyId ?? this.academyId,
       academyAddress: academyAddress ?? this.academyAddress,
       academyPhone: academyPhone ?? this.academyPhone,
-      academyLogo: academyLogo ?? this.academyLogo,
+      academyEmail: academyEmail ?? this.academyEmail,
+      academyLogo: clearAcademyLogo ? null : academyLogo ?? this.academyLogo,
       academyLocation:
           clearAcademyLocation ? null : academyLocation ?? this.academyLocation,
       academyCode: academyCode ?? this.academyCode,

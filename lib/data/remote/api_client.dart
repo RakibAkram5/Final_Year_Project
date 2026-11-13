@@ -210,12 +210,36 @@ class ApiClient {
 
     var response = await send();
     final mayRefresh = withAuth &&
-        response.statusCode == 401 &&
+        _isAuthFailure(response) &&
         !endpoint.startsWith('/auth/refresh') &&
         !endpoint.startsWith('/auth/login') &&
         !endpoint.startsWith('/auth/register');
     if (mayRefresh && await _refreshSession()) response = await send();
     return _handleResponse(response);
+  }
+
+  /// True when the access token was rejected and a refresh may recover the
+  /// session: HTTP 401 (current backend: `TOKEN_EXPIRED` / `UNAUTHENTICATED`)
+  /// or the legacy 403 + `UNAUTHENTICATED` that older deployments returned
+  /// for expired tokens. A 403 with any other code is a real permission
+  /// denial (inactive account, wrong role) and is never retried.
+  static bool _isAuthFailure(http.Response response) {
+    if (response.statusCode == 401) return true;
+    if (response.statusCode != 403) return false;
+    try {
+      final body = jsonDecode(response.body);
+      return body is Map && body['code'] == 'UNAUTHENTICATED';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Proactively refreshes the access token (used when the app resumes from
+  /// the background so the first request after a long pause does not fail).
+  /// Returns false when there is no refresh token or the refresh was rejected.
+  Future<bool> refreshSessionIfPossible() async {
+    if ((await _getRefreshToken())?.isNotEmpty != true) return false;
+    return _refreshSession();
   }
 
   /// Uploads raw bytes (application/octet-stream) and returns the JSON data.
@@ -234,7 +258,7 @@ class ApiClient {
     }
 
     var response = await send();
-    if (response.statusCode == 401 && await _refreshSession()) {
+    if (_isAuthFailure(response) && await _refreshSession()) {
       response = await send();
     }
     return _handleResponse(response);
@@ -251,7 +275,7 @@ class ApiClient {
     }
 
     var response = await send();
-    if (response.statusCode == 401 && await _refreshSession()) {
+    if (_isAuthFailure(response) && await _refreshSession()) {
       response = await send();
     }
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -286,7 +310,12 @@ class ApiClient {
         body: jsonEncode({'refreshToken': token}),
       ));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        await clearTokens();
+        // Only a definitive rejection (revoked/expired/unknown refresh token)
+        // ends the session. Server errors and rate limits are transient: keep
+        // the tokens so the next request can retry the refresh.
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          await clearTokens();
+        }
         return false;
       }
       dynamic decoded = jsonDecode(response.body);

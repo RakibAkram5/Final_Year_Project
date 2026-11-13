@@ -7,9 +7,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/web/web_breakpoints.dart';
 import '../../../data/models/class_entity.dart';
 import '../../../data/models/fee_challan_model.dart';
-import '../../../data/remote/challan_pdf_service.dart';
 import '../../../data/repositories/fee_challan_repository.dart';
 import '../../../logic/auth_provider.dart';
+import '../../../widgets/challan_actions.dart';
 import '../../../widgets/gradient_background.dart';
 import '../../../widgets/web/web_nav_items.dart';
 import '../../../widgets/web/web_shell.dart';
@@ -230,10 +230,10 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
           ),
           if (challan != null)
             IconButton(
-              icon: Icon(Icons.print_outlined,
+              icon: Icon(Icons.picture_as_pdf_outlined,
                   color: context.appColors.textSecondary, size: 20),
-              onPressed: () => _printChallan(challan),
-              tooltip: "Print / Download challan",
+              onPressed: () => ChallanActions.showSheet(context, challan),
+              tooltip: "Download / print / share challan",
             ),
           if (challan != null && !challan.isPaid)
             IconButton(
@@ -245,18 +245,6 @@ class _ClassFeeStatusScreenState extends State<ClassFeeStatusScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _printChallan(FeeChallanModel challan) async {
-    final academy = context.read<AuthProvider>().currentUser;
-    try {
-      await ChallanPdfService.generateAndPrint(challan, academy: academy);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open challan: $e')),
-      );
-    }
   }
 
   Future<void> _markPaid(FeeChallanModel challan) async {

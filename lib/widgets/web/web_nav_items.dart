@@ -17,6 +17,8 @@ import '../../features/admin/admin_ai_prediction_screen.dart';
 import '../../features/admin/announcements_screen.dart';
 import '../../features/admin/screens/academic_structure_screen.dart';
 import '../../features/admin/screens/class_reports_screen.dart';
+import '../../features/admin/screens/academy_branding_screen.dart';
+import '../../features/admin/screens/academy_payment_settings_screen.dart';
 
 import '../../features/teacher/teacher_classes_screen.dart';
 import '../../features/teacher/teacher_announcements_screen.dart';
@@ -153,6 +155,18 @@ List<WebNavSection> buildAdminNavSections(
           label: 'Class Reports',
           icon: Icons.summarize_rounded,
           onTap: () => push(const ClassReportsScreen())),
+    ]),
+    WebNavSection(title: 'SETTINGS', items: [
+      WebNavItem(
+          id: 'branding',
+          label: 'Academy Branding',
+          icon: Icons.palette_rounded,
+          onTap: () => push(const AcademyBrandingScreen())),
+      WebNavItem(
+          id: 'payment_settings',
+          label: 'Payment Settings',
+          icon: Icons.qr_code_2_rounded,
+          onTap: () => push(const AcademyPaymentSettingsScreen())),
     ]),
   ];
 }

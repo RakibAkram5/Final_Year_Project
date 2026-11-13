@@ -62,8 +62,15 @@ for (const file of files) {
   for (const m of text.matchAll(callRe)) {
     total += 1;
     const method = m[1].toUpperCase();
+    // Interpolated path segments become a wildcard. A `$suffix` glued to the
+    // end of a path ('/admin/ml/analytics$suffix') is a query-string
+    // interpolation, not a segment, so it is dropped rather than matched.
     const clientPath =
-      '/api/v2' + m[3].split('?')[0].replace(/\$\{[^}]+\}|\$\w+/g, 'X');
+      '/api/v2' +
+      m[3]
+        .split('?')[0]
+        .replace(/([^/])\$\w+$/, '$1')
+        .replace(/\$\{[^}]+\}|\$\w+/g, 'X');
     const matches = v2.filter((r) => r.method === method && toRegex(r.path).test(clientPath));
     // A literal client segment (e.g. "marks") that only matches a `:param`
     // route segment is almost always a wrong path: Express would treat

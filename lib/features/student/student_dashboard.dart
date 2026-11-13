@@ -26,6 +26,7 @@ import '../../widgets/latest_announcement_card.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
 import '../shared/notifications_screen.dart';
+import '../../widgets/academy_logo.dart';
 import '../../widgets/gradient_background.dart';
 import '../../core/theme/theme_extensions.dart';
 import '../quiz/screens/student_test_report_screen.dart';
@@ -98,19 +99,10 @@ class StudentDashboard extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          children: [
-            Icon(Icons.school_rounded,
-                color: context.appColors.accentText, size: 22),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text('Student Portal',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        ),
+        title: AcademyTitle(
+            user: user,
+            portalLabel: 'Student Portal',
+            portalIcon: Icons.school_rounded),
         actions: dashboardAppBarActions(context,
             notificationBell: _notificationBell(context, user),
             onSecurity: () => _showSecuritySettings(context),
@@ -358,12 +350,12 @@ class StudentDashboard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: context.appColors.surfaceAlt
-                          .withValues(alpha: 0.5),
+                      color:
+                          context.appColors.surfaceAlt.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                          color: context.appColors.border
-                              .withValues(alpha: 0.5)),
+                          color:
+                              context.appColors.border.withValues(alpha: 0.5)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,

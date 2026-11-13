@@ -18,6 +18,7 @@ import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
 import '../../data/remote/notification_service.dart';
 import '../shared/notifications_screen.dart';
+import '../../widgets/academy_logo.dart';
 import '../../widgets/gradient_background.dart';
 import '../shared/view_announcements_screen.dart';
 import 'screens/child_overview_screen.dart';
@@ -57,19 +58,10 @@ class ParentDashboard extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          children: [
-            Icon(Icons.family_restroom_rounded,
-                color: context.appColors.accentText, size: 22),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text('Parent Portal',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        ),
+        title: AcademyTitle(
+            user: user,
+            portalLabel: 'Parent Portal',
+            portalIcon: Icons.family_restroom_rounded),
         actions: dashboardAppBarActions(context,
             notificationBell: _notificationBell(context, user),
             onSecurity: () => _showSecuritySettings(context),

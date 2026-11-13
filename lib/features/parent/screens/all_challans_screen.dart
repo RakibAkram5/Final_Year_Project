@@ -90,7 +90,10 @@ class AllChallansScreen extends StatelessWidget {
       // content-width action on the right. On very narrow phones the action
       // drops to its own right-aligned line so the name keeps its space.
       child: LayoutBuilder(builder: (context, constraints) {
-        final stack = constraints.maxWidth < 340;
+        // Stack the action under the name when the row is narrow OR when the
+        // user has a large accessibility text scale (the button grows with it).
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
+        final stack = constraints.maxWidth < 340 * textScale;
         final info = Row(
           children: [
             CircleAvatar(
@@ -119,6 +122,8 @@ class AllChallansScreen extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           fontSize: 15)),
                   Text("Student Profile",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                           color: context.appColors.textMuted, fontSize: 12)),
                 ],

@@ -22,6 +22,7 @@ import '../../widgets/web/web_cards.dart';
 import '../../widgets/web/web_nav_items.dart';
 import '../../widgets/web/web_shell.dart';
 import '../shared/notifications_screen.dart'; // NEW
+import '../../widgets/academy_logo.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/responsive/responsive_grid.dart';
 import '../../core/theme/theme_extensions.dart'; // NEW
@@ -60,19 +61,10 @@ class TeacherDashboard extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          children: [
-            Icon(Icons.co_present_rounded,
-                color: context.appColors.accentText, size: 22),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text('Teacher Portal',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        ),
+        title: AcademyTitle(
+            user: user,
+            portalLabel: 'Teacher Portal',
+            portalIcon: Icons.co_present_rounded),
         actions: dashboardAppBarActions(context,
             notificationBell: _notificationBell(context, user),
             onSecurity: () => _showSecuritySettings(context),

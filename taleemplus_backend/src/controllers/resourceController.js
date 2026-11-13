@@ -263,6 +263,16 @@ const answerQuery = async (req, res, next) => {
       where: { id, academyId: req.academyId }
     });
     if (!existing) throw notFound('Query not found in this academy.');
+    // Ownership: only the teacher of the class the query belongs to (or an
+    // academy admin) may answer it.
+    if (req.user.role !== 'ADMIN') {
+      const cls = await prisma.class.findFirst({
+        where: { id: existing.classId, academyId: req.academyId }
+      });
+      if (!cls || !canManageClass(req, cls)) {
+        throw forbidden('Only the teacher of this class can answer its queries.');
+      }
+    }
 
     const updated = await prisma.studentQuery.update({
       where: { id: existing.id },

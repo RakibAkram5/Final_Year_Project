@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/db');
 const { validatePassword } = require('../utils/passwordPolicy');
+const { logoUri } = require('./brandingController');
 const crypto = require('crypto');
 
 const makeStudentCode = () => crypto.randomBytes(8).toString('hex');
@@ -50,7 +51,10 @@ const formatUser = (user, academy) => ({
   academyName: academy?.name,
   academyAddress: academy?.address,
   academyPhone: academy?.phone,
-  academyLogo: academy?.logo,
+  academyEmail: academy?.email ?? null,
+  // White-label branding: the stored logo as a data URI (falls back to the
+  // legacy URL column) so every portal and PDF renders the academy's own logo.
+  academyLogo: logoUri(academy),
   // Phase 6: saved academy location (null until an admin sets it).
   academyLatitude: academy?.latitude == null ? null : Number(academy.latitude),
   academyLongitude: academy?.longitude == null ? null : Number(academy.longitude),
@@ -111,7 +115,7 @@ const updateAcademyProfile = async (req, res, next) => {
   try {
     const fields = [
       ['name', 'name', 120], ['address', 'address', 240],
-      ['phone', 'phone', 40], ['logo', 'logo', 1000],
+      ['phone', 'phone', 40], ['logo', 'logo', 1000], ['email', 'email', 160],
     ];
     const data = {};
     for (const [input, column, maxLength] of fields) {
@@ -150,7 +154,8 @@ const updateAcademyProfile = async (req, res, next) => {
     const academy = await prisma.academy.update({ where: { id: req.academyId }, data });
     res.json({ success: true, data: {
       academyName: academy.name, academyAddress: academy.address,
-      academyPhone: academy.phone, academyLogo: academy.logo,
+      academyPhone: academy.phone, academyLogo: logoUri(academy),
+      academyEmail: academy.email ?? null,
       academyLatitude: academy.latitude == null ? null : Number(academy.latitude),
       academyLongitude: academy.longitude == null ? null : Number(academy.longitude),
       academyLocationLabel: academy.locationLabel,

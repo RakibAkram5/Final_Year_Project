@@ -1,5 +1,7 @@
-const BASE_URL = process.env.ML_SERVICE_URL;
-const TOKEN = process.env.ML_INTERNAL_TOKEN;
+// Read at request time (not module load) so configuration changes and test
+// environments take effect without restarting the process.
+const baseUrl = () => (process.env.ML_SERVICE_URL || '').trim().replace(/\/+$/, '');
+const token = () => (process.env.ML_INTERNAL_TOKEN || '').trim();
 
 // Render's free web service sleeps after ~15 min idle and cold-starts in
 // ~30-60 s, so the default timeout is generous and transient gateway errors
@@ -23,12 +25,14 @@ async function fetchWithTimeout(url, options) {
 }
 
 async function request(path, { method = 'GET', academyId, body } = {}) {
+  const BASE_URL = baseUrl();
+  const TOKEN = token();
   if (!BASE_URL || !TOKEN) {
     const error = new Error('ML service is not configured.');
     error.status = 503;
     throw error;
   }
-  const url = new URL(path, BASE_URL);
+  const url = new URL(`${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`);
   if (method === 'GET') url.searchParams.set('academy_id', academyId);
   const options = {
     method,

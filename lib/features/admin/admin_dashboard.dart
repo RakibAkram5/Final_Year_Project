@@ -38,9 +38,10 @@ import 'screens/timetable_management_screen.dart';
 import 'screens/academic_structure_screen.dart';
 import '../shared/assignments_screen.dart';
 import '../shared/reports_screen.dart';
-import '../shared/academy_location.dart';
 import 'screens/class_reports_screen.dart';
 import 'screens/academy_payment_settings_screen.dart';
+import 'screens/academy_branding_screen.dart';
+import '../../widgets/academy_logo.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -347,112 +348,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  /// Academy identity (logo, name, contact, map location) lives on its own
+  /// branding screen so the same form serves the app bar action, the
+  /// dashboard tile and the web sidebar.
   void _showAcademyInfoSettings(BuildContext context, AppUser? user) {
     if (user == null) return;
-
-    final nameCtrl = TextEditingController(text: user.academyName ?? "");
-    final addressCtrl = TextEditingController(text: user.academyAddress ?? "");
-    final phoneCtrl = TextEditingController(text: user.academyPhone ?? "");
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text("Academy Information",
-                style: TextStyle(
-                    color: context.appColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-                "Update details for official reports and parents support section.",
-                style: TextStyle(
-                    color: context.appColors.textSecondary, fontSize: 12)),
-            const SizedBox(height: 24),
-            Center(
-              child: CircleAvatar(
-                radius: 40,
-                backgroundColor: AppColors.accent.withValues(alpha: 0.1),
-                backgroundImage: user.academyLogo != null
-                    ? NetworkImage(user.academyLogo!)
-                    : null,
-                child: user.academyLogo == null
-                    ? Icon(Icons.business_rounded,
-                        color: context.appColors.accentText, size: 32)
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 24),
-            LabeledField(
-                label: "Academy Name",
-                hint: "SRS Tech Matrix",
-                controller: nameCtrl),
-            LabeledField(
-                label: "Address",
-                hint: "Enter full address",
-                controller: addressCtrl),
-            LabeledField(
-                label: "Contact Number",
-                hint: "+92...",
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const AcademyLocationEditorScreen()));
-              },
-              icon: const Icon(Icons.add_location_alt_rounded),
-              label: Text(user.academyLocation == null
-                  ? "Set location on map"
-                  : "Change map location"),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.accent,
-                side: const BorderSide(color: AppColors.accent),
-                minimumSize: const Size(double.infinity, 48),
-              ),
-            ),
-            const SizedBox(height: 16),
-            PrimaryButton(
-              label: "SAVE CHANGES",
-              onPressed: () async {
-                try {
-                  final authProvider = context.read<AuthProvider>();
-                  await AuthService().updateAcademyProfile(
-                    uid: user.uid,
-                    name: nameCtrl.text,
-                    address: addressCtrl.text,
-                    phone: phoneCtrl.text,
-                  );
-                  await authProvider.tryRestoreSession();
-                  if (ctx.mounted && mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text("Info updated successfully!")));
-                  }
-                } catch (error) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                        content: Text('Could not save profile: $error')));
-                  }
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => const AcademyBrandingScreen()));
   }
 
   @override
@@ -472,19 +374,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          children: [
-            Icon(Icons.admin_panel_settings_rounded,
-                color: context.appColors.accentText, size: 22),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text('Admin Portal',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
-        ),
+        title: AcademyTitle(
+            user: user,
+            portalLabel: 'Admin Portal',
+            portalIcon: Icons.admin_panel_settings_rounded),
         actions: dashboardAppBarActions(context,
             notificationBell: _notificationBell(context, user),
             onAcademyInfo: () => _showAcademyInfoSettings(context, user),
@@ -685,6 +578,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         MaterialPageRoute(
                             builder: (_) =>
                                 const AcademyPaymentSettingsScreen())),
+                  ),
+                  _gridTile(
+                    'Academy Branding',
+                    'Logo, name and contact details',
+                    Icons.palette_rounded,
+                    () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const AcademyBrandingScreen())),
                   ),
                   _gridTile(
                     'Bulk Fee Challans',
@@ -939,6 +841,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     context,
                     MaterialPageRoute(
                         builder: (_) => const AcademyPaymentSettingsScreen())),
+              ),
+              WebNavTile(
+                title: 'Academy Branding',
+                subtitle: 'Logo, name and contact details',
+                icon: Icons.palette_rounded,
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AcademyBrandingScreen())),
               ),
               WebNavTile(
                 title: 'Bulk Fee Challans',

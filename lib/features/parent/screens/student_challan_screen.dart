@@ -12,7 +12,7 @@ import '../../../widgets/web/web_nav_items.dart';
 import '../../../widgets/web/web_shell.dart';
 import '../../../data/models/fee_challan_model.dart';
 import '../../../data/repositories/fee_challan_repository.dart';
-import '../../../data/remote/challan_pdf_service.dart';
+import '../../../widgets/challan_actions.dart';
 import '../../../logic/auth_provider.dart';
 import '../../../data/remote/payment_service.dart';
 
@@ -355,40 +355,6 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
     );
   }
 
-  Future<void> _handlePrint(FeeChallanModel c) async {
-    try {
-      await ChallanPdfService.generateAndPrint(
-        c,
-        academy: context.read<AuthProvider>().currentUser,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text("Print Error: $e"),
-              backgroundColor: AppColors.danger),
-        );
-      }
-    }
-  }
-
-  Future<void> _handleShare(FeeChallanModel c) async {
-    try {
-      await ChallanPdfService.generateAndShare(
-        c,
-        academy: context.read<AuthProvider>().currentUser,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text("Share Error: $e"),
-              backgroundColor: AppColors.danger),
-        );
-      }
-    }
-  }
-
   Widget _buildActionButtons(FeeChallanModel c) {
     return Column(
       children: [
@@ -405,39 +371,7 @@ class _StudentChallanScreenState extends State<StudentChallanScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _handlePrint(c),
-                icon: const Icon(Icons.print_rounded),
-                label: const Text("PRINT"),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.accent,
-                  side: const BorderSide(color: AppColors.accent),
-                  minimumSize: const Size(0, 40),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _handleShare(c),
-                icon: const Icon(Icons.share_rounded),
-                label: const Text("SHARE"),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.accent,
-                  side: const BorderSide(color: AppColors.accent),
-                  minimumSize: const Size(0, 40),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-          ],
-        ),
+        ChallanActionBar(challan: c),
       ],
     );
   }

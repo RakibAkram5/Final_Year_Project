@@ -75,6 +75,13 @@ model Academy {
   bankAccountNumber     String?
   bankIban              String?
   paymentInstructions   String?
+  // White-label branding: each academy owns its identity. The logo is stored
+  // as validated image bytes (PNG/JPEG/WebP, size-capped) so it renders the
+  // same on Android, Web and inside generated PDFs without a public URL.
+  email                 String?
+  logoData              Bytes?
+  logoMimeType          String?
+  logoUpdatedAt         DateTime?
 
   users             User[]
   classes           Class[]

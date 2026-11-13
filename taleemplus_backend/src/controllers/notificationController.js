@@ -1,5 +1,5 @@
 const prisma = require('../config/db');
-const { notFound } = require('../utils/apiError');
+const { notFound, forbidden } = require('../utils/apiError');
 const { sendSuccess } = require('../utils/response');
 const { toIso } = require('../utils/dto');
 
@@ -222,6 +222,11 @@ const updateAnnouncement = async (req, res, next) => {
       where: { id: req.params.id, academyId: req.academyId }
     });
     if (!existing) throw notFound('Announcement not found in academy.');
+    // Ownership: teachers may edit only announcements they created; admins
+    // may edit any announcement in their academy.
+    if (req.user.role !== 'ADMIN' && existing.createdById !== req.user.id) {
+      throw forbidden('You can only edit announcements you created.');
+    }
     const data = {};
     if (req.body.title !== undefined) data.title = String(req.body.title).trim();
     if (req.body.message !== undefined) data.message = String(req.body.message).trim();
@@ -248,10 +253,14 @@ const updateAnnouncement = async (req, res, next) => {
 
 const deleteAnnouncement = async (req, res, next) => {
   try {
-    const deleted = await prisma.announcement.deleteMany({
+    const existing = await prisma.announcement.findFirst({
       where: { id: req.params.id, academyId: req.academyId }
     });
-    if (!deleted.count) throw notFound('Announcement not found in academy.');
+    if (!existing) throw notFound('Announcement not found in academy.');
+    if (req.user.role !== 'ADMIN' && existing.createdById !== req.user.id) {
+      throw forbidden('You can only delete announcements you created.');
+    }
+    await prisma.announcement.delete({ where: { id: existing.id } });
     return sendSuccess(res, { deleted: true }, {
       message: 'Announcement deleted.'
     });

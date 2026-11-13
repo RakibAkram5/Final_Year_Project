@@ -6,6 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../models/app_user.dart';
 import '../models/parent_link_request.dart';
 import 'api_client.dart';
+import 'branding_service.dart';
 import 'live_query.dart';
 
 class AuthException implements Exception {
@@ -78,6 +79,7 @@ class AuthService {
         'academyName': user.academyName,
         'academyAddress': user.academyAddress,
         'academyPhone': user.academyPhone,
+        'academyEmail': user.academyEmail,
         'academyLogo': user.academyLogo,
         'academyLatitude': user.academyLocation?.latitude,
         'academyLongitude': user.academyLocation?.longitude,
@@ -167,19 +169,45 @@ class AuthService {
       }
       _currentUser = _mapApiUser(userData);
       await _cacheUser(_currentUser!);
+      await _rememberBrandingForLogin(_currentUser!);
       return _currentUser!;
     } catch (e) {
       throw AuthException(e.toString().replaceAll('Exception: ', ''));
     }
   }
 
+  /// The login screen shows the last academy's identity (name + logo) even
+  /// before a session exists; keep that cache in step with the profile.
+  Future<void> _rememberBrandingForLogin(AppUser user) async {
+    final name = user.academyName?.trim();
+    if (name == null || name.isEmpty) return;
+    try {
+      await BrandingService.rememberForLogin(PublicBranding(
+          academyCode: user.academyCode ?? '',
+          name: name,
+          logo: user.academyLogo));
+    } catch (_) {
+      // Cosmetic cache only; never block sign-in on it.
+    }
+  }
+
   /// Fetches the authoritative profile. Throws on network/transport failure so
   /// callers can keep a cached session instead of treating an outage as a
   /// sign-out. Pass [timeout] for bootstrap calls that must not block startup.
+  /// Proactive token refresh (app resume). Never throws.
+  Future<bool> refreshSessionIfPossible() async {
+    try {
+      return await _api.refreshSessionIfPossible();
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<AppUser?> getCurrentUserProfile({Duration? timeout}) async {
     final res = await _api.get('/auth/me', timeout: timeout);
     _currentUser = _mapApiUser(Map<String, dynamic>.from(res as Map));
     await _cacheUser(_currentUser!);
+    await _rememberBrandingForLogin(_currentUser!);
     return _currentUser;
   }
 
@@ -298,15 +326,18 @@ class AuthService {
   Future<List<ParentLinkRequest>> getMyLinkRequests() async {
     final res = await _api.get('/users/link-requests/mine');
     return (res as List)
-        .map((e) => ParentLinkRequest.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) =>
+            ParentLinkRequest.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   /// Admin: link requests for the academy, filtered by [status] (default PENDING).
-  Future<List<ParentLinkRequest>> getLinkRequests({String status = 'PENDING'}) async {
+  Future<List<ParentLinkRequest>> getLinkRequests(
+      {String status = 'PENDING'}) async {
     final res = await _api.get('/users/link-requests?status=$status');
     return (res as List)
-        .map((e) => ParentLinkRequest.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) =>
+            ParentLinkRequest.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
@@ -354,6 +385,7 @@ class AuthService {
     String? academyName,
     String? academyAddress,
     String? academyPhone,
+    String? academyEmail,
     String? academyLogo,
     String? name,
     String? address,
@@ -370,6 +402,7 @@ class AuthService {
     if (phone != null || academyPhone != null) {
       data['phone'] = phone ?? academyPhone;
     }
+    if (academyEmail != null) data['email'] = academyEmail;
     if (academyLogo != null) data['logo'] = academyLogo;
     if (data.isEmpty) return;
     final response = await _api.put('/auth/academy', data);
@@ -378,10 +411,27 @@ class AuthService {
         academyName: response['academyName'] as String?,
         academyAddress: response['academyAddress'] as String?,
         academyPhone: response['academyPhone'] as String?,
+        academyEmail: response['academyEmail'] as String?,
         academyLogo: response['academyLogo'] as String?,
       );
       await _cacheUser(_currentUser!);
     }
+  }
+
+  /// Replaces the cached academy identity after a branding change so every
+  /// screen watching the session shows the new name/logo immediately.
+  Future<AppUser?> applyBranding(AcademyBranding branding) async {
+    if (_currentUser == null) return null;
+    _currentUser = _currentUser!.copyWith(
+      academyName: branding.name,
+      academyAddress: branding.address,
+      academyPhone: branding.phone,
+      academyEmail: branding.email,
+      academyLogo: branding.logo,
+      clearAcademyLogo: branding.logo == null,
+    );
+    await _cacheUser(_currentUser!);
+    return _currentUser;
   }
 
   /// Saves (or clears, when [location] is null) the academy location and
@@ -661,6 +711,7 @@ class AuthService {
       academyName: json['academyName'] ?? json['academy_name'],
       academyAddress: json['academyAddress'] ?? json['academy_address'],
       academyPhone: json['academyPhone'] ?? json['academy_phone'],
+      academyEmail: json['academyEmail'] ?? json['academy_email'],
       academyLogo: json['academyLogo'] ?? json['academy_logo'],
       academyLocation: AcademyLocation.tryParse(json['academyLatitude'],
           json['academyLongitude'], json['academyLocationLabel']),
