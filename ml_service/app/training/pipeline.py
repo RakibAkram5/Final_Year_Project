@@ -34,8 +34,19 @@ def _time_split(frame: pd.DataFrame, date_column: str):
     dates = sorted(frame[date_column].dropna().unique())
     if len(dates) < 2:
         raise InsufficientData("Chronological validation requires at least two distinct dates")
-    split_at = min(max(int(len(dates) * .8), 1), len(dates) - 1)
-    cutoff = dates[split_at]
+    # Choose the date boundary whose training share is closest to 80% of ROWS
+    # (not 80% of distinct dates): with few dates, a date-count quantile can
+    # leave only the single latest day in the holdout. Still strictly
+    # chronological: every training row precedes every validation row.
+    counts = frame[date_column].value_counts()
+    total = float(counts.sum())
+    before, best, best_gap = 0.0, 1, None
+    for index in range(1, len(dates)):
+        before += counts[dates[index - 1]]
+        gap = abs(before / total - .8)
+        if best_gap is None or gap <= best_gap:
+            best, best_gap = index, gap
+    cutoff = dates[best]
     return frame[frame[date_column] < cutoff], frame[frame[date_column] >= cutoff]
 
 

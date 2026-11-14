@@ -8,6 +8,14 @@ from pathlib import Path
 # function returns. On serverless, the GitHub Actions cron drives /models/monitor.
 SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("ML_SERVERLESS"))
 
+# Serverless filesystems are read-only outside /tmp. huggingface_hub (and its
+# Xet transfer backend) cache and log under ~/.cache/huggingface by default,
+# which made every artifact upload fail with OSError and revert promotion.
+# Point the cache at /tmp and use the plain HTTP/LFS transfer path there.
+if SERVERLESS:
+    os.environ.setdefault("HF_HOME", "/tmp/huggingface")
+    os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 INTERNAL_TOKEN = os.getenv("ML_INTERNAL_TOKEN", "")
 ARTIFACT_DIR = Path(os.getenv("ML_ARTIFACT_DIR", "./artifacts"))

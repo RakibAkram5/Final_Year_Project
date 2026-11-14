@@ -6,6 +6,7 @@ import '../../../logic/quiz_provider.dart';
 import '../../../logic/class_provider.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/gradient_background.dart';
+import '../../../data/models/class_entity.dart';
 import '../../../data/models/quiz_model.dart';
 import '../../../data/models/test_mark_model.dart';
 
@@ -131,6 +132,7 @@ class _MarkEntryScreenState extends State<MarkEntryScreen> {
           body: const Center(child: Text("Class data not found.")));
     }
     final cls = clsList.first;
+    final ordered = _byRollNumber(cls);
 
     return Scaffold(
       appBar: AppBar(
@@ -146,12 +148,14 @@ class _MarkEntryScreenState extends State<MarkEntryScreen> {
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.all(20),
-                  itemCount: cls.studentIds.length,
+                  itemCount: ordered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, i) {
-                    final uid = cls.studentIds[i];
+                    final uid = ordered[i];
                     final name = cls.studentNames[uid] ?? "Student";
-                    return _studentMarkTile(name, uid);
+                    final roll = cls.studentRollNumbers[uid] ?? '';
+                    return _studentMarkTile(
+                        roll.isEmpty ? name : '$roll  ·  $name', uid);
                   },
                 ),
               ),
@@ -169,6 +173,30 @@ class _MarkEntryScreenState extends State<MarkEntryScreen> {
         ),
       ),
     );
+  }
+
+  /// Students in roll-number order (natural sort: 9B-2 before 9B-10);
+  /// students without a roll number follow, alphabetically.
+  static List<String> _byRollNumber(ClassEntity cls) {
+    final ids = List<String>.of(cls.studentIds);
+    int numberOf(String roll) =>
+        int.tryParse(RegExp(r'(\d+)\D*$').firstMatch(roll)?.group(1) ?? '') ??
+        0;
+    ids.sort((a, b) {
+      final ra = cls.studentRollNumbers[a] ?? '';
+      final rb = cls.studentRollNumbers[b] ?? '';
+      if (ra.isEmpty != rb.isEmpty) return ra.isEmpty ? 1 : -1;
+      if (ra.isNotEmpty) {
+        final prefixA = ra.replaceAll(RegExp(r'\d+\D*$'), '');
+        final prefixB = rb.replaceAll(RegExp(r'\d+\D*$'), '');
+        final byPrefix = prefixA.compareTo(prefixB);
+        if (byPrefix != 0) return byPrefix;
+        final byNumber = numberOf(ra).compareTo(numberOf(rb));
+        if (byNumber != 0) return byNumber;
+      }
+      return (cls.studentNames[a] ?? '').compareTo(cls.studentNames[b] ?? '');
+    });
+    return ids;
   }
 
   Widget _quizInfoCard() {

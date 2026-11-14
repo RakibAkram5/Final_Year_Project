@@ -438,17 +438,21 @@ class _RoleListTabState extends State<_RoleListTab>
       titleStyle: TextStyle(
           color: colors.textPrimary, fontWeight: FontWeight.w600, fontSize: 15),
       subtitles: [
-        if (m.role == 'teacher' && (m.extra.isNotEmpty || m.subject.isNotEmpty))
+        if (m.isDemo)
+          Text('Demo / test record – not a genuine account',
+              style: line(AppColors.warning, style: FontStyle.italic)),
+        if (m.role == 'teacher' &&
+            (m.displayExtra.isNotEmpty || m.subject.isNotEmpty))
           Text(
               [
-                if (m.extra.isNotEmpty) m.extra,
+                if (m.displayExtra.isNotEmpty) m.displayExtra,
                 if (m.subject.isNotEmpty) m.subject,
               ].join(' • '),
               style: line(AppColors.accent))
         else if (m.role == 'student' && m.rollNumber.isNotEmpty)
           Text('Roll: ${m.rollNumber}', style: line(AppColors.accent))
-        else if (m.extra.isNotEmpty)
-          Text(m.extra, style: line(AppColors.accent)),
+        else if (m.displayExtra.isNotEmpty)
+          Text(m.displayExtra, style: line(AppColors.accent)),
         if (m.role == 'student' && _parentNameByStudentUid.containsKey(m.id))
           Text('Parent: ${_parentNameByStudentUid[m.id]}',
               style: line(colors.textSecondary, style: FontStyle.italic)),
