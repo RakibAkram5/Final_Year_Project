@@ -17,6 +17,9 @@ class ClassEntity {
   final List<String> studentIds;
   final Map<String, String> studentNames;
 
+  /// {uid: roll number} from the section enrollment (may be empty).
+  final Map<String, String> studentRollNumbers;
+
   /// Total enrolled students reported by the server. Students and parents
   /// only receive their own roster rows, so [studentIds] can be shorter.
   final int? totalEnrolled;
@@ -33,6 +36,7 @@ class ClassEntity {
     this.primaryTeacherEmail = '',
     this.studentIds = const [],
     this.studentNames = const {},
+    this.studentRollNumbers = const {},
     this.totalEnrolled,
     required this.createdAt,
   });
@@ -57,6 +61,7 @@ class ClassEntity {
         'primary_teacher_email': primaryTeacherEmail,
         'student_ids': studentIds,
         'student_names': studentNames,
+        'student_roll_numbers': studentRollNumbers,
         'created_at': createdAt.millisecondsSinceEpoch == 0
             ? DateTime.now().toUtc().toIso8601String()
             : createdAt.toUtc().toIso8601String(),
@@ -66,6 +71,7 @@ class ClassEntity {
   factory ClassEntity.fromMap(String id, Map<String, dynamic> map) {
     final rawIds = map['student_ids'];
     final rawNames = map['student_names'];
+    final rawRolls = map['student_roll_numbers'];
     final ts = map['created_at'];
     return ClassEntity(
       id: id,
@@ -81,6 +87,9 @@ class ClassEntity {
           : const [],
       studentNames: (rawNames is Map)
           ? rawNames.map((k, v) => MapEntry(k.toString(), (v ?? '').toString()))
+          : const {},
+      studentRollNumbers: (rawRolls is Map)
+          ? rawRolls.map((k, v) => MapEntry(k.toString(), (v ?? '').toString()))
           : const {},
       totalEnrolled: (map['enrollment_count'] as num?)?.toInt(),
       createdAt: ApiClient.parseDate(ts) ?? DateTime.now(),

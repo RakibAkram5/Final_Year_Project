@@ -7,6 +7,12 @@ class AcademyMember {
   final String phone;
   final String role; // 'teacher' | 'student' | 'parent'
   final String extra; // qualification (teacher) / relation (parent)
+
+  /// Seeded demo/test accounts carry a `demo-seed-*` marker in extraInfo.
+  bool get isDemo => extra.startsWith('demo-seed');
+
+  /// Role note to display; the internal demo marker is never shown raw.
+  String get displayExtra => isDemo ? '' : extra;
   final String subject; // teacher's subject (separate from qualification)
   final String rollNumber; // student's unique roll number
   final String status;
