@@ -70,3 +70,16 @@ def test_performance_training_reports_regression_metrics(tmp_path):
     meta = train("performance", rows, tmp_path, "academy-hash", minimum=40)
     assert {"mae", "rmse", "r2"}.issubset(meta["metrics"]["metrics"])
     assert np.isfinite(meta["metrics"]["metrics"]["rmse"])
+
+
+def test_time_split_uses_row_share_not_date_count():
+    # Three large monthly cohorts followed by one tiny late cohort: a
+    # distinct-date quantile would validate on the 5-row tail only.
+    import pandas as pd
+    from app.training.pipeline import _time_split
+    frame = pd.DataFrame({"d": ["2026-08-01"] * 100 + ["2026-09-01"] * 100 +
+                          ["2026-10-01"] * 100 + ["2026-11-08"] * 5})
+    train_df, valid_df = _time_split(frame, "d")
+    assert set(valid_df["d"]) == {"2026-10-01", "2026-11-08"}
+    assert train_df["d"].max() < valid_df["d"].min()   # strictly chronological
+    assert len(train_df) + len(valid_df) == len(frame)

@@ -51,7 +51,7 @@ def extract_fee_rows(database_url: str, academy_id: str, as_of: date | None = No
         cur.execute("""
           SELECT f."id", f."studentId" AS student_id, f."issueDate"::date AS issue_date,
                  f."dueDate"::date AS due_date, f."totalAmount"::float8 AS amount,
-                 (f."totalAmount" + COALESCE((SELECT sum(p."totalAmount")
+                 (f."totalAmount" - COALESCE(f."fine", 0) + COALESCE((SELECT sum(p."totalAmount")
                     FROM fee_challans p WHERE p."academyId"=f."academyId"
                      AND p."studentId"=f."studentId" AND p."issueDate" < f."issueDate"
                      AND (p."paidAt" IS NULL OR p."paidAt" >= f."issueDate")), 0))::float8 AS outstanding_snapshot,
@@ -117,6 +117,8 @@ def extract_fee_rows(database_url: str, academy_id: str, as_of: date | None = No
         row["late_count"] = int(row.pop("prior_late_count") or 0)
         row["delay_avg"] = float(row.pop("prior_delay_avg") or 0)
         row["consistency"] = None
+        # A fine on the current bill is assessed after the due date, i.e. it
+        # encodes the label, so it is excluded from the current bill's amount.
         # Snapshot balance includes this bill plus prior bills still open at
         # issue date, reconstructed only from payment timestamps.
         row["outstanding"] = float(row.pop("outstanding_snapshot"))
