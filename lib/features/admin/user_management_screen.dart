@@ -441,7 +441,8 @@ class _RoleListTabState extends State<_RoleListTab>
         if (m.isDemo)
           Text('Demo / test record – not a genuine account',
               style: line(AppColors.warning, style: FontStyle.italic)),
-        if (m.role == 'teacher' && (m.displayExtra.isNotEmpty || m.subject.isNotEmpty))
+        if (m.role == 'teacher' &&
+            (m.displayExtra.isNotEmpty || m.subject.isNotEmpty))
           Text(
               [
                 if (m.displayExtra.isNotEmpty) m.displayExtra,

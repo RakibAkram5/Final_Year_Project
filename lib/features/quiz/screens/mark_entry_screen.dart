@@ -180,7 +180,8 @@ class _MarkEntryScreenState extends State<MarkEntryScreen> {
   static List<String> _byRollNumber(ClassEntity cls) {
     final ids = List<String>.of(cls.studentIds);
     int numberOf(String roll) =>
-        int.tryParse(RegExp(r'(\d+)\D*$').firstMatch(roll)?.group(1) ?? '') ?? 0;
+        int.tryParse(RegExp(r'(\d+)\D*$').firstMatch(roll)?.group(1) ?? '') ??
+        0;
     ids.sort((a, b) {
       final ra = cls.studentRollNumbers[a] ?? '';
       final rb = cls.studentRollNumbers[b] ?? '';
